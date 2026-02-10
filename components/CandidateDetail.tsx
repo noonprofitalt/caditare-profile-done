@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MOCK_CANDIDATES } from '../services/mockData';
-import { ArrowLeft, MapPin, Phone, Mail, Briefcase, FileText, Layout, PlayCircle, AlertCircle, History, ShieldAlert, ChevronDown, Unlock, Edit3, MessageCircle, Calendar, User, FileBadge } from 'lucide-react';
+import { ReportingService } from '../services/reportingService';
+import { ArrowLeft, MapPin, Phone, Mail, Briefcase, FileText, Layout, PlayCircle, AlertCircle, History, ShieldAlert, ChevronDown, Unlock, Edit3, MessageCircle, Calendar, User, FileBadge, Printer } from 'lucide-react';
 import DocumentManager from './DocumentManager';
 import WorkflowTracker from './WorkflowTracker';
 import TimelineView from './TimelineView';
@@ -38,6 +39,19 @@ const CandidateDetail: React.FC = () => {
     };
     setCandidate(updatedCandidate);
     setIsEditModalOpen(false);
+  };
+
+  const handleDownloadReport = () => {
+     if (!candidate) return;
+     const csvContent = ReportingService.generateCandidateCSV(candidate);
+     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+     const link = document.createElement("a");
+     const url = URL.createObjectURL(blob);
+     link.setAttribute("href", url);
+     link.setAttribute("download", `360_Report_${candidate.name.replace(' ', '_')}.csv`);
+     document.body.appendChild(link);
+     link.click();
+     document.body.removeChild(link);
   };
 
   // Smart Transition Handler
@@ -112,6 +126,12 @@ const CandidateDetail: React.FC = () => {
                  <h1 className="text-2xl font-bold text-slate-800">{candidate.name}</h1>
                  <button onClick={() => setIsEditModalOpen(true)} className="text-slate-400 hover:text-blue-600 transition-colors">
                    <Edit3 size={16} />
+                 </button>
+                 <button 
+                    onClick={handleDownloadReport}
+                    className="flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold hover:bg-slate-200 transition-colors"
+                 >
+                    <Printer size={12} /> 360° Report
                  </button>
               </div>
               <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">

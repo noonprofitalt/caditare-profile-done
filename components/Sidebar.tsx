@@ -7,7 +7,8 @@ import {
   MessageSquare,
   LogOut,
   Settings,
-  KanbanSquare
+  KanbanSquare,
+  BrainCircuit
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
@@ -36,6 +37,10 @@ const Sidebar: React.FC = () => {
         <NavLink to="/" className={linkClass}>
           <LayoutDashboard size={20} />
           <span>Dashboard</span>
+        </NavLink>
+        <NavLink to="/intelligence" className={linkClass}>
+          <BrainCircuit size={20} />
+          <span>Intelligence</span>
         </NavLink>
         <NavLink to="/pipeline" className={linkClass}>
           <KanbanSquare size={20} />

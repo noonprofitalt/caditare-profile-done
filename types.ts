@@ -25,6 +25,13 @@ export enum StageStatus {
   CANCELLED = 'Cancelled',
 }
 
+export interface PaymentRecord {
+  id: string;
+  date: string;
+  amount: string;
+  notes?: string;
+}
+
 // Sub-status specific data tracking
 export interface StageData {
   medicalStatus?: 'Pending' | 'Scheduled' | 'Cleared' | 'Failed';
@@ -33,6 +40,8 @@ export interface StageData {
   employerStatus?: 'Pending' | 'Selected' | 'Rejected';
   ticketStatus?: 'Pending' | 'Reserved' | 'Issued';
   paymentStatus?: 'Pending' | 'Partial' | 'Completed';
+  paymentNotes?: string;
+  paymentHistory?: PaymentRecord[];
 }
 
 export enum DocumentType {
@@ -161,4 +170,42 @@ export interface Candidate {
   preferredCountries: string[];
   avatarUrl: string;
   documents: CandidateDocument[];
+}
+
+// --- INTELLIGENCE ENGINE TYPES ---
+
+export interface KPIMetrics {
+  totalCandidates: number;
+  activeProcessing: number;
+  completedDepartures: number;
+  criticalDelays: number;
+  revenueEst: number;
+  avgProcessDays: number;
+}
+
+export interface StaffPerformanceMetric {
+  name: string;
+  actionsPerformed: number;
+  lastActive: string;
+  mostActiveStage: string;
+}
+
+export interface BottleneckMetric {
+  stage: string;
+  count: number;
+  avgDays: number;
+  slaLimit: number;
+  status: 'Good' | 'Warning' | 'Critical';
+}
+
+export interface SystemSnapshot {
+  timestamp: string;
+  kpi: KPIMetrics;
+  stageDistribution: { name: string; value: number }[];
+  bottlenecks: BottleneckMetric[];
+  staffMetrics: StaffPerformanceMetric[];
+  financials: {
+    totalCollected: number;
+    pendingCollection: number; // Mock logic based on stage
+  };
 }

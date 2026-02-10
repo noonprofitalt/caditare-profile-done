@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Candidate, StageData, DocumentType, DocumentStatus } from '../types';
-import { X, Save, User, MapPin, Briefcase, Mail, Phone, Globe, Award, Activity, Calendar, FileText } from 'lucide-react';
+import { Candidate, StageData, DocumentType, DocumentStatus, PaymentRecord } from '../types';
+import { X, Save, User, MapPin, Briefcase, Mail, Phone, Globe, Award, Activity, Calendar, FileText, CreditCard, Plus, Trash2 } from 'lucide-react';
 
 interface CandidateFormProps {
   initialData?: Partial<Candidate>;
@@ -19,6 +19,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
   const passportPhotosDoc = initialData?.documents?.find(d => d.type === DocumentType.PASSPORT_PHOTOS);
   const fullPhotoDoc = initialData?.documents?.find(d => d.type === DocumentType.FULL_PHOTO);
 
+  // Form State
   const [formData, setFormData] = useState({
     firstName: defaultFirstName,
     lastName: defaultLastName,
@@ -45,11 +46,16 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     policeStatus: initialData?.stageData?.policeStatus || 'Pending',
     visaStatus: initialData?.stageData?.visaStatus || 'Pending',
     paymentStatus: initialData?.stageData?.paymentStatus || 'Pending',
+    paymentNotes: initialData?.stageData?.paymentNotes || '',
 
     // Photo Docs Status
     passportPhotosStatus: passportPhotosDoc?.status || DocumentStatus.MISSING,
     fullPhotoStatus: fullPhotoDoc?.status || DocumentStatus.MISSING,
   });
+
+  // Payment History State
+  const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>(initialData?.stageData?.paymentHistory || []);
+  const [newPayment, setNewPayment] = useState({ date: '', amount: '', notes: '' });
 
   const [age, setAge] = useState<string>('Auto-calculated');
 
@@ -68,6 +74,22 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     }
   }, [formData.dob]);
 
+  const handleAddPayment = () => {
+    if (!newPayment.amount || !newPayment.date) return;
+    const record: PaymentRecord = {
+      id: `pay-${Date.now()}`,
+      date: newPayment.date,
+      amount: newPayment.amount,
+      notes: newPayment.notes
+    };
+    setPaymentHistory([...paymentHistory, record]);
+    setNewPayment({ date: '', amount: '', notes: '' });
+  };
+
+  const handleRemovePayment = (id: string) => {
+    setPaymentHistory(paymentHistory.filter(p => p.id !== id));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -78,6 +100,8 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
         policeStatus: formData.policeStatus as any,
         visaStatus: formData.visaStatus as any,
         paymentStatus: formData.paymentStatus as any,
+        paymentNotes: formData.paymentNotes,
+        paymentHistory: paymentHistory,
     };
 
     // Update documents if in Edit Mode (initialData.documents exists)
@@ -128,7 +152,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
         
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
           
-          {/* PERSONAL INFORMATION (Exact match to screenshot) */}
+          {/* PERSONAL INFORMATION */}
           <div className="space-y-6">
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4">
               Personal Information
@@ -377,7 +401,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
             </div>
           </div>
 
-          {/* OPERATIONAL STATUS (Existing system logic) */}
+          {/* OPERATIONAL STATUS */}
           <div className="pt-2">
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
                Operational Statuses <Activity size={12} />
@@ -441,19 +465,123 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                         <option value="Rejected">Rejected</option>
                     </select>
                 </div>
+            </div>
+          </div>
 
-                <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Payment Status</label>
-                    <select
-                        name="paymentStatus"
-                        value={formData.paymentStatus}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
-                    >
-                        <option value="Pending">Pending</option>
-                        <option value="Partial">Partial</option>
-                        <option value="Completed">Completed</option>
-                    </select>
+          {/* PAYMENT DETAILS SECTION */}
+          <div className="pt-2">
+            <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
+               Payment Details <CreditCard size={12} />
+            </h4>
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Overall Payment Status</label>
+                        <select
+                            name="paymentStatus"
+                            value={formData.paymentStatus}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                        >
+                            <option value="Pending">Pending</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">General Notes</label>
+                        <input
+                            name="paymentNotes"
+                            value={formData.paymentNotes}
+                            onChange={handleChange}
+                            placeholder="Overall payment remarks..."
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
+                    </div>
+                </div>
+
+                {/* Payment History Table */}
+                <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <div className="p-3 bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-500 uppercase flex justify-between items-center">
+                        <span>Payment History</span>
+                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{paymentHistory.length} Records</span>
+                    </div>
+                    
+                    {/* List */}
+                    <div className="max-h-48 overflow-y-auto">
+                        {paymentHistory.length > 0 ? (
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 text-slate-500 text-xs">
+                                    <tr>
+                                        <th className="px-4 py-2">Date</th>
+                                        <th className="px-4 py-2">Amount</th>
+                                        <th className="px-4 py-2">Notes</th>
+                                        <th className="px-4 py-2 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {paymentHistory.map(record => (
+                                        <tr key={record.id}>
+                                            <td className="px-4 py-2 text-slate-700">{record.date}</td>
+                                            <td className="px-4 py-2 font-mono font-medium text-slate-800">{record.amount}</td>
+                                            <td className="px-4 py-2 text-slate-500 text-xs truncate max-w-[150px]">{record.notes}</td>
+                                            <td className="px-4 py-2 text-right">
+                                                <button onClick={() => handleRemovePayment(record.id)} className="text-red-400 hover:text-red-600 transition-colors">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="p-4 text-center text-sm text-slate-400 italic">No payments recorded yet.</div>
+                        )}
+                    </div>
+
+                    {/* Add New Record */}
+                    <div className="p-3 bg-slate-50 border-t border-slate-200 grid grid-cols-12 gap-3 items-end">
+                        <div className="col-span-3">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Date</label>
+                            <input 
+                                type="date"
+                                value={newPayment.date}
+                                onChange={(e) => setNewPayment({...newPayment, date: e.target.value})}
+                                className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                        <div className="col-span-3">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Amount</label>
+                            <input 
+                                type="text"
+                                placeholder="0.00"
+                                value={newPayment.amount}
+                                onChange={(e) => setNewPayment({...newPayment, amount: e.target.value})}
+                                className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                        <div className="col-span-5">
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Notes</label>
+                            <input 
+                                type="text"
+                                placeholder="e.g. Initial deposit"
+                                value={newPayment.notes}
+                                onChange={(e) => setNewPayment({...newPayment, notes: e.target.value})}
+                                className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                        <div className="col-span-1">
+                             <button 
+                                type="button" 
+                                onClick={handleAddPayment}
+                                className="w-full flex items-center justify-center h-[34px] bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                title="Add Payment"
+                            >
+                                <Plus size={16} />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
           </div>
