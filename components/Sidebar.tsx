@@ -61,10 +61,10 @@ const Sidebar: React.FC = () => {
       </nav>
 
       <div className="p-4 border-t border-slate-800 space-y-2">
-        <button className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+        <NavLink to="/settings" className={linkClass}>
           <Settings size={20} />
           <span>Settings</span>
-        </button>
+        </NavLink>
         <button className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
           <LogOut size={20} />
           <span>Sign Out</span>

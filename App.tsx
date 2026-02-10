@@ -9,6 +9,7 @@ import JobBoard from './components/JobBoard';
 import TeamChat from './components/TeamChat';
 import KanbanBoard from './components/KanbanBoard';
 import IntelligenceEngine from './components/IntelligenceEngine';
+import Settings from './components/Settings';
 
 const App: React.FC = () => {
   return (
@@ -26,6 +27,7 @@ const App: React.FC = () => {
               <Route path="/candidates/:id" element={<CandidateDetail />} />
               <Route path="/jobs" element={<JobBoard />} />
               <Route path="/team-chat" element={<TeamChat />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

@@ -209,3 +209,28 @@ export interface SystemSnapshot {
     pendingCollection: number; // Mock logic based on stage
   };
 }
+
+// --- NEW OPERATIONAL DASHBOARD TYPES ---
+
+export type TaskPriority = 'Critical' | 'High' | 'Medium' | 'Low';
+
+export interface WorkTask {
+  id: string;
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  candidateId: string;
+  candidateName: string;
+  stage: WorkflowStage;
+  dueDate: string;
+  actionLabel: string;
+  type: 'VERIFICATION' | 'APPROVAL' | 'FOLLOW_UP' | 'PAYMENT' | 'ISSUE';
+}
+
+export interface SystemAlert {
+  id: string;
+  type: 'DELAY' | 'INFO' | 'WARNING' | 'SUCCESS';
+  message: string;
+  timestamp: string;
+  count?: number;
+}
