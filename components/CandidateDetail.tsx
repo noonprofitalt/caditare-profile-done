@@ -289,14 +289,14 @@ const CandidateDetail: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-3 no-print">
-          <div className="flex items-center gap-3 no-print">
+        <div className="flex flex-col items-start md:items-end gap-4 no-print w-full md:w-auto">
+          <div className="flex items-center flex-wrap gap-2 sm:gap-3 w-full justify-start md:justify-end">
             <button
               onClick={() => window.print()}
-              className="p-2.5 bg-white text-slate-500 rounded-lg hover:bg-slate-50 border border-slate-200"
+              className="p-2 md:p-2.5 bg-white text-slate-500 rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors"
               title="Print Profile"
             >
-              <Printer size={20} />
+              <Printer size={18} />
             </button>
 
             {/* Invoice Generation Button */}
@@ -304,11 +304,8 @@ const CandidateDetail: React.FC = () => {
               <button
                 onClick={() => {
                   if (confirm('Generate Commission Invoice for this candidate?')) {
-                    // Logic to find employer similar to commission logging
                     let emp = matchedEmployer;
-                    if (!emp && candidate.employerId) {
-                      emp = PartnerService.getEmployerById(candidate.employerId);
-                    } else if (!emp && candidate.jobId) {
+                    if (!emp && candidate.jobId) {
                       const job = JobService.getJobById(candidate.jobId);
                       if (job && job.employerId) emp = PartnerService.getEmployerById(job.employerId);
                     }
@@ -327,10 +324,10 @@ const CandidateDetail: React.FC = () => {
                     }
                   }
                 }}
-                className="p-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 border border-blue-200 no-print"
+                className="p-2 md:p-2.5 bg-white text-blue-600 rounded-xl hover:bg-blue-50 border border-blue-200 transition-colors"
                 title="Generate Commission Invoice"
               >
-                <FileText size={20} />
+                <FileText size={18} />
               </button>
             )}
 
@@ -338,24 +335,23 @@ const CandidateDetail: React.FC = () => {
             {isAdminMode && (
               <button
                 onClick={() => {
-                  if (confirm('Are you sure you want to rollback the last stage transition?')) {
-                    CandidateService.rollbackTransition(candidate.id, user?.name || 'Admin User');
+                  if (confirm('Are you sure?')) {
+                    CandidateService.rollbackTransition(candidate.id, user?.name || 'Admin');
                     refreshCandidate();
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-all font-bold text-sm"
-                title="Undo last transition"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-red-50 text-red-700 border border-red-100 rounded-xl hover:bg-red-100 transition-all font-bold text-xs md:text-sm"
               >
-                <History size={18} /> Undo Last
+                <History size={16} /> <span className="hidden sm:inline">Undo</span>
               </button>
             )}
 
             {nextStage && (
               <button
                 onClick={() => handleStageTransition(nextStage)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all font-bold text-sm active:scale-95"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all font-black text-xs md:text-sm active:scale-95 whitespace-nowrap"
               >
-                Promote to {nextStage} <PlayCircle size={18} />
+                Promote <PlayCircle size={16} className="hidden sm:inline" />
               </button>
             )}
 
@@ -363,15 +359,14 @@ const CandidateDetail: React.FC = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowStageSelector(!showStageSelector)}
-                  className="p-2.5 bg-white text-slate-500 rounded-lg hover:bg-slate-50 border border-slate-200"
-                  title="Jump to any stage"
+                  className="p-2 md:p-2.5 bg-white text-slate-500 rounded-xl hover:bg-slate-50 border border-slate-200"
                 >
-                  <ChevronDown size={20} />
+                  <ChevronDown size={18} />
                 </button>
 
                 {showStageSelector && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-200 z-50 py-1 overflow-hidden">
-                    <div className="px-4 py-2 border-b border-slate-50 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 origin-top-right">
+                    <div className="px-4 py-2 border-b border-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       Force Jump To Stage
                     </div>
                     {STAGE_ORDER.map((stage) => (
@@ -379,10 +374,9 @@ const CandidateDetail: React.FC = () => {
                         key={stage}
                         disabled={stage === candidate.stage}
                         onClick={() => handleForceTransition(stage)}
-                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between group transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 flex items-center justify-between transition-colors"
                       >
                         {stage}
-                        {stage === candidate.stage && <span className="text-xs text-slate-400 font-medium">Current</span>}
                       </button>
                     ))}
                   </div>
@@ -412,31 +406,33 @@ const CandidateDetail: React.FC = () => {
       <WorkflowTracker candidate={candidate} />
 
       {/* Tabs */}
-      <div className="flex gap-8 border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab('timeline')}
-          className={`pb-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'timeline' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-        >
-          <div className="flex items-center gap-2"><History size={16} /> Process Timeline</div>
-        </button>
-        <button
-          onClick={() => setActiveTab('documents')}
-          className={`pb-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'documents' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-        >
-          <div className="flex items-center gap-2"><FileText size={16} /> Documents</div>
-        </button>
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`pb-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'profile' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-        >
-          <div className="flex items-center gap-2"><Layout size={16} /> Profile</div>
-        </button>
-        <button
-          onClick={() => setActiveTab('report')}
-          className={`pb-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'report' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-        >
-          <div className="flex items-center gap-2"><FileSearch size={16} /> System Report</div>
-        </button>
+      <div className="flex gap-4 sm:gap-8 border-b border-slate-200 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex min-w-max gap-4 sm:gap-8">
+          <button
+            onClick={() => setActiveTab('timeline')}
+            className={`pb-4 text-sm font-bold transition-colors border-b-2 relative ${activeTab === 'timeline' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          >
+            <div className="flex items-center gap-2"><History size={16} /> Timeline</div>
+          </button>
+          <button
+            onClick={() => setActiveTab('documents')}
+            className={`pb-4 text-sm font-bold transition-colors border-b-2 relative ${activeTab === 'documents' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          >
+            <div className="flex items-center gap-2"><FileText size={16} /> Documents</div>
+          </button>
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`pb-4 text-sm font-bold transition-colors border-b-2 relative ${activeTab === 'profile' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          >
+            <div className="flex items-center gap-2"><Layout size={16} /> Profile</div>
+          </button>
+          <button
+            onClick={() => setActiveTab('report')}
+            className={`pb-4 text-sm font-bold transition-colors border-b-2 relative ${activeTab === 'report' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          >
+            <div className="flex items-center gap-2"><FileSearch size={16} /> AI Report</div>
+          </button>
+        </div>
       </div>
 
       {activeTab === 'timeline' ? (

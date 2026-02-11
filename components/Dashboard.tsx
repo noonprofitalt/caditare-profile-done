@@ -62,7 +62,7 @@ const Dashboard: React.FC = () => {
       <div className="p-6 max-w-[1600px] mx-auto space-y-6 relative h-[calc(100vh-4rem)] overflow-y-auto">
 
          {/* 1. Header Row: High-Level Status (KPIs) */}
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {isLoading ? (
                Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between h-[116px]">
@@ -285,12 +285,12 @@ const Dashboard: React.FC = () => {
          </div>
 
          {/* 4. FLOATING ACTION PALETTE (Quick Actions) */}
-         <div className="fixed bottom-8 right-8 flex flex-col items-end gap-3 z-40">
+         <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 flex flex-col items-end gap-3 z-40">
             <div className="group relative">
-               <button className="flex items-center gap-3 bg-slate-900 text-white pl-5 pr-2 py-3 rounded-full shadow-2xl hover:scale-105 transition-all">
-                  <span className="font-bold text-sm">Quick Actions</span>
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                     <ArrowRight size={16} />
+               <button className="flex items-center gap-2 md:gap-3 bg-slate-900 text-white pl-4 pr-1 md:pl-5 md:pr-2 py-2.5 md:py-3 rounded-full shadow-2xl hover:scale-105 transition-all">
+                  <span className="font-bold text-xs md:text-sm">Quick Actions</span>
+                  <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                     <ArrowRight size={14} className="md:w-4 md:h-4" />
                   </div>
                </button>
 

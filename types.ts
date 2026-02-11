@@ -185,6 +185,73 @@ export interface Candidate {
   city?: string;
   education?: string[];
 
+  // Application Form Specific Fields
+  refNo?: string; // Application Reference Number
+  country?: string; // Target country
+  position?: string; // Desired position
+  religion?: string;
+  maritalStatus?: 'Single' | 'Married' | 'Divorced' | 'Widowed';
+  drivingLicenseNo?: string;
+  height?: { feet: number; inches: number };
+  weight?: number; // in KG
+  school?: string;
+
+  // Administrative Divisions
+  gsDivision?: string;
+  divisionalSecretariat?: string;
+  district?: string;
+  province?: string;
+
+  // Family Information
+  spouseName?: string;
+  fatherName?: string;
+  motherName?: string;
+  guardianName?: string;
+  guardianRelation?: string;
+  guardianContact?: string;
+  guardianIdNo?: string;
+  guardianBirthday?: string;
+  numberOfChildren?: number;
+  children?: Array<{
+    name: string;
+    gender: 'M' | 'F';
+    age: number;
+  }>;
+
+  // Employment History
+  employmentHistory?: Array<{
+    type: 'Local' | 'Foreign';
+    position: string;
+    companyName: string;
+    country?: string;
+    years: number;
+  }>;
+
+  // Educational Qualifications (detailed)
+  educationalQualifications?: Array<{
+    courseName: string;
+    level: string; // NVQ/SLQF level
+    institute: string;
+    year: string;
+  }>;
+  gceOL?: { year: string };
+  gceAL?: { year: string };
+
+  // Training & Achievements
+  trainingDetails?: string;
+  specialAchievements?: string;
+
+  // Office Use Only
+  officeSelection?: 'Select' | 'Reject';
+  officeRemark?: string;
+  customerCareOfficer?: string;
+  fileHandlingOfficer?: string;
+  charges?: string;
+
+  // Application Metadata
+  applicationDate?: string;
+  signature?: string; // Could be a data URL for signature image
+
   // Workflow Core
   stage: WorkflowStage;
   stageStatus: StageStatus;

@@ -16,8 +16,11 @@ import Breadcrumbs from './components/Breadcrumbs';
 import Login from './components/Login';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import DigitalApplicationForm from './components/DigitalApplicationForm';
 
 const App: React.FC = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
   return (
     <AuthProvider>
       <HashRouter>
@@ -27,11 +30,22 @@ const App: React.FC = () => {
             path="/*"
             element={
               <ProtectedRoute>
-                <div className="flex min-h-screen bg-slate-50">
-                  <Sidebar />
-                  <div className="flex-1 ml-64 flex flex-col">
-                    <Header />
-                    <Breadcrumbs />
+                <div className="flex min-h-screen bg-slate-50 relative overflow-hidden">
+                  {/* Overlay for mobile sidebar */}
+                  {isSidebarOpen && (
+                    <div
+                      className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+                      onClick={() => setIsSidebarOpen(false)}
+                    />
+                  )}
+
+                  <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+                  <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:ml-64">
+                    <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+                    <div className="lg:ml-0">
+                      <Breadcrumbs />
+                    </div>
                     <main className="flex-1 overflow-y-auto">
                       <Routes>
                         <Route path="/" element={<Dashboard />} />
@@ -39,6 +53,7 @@ const App: React.FC = () => {
                         <Route path="/pipeline" element={<KanbanBoard />} />
                         <Route path="/candidates" element={<CandidateList />} />
                         <Route path="/candidates/:id" element={<CandidateDetail />} />
+                        <Route path="/applications/new" element={<DigitalApplicationForm />} />
                         <Route path="/jobs" element={<JobBoard />} />
                         <Route path="/partners/:id?" element={<PartnerManager />} />
                         <Route path="/finance" element={<FinanceLedger />} />
