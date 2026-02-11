@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Candidate, CandidateDocument, DocumentType, DocumentStatus, DocumentCategory, DocumentLog } from '../types';
+import { NotificationService } from '../services/notificationService';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, Clock, XCircle, Eye, Download, History, Lock, ShieldCheck } from 'lucide-react';
 
 interface DocumentManagerProps {
@@ -13,7 +14,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   const [dragActive, setDragActive] = useState(false);
 
   // Stats
-  const mandatoryDocs = candidate.documents.filter(d => d.category === DocumentCategory.MANDATORY_REGISTRATION);
+  const mandatoryDocs = candidate.documents?.filter(d => d.category === DocumentCategory.MANDATORY_REGISTRATION) || [];
   const completedMandatory = mandatoryDocs.filter(d => d.status === DocumentStatus.APPROVED).length;
   const isWorkflowBlocked = completedMandatory < mandatoryDocs.length;
 
@@ -79,12 +80,22 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       logs: [newLog, ...doc.logs]
     };
 
+    if (status === DocumentStatus.REJECTED || status === DocumentStatus.CORRECTION_REQUIRED) {
+      NotificationService.addNotification({
+        type: 'WARNING',
+        title: `Document ${status === DocumentStatus.REJECTED ? 'Rejected' : 'Fix Required'}`,
+        message: `${doc.type} for ${candidate.name} has been ${status.toLowerCase()}. ${reason ? `Reason: ${reason}` : ''}`,
+        link: `/candidates/${candidate.id}?tab=documents`,
+        candidateId: candidate.id
+      });
+    }
+
     updateDocumentInList(updatedDoc);
     setSelectedDoc(null);
   };
 
   const updateDocumentInList = (updatedDoc: CandidateDocument) => {
-    const newDocs = candidate.documents.map(d => d.id === updatedDoc.id ? updatedDoc : d);
+    const newDocs = candidate.documents?.map(d => d.id === updatedDoc.id ? updatedDoc : d) || [];
     onUpdate(newDocs);
   };
 
@@ -118,7 +129,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
             <button onClick={() => setSelectedDoc(null)} className="text-slate-400 hover:text-slate-600"><XCircle size={24} /></button>
           </div>
           <div className="p-8">
-            <div 
+            <div
               className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 hover:border-slate-400'}`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -128,10 +139,10 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
               <UploadCloud size={48} className="mx-auto text-slate-400 mb-4" />
               <p className="text-slate-600 font-medium">Drag and drop your file here</p>
               <p className="text-sm text-slate-400 mt-2">or</p>
-              <input 
-                type="file" 
-                id="file-upload" 
-                className="hidden" 
+              <input
+                type="file"
+                id="file-upload"
+                className="hidden"
                 onChange={(e) => e.target.files && e.target.files[0] && handleFileUpload(selectedDoc, e.target.files[0])}
                 accept=".pdf,.jpg,.png,.jpeg"
               />
@@ -152,85 +163,85 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   const renderVerifyModal = () => {
     if (!selectedDoc) return null;
     const [rejectReason, setRejectReason] = useState('');
-    
+
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-             <div>
-                <h3 className="font-bold text-lg text-slate-800">Verify: {selectedDoc.type}</h3>
-                <p className="text-xs text-slate-500">Version {selectedDoc.version} • Uploaded by {selectedDoc.uploadedBy} on {selectedDoc.uploadedAt}</p>
-             </div>
+            <div>
+              <h3 className="font-bold text-lg text-slate-800">Verify: {selectedDoc.type}</h3>
+              <p className="text-xs text-slate-500">Version {selectedDoc.version} • Uploaded by {selectedDoc.uploadedBy} on {selectedDoc.uploadedAt}</p>
+            </div>
             <button onClick={() => setSelectedDoc(null)} className="text-slate-400 hover:text-slate-600"><XCircle size={24} /></button>
           </div>
-          
+
           <div className="flex-1 flex overflow-hidden">
             {/* File Preview Mock */}
             <div className="flex-1 bg-slate-800 flex items-center justify-center p-8">
-               <div className="bg-white p-8 rounded shadow-lg max-w-lg w-full text-center aspect-[3/4] flex flex-col items-center justify-center">
-                  <FileText size={64} className="text-slate-300 mb-4" />
-                  <p className="text-slate-500">Document Preview</p>
-                  <p className="font-mono text-xs text-slate-400 mt-2">{selectedDoc.type}_v{selectedDoc.version}.pdf</p>
-                  <button className="mt-6 text-blue-600 text-sm hover:underline flex items-center gap-1">
-                    <Download size={14} /> Download Securely
-                  </button>
-               </div>
+              <div className="bg-white p-8 rounded shadow-lg max-w-lg w-full text-center aspect-[3/4] flex flex-col items-center justify-center">
+                <FileText size={64} className="text-slate-300 mb-4" />
+                <p className="text-slate-500">Document Preview</p>
+                <p className="font-mono text-xs text-slate-400 mt-2">{selectedDoc.type}_v{selectedDoc.version}.pdf</p>
+                <button className="mt-6 text-blue-600 text-sm hover:underline flex items-center gap-1">
+                  <Download size={14} /> Download Securely
+                </button>
+              </div>
             </div>
 
             {/* Actions Panel */}
             <div className="w-80 border-l border-slate-200 p-6 overflow-y-auto bg-white">
-               <h4 className="font-bold text-slate-800 mb-4">Verification Actions</h4>
-               
-               <div className="space-y-3">
-                 <button 
-                   onClick={() => handleVerification(selectedDoc, DocumentStatus.APPROVED)}
-                   className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2"
-                 >
-                   <CheckCircle size={18} /> Approve Document
-                 </button>
-                 
-                 <hr className="border-slate-100 my-4" />
-                 
-                 <div>
-                   <label className="block text-xs font-semibold text-slate-700 mb-2">Rejection / Correction Reason</label>
-                   <textarea 
-                     className="w-full p-3 border border-slate-200 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-red-500 outline-none resize-none"
-                     rows={3}
-                     placeholder="Why is this rejected?"
-                     value={rejectReason}
-                     onChange={(e) => setRejectReason(e.target.value)}
-                   ></textarea>
-                   <div className="grid grid-cols-2 gap-2">
-                      <button 
-                        onClick={() => handleVerification(selectedDoc, DocumentStatus.CORRECTION_REQUIRED, rejectReason)}
-                        disabled={!rejectReason}
-                        className="px-3 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg text-xs font-medium hover:bg-orange-100 disabled:opacity-50"
-                      >
-                        Request Fix
-                      </button>
-                      <button 
-                        onClick={() => handleVerification(selectedDoc, DocumentStatus.REJECTED, rejectReason)}
-                        disabled={!rejectReason}
-                        className="px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-100 disabled:opacity-50"
-                      >
-                        Reject
-                      </button>
-                   </div>
-                 </div>
-               </div>
+              <h4 className="font-bold text-slate-800 mb-4">Verification Actions</h4>
 
-               <div className="mt-8">
-                 <h4 className="font-bold text-slate-800 mb-2 text-sm flex items-center gap-2"><History size={14} /> Audit Trail</h4>
-                 <div className="space-y-3">
-                    {selectedDoc.logs.map(log => (
-                      <div key={log.id} className="text-xs border-l-2 border-slate-200 pl-3 py-1">
-                        <p className="font-semibold text-slate-700">{log.action}</p>
-                        <p className="text-slate-500">{log.user} • {log.timestamp}</p>
-                        {log.details && <p className="text-slate-400 mt-1 italic">{log.details}</p>}
-                      </div>
-                    ))}
-                 </div>
-               </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleVerification(selectedDoc, DocumentStatus.APPROVED)}
+                  className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2"
+                >
+                  <CheckCircle size={18} /> Approve Document
+                </button>
+
+                <hr className="border-slate-100 my-4" />
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">Rejection / Correction Reason</label>
+                  <textarea
+                    className="w-full p-3 border border-slate-200 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-red-500 outline-none resize-none"
+                    rows={3}
+                    placeholder="Why is this rejected?"
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                  ></textarea>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleVerification(selectedDoc, DocumentStatus.CORRECTION_REQUIRED, rejectReason)}
+                      disabled={!rejectReason}
+                      className="px-3 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg text-xs font-medium hover:bg-orange-100 disabled:opacity-50"
+                    >
+                      Request Fix
+                    </button>
+                    <button
+                      onClick={() => handleVerification(selectedDoc, DocumentStatus.REJECTED, rejectReason)}
+                      disabled={!rejectReason}
+                      className="px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-100 disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <h4 className="font-bold text-slate-800 mb-2 text-sm flex items-center gap-2"><History size={14} /> Audit Trail</h4>
+                <div className="space-y-3">
+                  {selectedDoc.logs.map(log => (
+                    <div key={log.id} className="text-xs border-l-2 border-slate-200 pl-3 py-1">
+                      <p className="font-semibold text-slate-700">{log.action}</p>
+                      <p className="text-slate-500">{log.user} • {log.timestamp}</p>
+                      {log.details && <p className="text-slate-400 mt-1 italic">{log.details}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -248,11 +259,11 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
           </h3>
           <p className="text-sm text-slate-500">Secure storage • Audit Trail Enabled • Role-Based Access</p>
         </div>
-        
+
         {isWorkflowBlocked && (
-           <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-medium">
-             <Lock size={16} /> Workflow Blocked: Missing Mandatory Docs
-           </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-medium">
+            <Lock size={16} /> Workflow Blocked: Missing Mandatory Docs
+          </div>
         )}
       </div>
 
@@ -264,11 +275,11 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
         </div>
         <div className="p-4 text-center">
           <p className="text-xs text-slate-400 uppercase font-semibold">Pending Review</p>
-          <p className="text-xl font-bold text-yellow-600">{candidate.documents.filter(d => d.status === DocumentStatus.PENDING).length}</p>
+          <p className="text-xl font-bold text-yellow-600">{candidate.documents?.filter(d => d.status === DocumentStatus.PENDING).length || 0}</p>
         </div>
         <div className="p-4 text-center">
           <p className="text-xs text-slate-400 uppercase font-semibold">Rejected / Fix</p>
-          <p className="text-xl font-bold text-red-600">{candidate.documents.filter(d => d.status === DocumentStatus.REJECTED || d.status === DocumentStatus.CORRECTION_REQUIRED).length}</p>
+          <p className="text-xl font-bold text-red-600">{candidate.documents?.filter(d => d.status === DocumentStatus.REJECTED || d.status === DocumentStatus.CORRECTION_REQUIRED).length || 0}</p>
         </div>
       </div>
 
@@ -280,14 +291,14 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
               {category}
               {category === DocumentCategory.MANDATORY_REGISTRATION && <span className="text-red-500">*</span>}
             </h4>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {candidate.documents.filter(d => d.category === category).map((doc) => (
+              {candidate.documents?.filter(d => d.category === category).map((doc) => (
                 <div key={doc.id} className={`group relative flex items-start p-4 rounded-xl border transition-all ${getStatusColor(doc.status)} bg-opacity-30`}>
                   <div className={`p-2 rounded-lg mr-4 ${doc.status === DocumentStatus.MISSING ? 'bg-slate-200 text-slate-500' : 'bg-white shadow-sm'}`}>
                     {getStatusIcon(doc.status)}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <h5 className="font-semibold text-slate-800 truncate" title={doc.type}>{doc.type}</h5>
@@ -295,14 +306,14 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
                         {doc.status}
                       </span>
                     </div>
-                    
+
                     {doc.status === DocumentStatus.MISSING ? (
-                       <button 
-                         onClick={() => { setSelectedDoc(doc); setViewMode('upload'); }}
-                         className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                       >
-                         <UploadCloud size={12} /> Upload Required
-                       </button>
+                      <button
+                        onClick={() => { setSelectedDoc(doc); setViewMode('upload'); }}
+                        className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      >
+                        <UploadCloud size={12} /> Upload Required
+                      </button>
                     ) : (
                       <div className="space-y-1">
                         <p className="text-xs text-slate-600 truncate">
@@ -312,12 +323,12 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
                           <p className="text-xs text-red-600 font-medium bg-red-50 p-1 rounded">Reason: {doc.rejectionReason}</p>
                         )}
                         <div className="flex items-center gap-3 mt-2">
-                           <button onClick={() => { setSelectedDoc(doc); setViewMode('verify'); }} className="text-xs font-semibold text-slate-700 hover:text-blue-600 flex items-center gap-1">
-                             <Eye size={12} /> View
-                           </button>
-                           <button onClick={() => { setSelectedDoc(doc); setViewMode('upload'); }} className="text-xs font-semibold text-slate-700 hover:text-blue-600 flex items-center gap-1">
-                             <UploadCloud size={12} /> New Version
-                           </button>
+                          <button onClick={() => { setSelectedDoc(doc); setViewMode('verify'); }} className="text-xs font-semibold text-slate-700 hover:text-blue-600 flex items-center gap-1">
+                            <Eye size={12} /> View
+                          </button>
+                          <button onClick={() => { setSelectedDoc(doc); setViewMode('upload'); }} className="text-xs font-semibold text-slate-700 hover:text-blue-600 flex items-center gap-1">
+                            <UploadCloud size={12} /> New Version
+                          </button>
                         </div>
                       </div>
                     )}

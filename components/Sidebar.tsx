@@ -1,22 +1,23 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Briefcase, 
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
   MessageSquare,
   LogOut,
   Settings,
   KanbanSquare,
-  BrainCircuit
+  BrainCircuit,
+  Target,
+  DollarSign
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
-  const linkClass = ({ isActive }: { isActive: boolean }) => 
-    `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-      isActive 
-        ? 'bg-blue-600 text-white shadow-md' 
-        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+  const linkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
+      ? 'bg-blue-600 text-white shadow-md'
+      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
     }`;
 
   return (
@@ -24,7 +25,7 @@ const Sidebar: React.FC = () => {
       <div className="p-6 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-             <span className="font-bold text-white text-lg">G</span>
+            <span className="font-bold text-white text-lg">G</span>
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight">GlobalWorkforce</h1>
@@ -53,6 +54,14 @@ const Sidebar: React.FC = () => {
         <NavLink to="/jobs" className={linkClass}>
           <Briefcase size={20} />
           <span>Jobs</span>
+        </NavLink>
+        <NavLink to="/partners" className={linkClass}>
+          <Target size={20} />
+          <span>Partners</span>
+        </NavLink>
+        <NavLink to="/finance" className={linkClass}>
+          <DollarSign size={20} />
+          <span>Finance</span>
         </NavLink>
         <NavLink to="/team-chat" className={linkClass}>
           <MessageSquare size={20} />

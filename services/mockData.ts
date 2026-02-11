@@ -1,4 +1,4 @@
-import { Candidate, WorkflowStage, StageStatus, Job, JobStatus, DocumentType, DocumentStatus, DocumentCategory, CandidateDocument, TimelineEvent } from "../types";
+import { Candidate, WorkflowStage, StageStatus, Job, JobStatus, DocumentType, DocumentStatus, DocumentCategory, CandidateDocument, TimelineEvent, PassportStatus, PCCStatus } from "../types";
 
 export const MOCK_JOBS: Job[] = [
   {
@@ -102,9 +102,9 @@ const hoursAgo = (hours: number, baseDate?: string) => {
 // Create a candidate with some docs filled
 const candidateWithDocs = (base: any, filledCount: number): Candidate => {
   const docs = generateRequiredDocs();
-  
+
   // Simulate some filled docs
-  for(let i = 0; i < filledCount; i++) {
+  for (let i = 0; i < filledCount; i++) {
     docs[i].status = DocumentStatus.APPROVED;
     docs[i].url = '#';
     docs[i].uploadedAt = '2023-11-01 10:30 AM';
@@ -127,8 +127,8 @@ const candidateWithDocs = (base: any, filledCount: number): Candidate => {
   const lastName = base.lastName || names.slice(1).join(' ');
   const city = base.location ? base.location.split(',')[0].trim() : 'Unknown';
 
-  return { 
-    ...base, 
+  return {
+    ...base,
     firstName,
     lastName,
     nic: base.nic || '199012345678',
@@ -137,8 +137,8 @@ const candidateWithDocs = (base: any, filledCount: number): Candidate => {
     whatsapp: base.whatsapp || base.phone,
     address: base.address || '123 Main Street',
     city: base.city || city,
-    education: base.education || 'Bachelor\'s Degree',
-    documents: docs 
+    education: base.education || ['Bachelor\'s Degree'],
+    documents: docs
   };
 };
 
@@ -149,16 +149,30 @@ export const MOCK_CANDIDATES: Candidate[] = [
     email: 'ahmed.h@example.com',
     phone: '+20 123 456 7890',
     role: 'Civil Engineer',
-    stage: WorkflowStage.JOB_MATCHING,
+    stage: WorkflowStage.APPLIED,
     stageStatus: StageStatus.IN_PROGRESS,
     stageEnteredAt: daysAgo(3),
     stageData: {
       employerStatus: 'Pending',
       paymentStatus: 'Pending'
     },
+    // Valid Passport, Valid PCC
+    passportData: {
+      passportNumber: 'N12345678',
+      issuedDate: '2020-01-01',
+      expiryDate: '2030-01-01',
+      country: 'Egypt',
+      status: PassportStatus.VALID,
+      validityDays: 2000
+    },
+    pccData: {
+      issuedDate: daysAgo(30),
+      status: PCCStatus.VALID,
+      ageDays: 30
+    },
     workflowLogs: [],
     timelineEvents: [
-      { id: '1', type: 'STAGE_TRANSITION', title: 'Moved to Job Matching', timestamp: daysAgo(3), actor: 'System', stage: WorkflowStage.JOB_MATCHING },
+      { id: '1', type: 'STAGE_TRANSITION', title: 'Moved to Applied', timestamp: daysAgo(3), actor: 'System', stage: WorkflowStage.APPLIED },
       { id: '2', type: 'DOCUMENT', title: 'Passport Verified', description: 'Document approved by verification team', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFICATION },
       { id: '3', type: 'STATUS_CHANGE', title: 'Verification Completed', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFICATION },
       { id: '4', type: 'STAGE_TRANSITION', title: 'Moved to Verification', timestamp: daysAgo(5), actor: 'System', stage: WorkflowStage.VERIFICATION },
@@ -170,7 +184,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     location: 'Cairo, Egypt',
     preferredCountries: ['UAE', 'Qatar', 'Saudi Arabia'],
     avatarUrl: 'https://picsum.photos/150/150?random=1',
-  }, 8), 
+  }, 8),
 
   candidateWithDocs({
     id: '102',
@@ -183,9 +197,10 @@ export const MOCK_CANDIDATES: Candidate[] = [
     stageStatus: StageStatus.PENDING,
     stageEnteredAt: daysAgo(1),
     stageData: {},
+    // No Data yet (New Reg)
     workflowLogs: [],
     timelineEvents: [
-       { id: '1', type: 'SYSTEM', title: 'Profile Created', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.REGISTRATION },
+      { id: '1', type: 'SYSTEM', title: 'Profile Created', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.REGISTRATION },
     ],
     experienceYears: 5,
     skills: ['Patient Care', 'ICU', 'Emergency Response'],
@@ -200,7 +215,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     email: 'rajesh.k@example.com',
     phone: '+91 987 654 3210',
     role: 'Chef',
-    stage: WorkflowStage.VISA,
+    stage: WorkflowStage.EMBASSY_APPLIED,
     stageStatus: StageStatus.IN_PROGRESS,
     stageEnteredAt: daysAgo(16), // Overdue
     stageData: {
@@ -210,13 +225,24 @@ export const MOCK_CANDIDATES: Candidate[] = [
       visaStatus: 'Submitted',
       paymentStatus: 'Partial'
     },
+    // Expiring Passport (< 6 months), Valid PCC
+    passportData: {
+      passportNumber: 'K98765432',
+      issuedDate: '2014-05-01',
+      expiryDate: daysAgo(-100), // Expiring in 100 days
+      country: 'India',
+      status: PassportStatus.EXPIRING,
+      validityDays: 100
+    },
+    pccData: {
+      issuedDate: daysAgo(10),
+      status: PCCStatus.VALID,
+      ageDays: 10
+    },
     workflowLogs: [],
     timelineEvents: [
-      { id: '1', type: 'ALERT', title: 'SLA Breach: Visa Stage', description: 'Candidate has been in Visa stage for 16 days (Limit: 14)', timestamp: hoursAgo(2), actor: 'System', stage: WorkflowStage.VISA, metadata: { isCritical: true } },
-      { id: '2', type: 'STATUS_CHANGE', title: 'Visa Application Submitted', timestamp: daysAgo(15), actor: 'Visa Team', stage: WorkflowStage.VISA },
-      { id: '3', type: 'STAGE_TRANSITION', title: 'Moved to Visa', timestamp: daysAgo(16), actor: 'System', stage: WorkflowStage.VISA },
-      { id: '4', type: 'STATUS_CHANGE', title: 'Police Clearance Issued', timestamp: daysAgo(18), actor: 'Admin', stage: WorkflowStage.POLICE },
-      { id: '5', type: 'STATUS_CHANGE', title: 'Medical Cleared', timestamp: daysAgo(22), actor: 'Medical Center', stage: WorkflowStage.MEDICAL },
+      { id: '1', type: 'ALERT', title: 'SLA Breach: Embassy Stage', description: 'Candidate has been in Embassy stage for 16 days (Limit: 1)', timestamp: hoursAgo(2), actor: 'System', stage: WorkflowStage.EMBASSY_APPLIED, metadata: { isCritical: true } },
+      { id: '3', type: 'STAGE_TRANSITION', title: 'Moved to Embassy Applied', timestamp: daysAgo(16), actor: 'System', stage: WorkflowStage.EMBASSY_APPLIED },
     ],
     experienceYears: 12,
     skills: ['Continental Cuisine', 'Menu Planning', 'Kitchen Management'],
@@ -225,7 +251,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     avatarUrl: 'https://picsum.photos/150/150?random=3',
   }, 12),
 
-   candidateWithDocs({
+  candidateWithDocs({
     id: '104',
     name: 'Elena Popov',
     email: 'elena.p@example.com',
@@ -236,6 +262,20 @@ export const MOCK_CANDIDATES: Candidate[] = [
     stageStatus: StageStatus.ON_HOLD,
     stageEnteredAt: daysAgo(4), // Overdue SLA 2
     stageData: {},
+    // Valid Passport, Expired PCC
+    passportData: {
+      passportNumber: 'B55667788',
+      issuedDate: '2019-01-01',
+      expiryDate: '2029-01-01',
+      country: 'Bulgaria',
+      status: PassportStatus.VALID,
+      validityDays: 1500
+    },
+    pccData: {
+      issuedDate: daysAgo(200), // Expired
+      status: PCCStatus.EXPIRED,
+      ageDays: 200
+    },
     workflowLogs: [],
     timelineEvents: [
       { id: '1', type: 'ALERT', title: 'SLA Warning', description: 'Verification is taking longer than expected.', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.VERIFICATION, metadata: { isCritical: false } },

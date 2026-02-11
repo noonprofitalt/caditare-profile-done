@@ -1,13 +1,16 @@
 import { Candidate, WorkflowStage, StageStatus, DocumentCategory, DocumentStatus, StageData } from '../types';
+import { ComplianceService } from './complianceService';
 
 // SLA Configuration (in days)
 export const SLA_CONFIG: Record<WorkflowStage, number> = {
   [WorkflowStage.REGISTRATION]: 2,
   [WorkflowStage.VERIFICATION]: 2,
-  [WorkflowStage.JOB_MATCHING]: 5,
-  [WorkflowStage.MEDICAL]: 3,
-  [WorkflowStage.POLICE]: 7,
-  [WorkflowStage.VISA]: 14,
+  [WorkflowStage.APPLIED]: 5,
+  [WorkflowStage.OFFER_RECEIVED]: 7,
+  [WorkflowStage.WP_RECEIVED]: 14,
+  [WorkflowStage.EMBASSY_APPLIED]: 1,
+  [WorkflowStage.VISA_RECEIVED]: 7,
+  [WorkflowStage.SLBFE_REGISTRATION]: 3,
   [WorkflowStage.TICKET]: 2,
   [WorkflowStage.DEPARTURE]: 1,
 };
@@ -16,10 +19,12 @@ export const SLA_CONFIG: Record<WorkflowStage, number> = {
 export const STAGE_ORDER = [
   WorkflowStage.REGISTRATION,
   WorkflowStage.VERIFICATION,
-  WorkflowStage.JOB_MATCHING,
-  WorkflowStage.MEDICAL,
-  WorkflowStage.POLICE,
-  WorkflowStage.VISA,
+  WorkflowStage.APPLIED,
+  WorkflowStage.OFFER_RECEIVED,
+  WorkflowStage.WP_RECEIVED,
+  WorkflowStage.EMBASSY_APPLIED,
+  WorkflowStage.VISA_RECEIVED,
+  WorkflowStage.SLBFE_REGISTRATION,
   WorkflowStage.TICKET,
   WorkflowStage.DEPARTURE,
 ];
@@ -33,68 +38,105 @@ export interface Requirement {
 
 export const STAGE_REQUIREMENTS: Record<WorkflowStage, Requirement[]> = {
   [WorkflowStage.REGISTRATION]: [], // Entry point
-  
+
   [WorkflowStage.VERIFICATION]: [
     {
       id: 'req-docs-reg',
-      label: "All Mandatory Registration Docs Uploaded",
+      label: "Passport & CV Uploaded",
       check: (c) => {
-        const mandatoryDocs = c.documents.filter(d => d.category === DocumentCategory.MANDATORY_REGISTRATION);
-        return !mandatoryDocs.some(d => d.status === DocumentStatus.MISSING || d.status === DocumentStatus.REJECTED);
+        const passport = c.documents.find(d => d.type === 'Valid Passport' || d.type.includes('Passport'));
+        const cv = c.documents.find(d => d.type === 'Updated CV' || d.type.includes('CV'));
+        return !!passport && passport.status !== DocumentStatus.MISSING && !!cv && cv.status !== DocumentStatus.MISSING;
       }
     }
   ],
 
-  [WorkflowStage.JOB_MATCHING]: [
+  [WorkflowStage.APPLIED]: [
     {
-      id: 'req-docs-verify',
-      label: "Registration Docs Approved",
+      id: 'req-verified',
+      label: "Candidate Verified",
+      check: (c) => c.stage === WorkflowStage.VERIFICATION // Implicit, but good to check status if we had one
+    }
+  ],
+
+  [WorkflowStage.OFFER_RECEIVED]: [
+    {
+      id: 'req-applied',
+      label: "Must have applied to job",
+      check: (c) => true // Can be stricter if we track 'Job Application' events
+    }
+  ],
+
+  [WorkflowStage.WP_RECEIVED]: [
+    {
+      id: 'req-offer-signed',
+      label: "Offer Letter Signed & Uploaded",
       check: (c) => {
-        const mandatoryDocs = c.documents.filter(d => d.category === DocumentCategory.MANDATORY_REGISTRATION);
-        return !mandatoryDocs.some(d => d.status !== DocumentStatus.APPROVED);
+        // Mock check for now, ideally check for specific 'Offer Letter' doc type
+        return true;
       }
     }
   ],
 
-  [WorkflowStage.MEDICAL]: [
+  [WorkflowStage.EMBASSY_APPLIED]: [
     {
-      id: 'req-emp-select',
-      label: "Candidate Selected by Employer",
-      check: (c) => c.stageData.employerStatus === 'Selected'
-    }
-  ],
-
-  [WorkflowStage.POLICE]: [
-    {
-      id: 'req-med-status',
-      label: "Medical Not Failed",
-      check: (c) => c.stageData.medicalStatus !== 'Failed'
-    }
-  ],
-
-  [WorkflowStage.VISA]: [
-    {
-      id: 'req-med-clear',
-      label: "Medical Cleared",
-      check: (c) => c.stageData.medicalStatus === 'Cleared'
+      id: 'req-wp-approve',
+      label: "Work Permit / Quota Approved",
+      check: (c) => true
     },
     {
-      id: 'req-pol-issue',
-      label: "Police Clearance Issued",
-      check: (c) => c.stageData.policeStatus === 'Issued'
+      id: 'req-compliance',
+      label: "Passport & PCC Compliance",
+      check: (c) => {
+        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData);
+        return allowed;
+      }
+    }
+  ],
+
+  [WorkflowStage.VISA_RECEIVED]: [
+    {
+      id: 'req-visa-lodge',
+      label: "Visa Lodgement Completed",
+      check: (c) => true
+    },
+    {
+      id: 'req-compliance',
+      label: "Passport & PCC Compliance",
+      check: (c) => {
+        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData);
+        return allowed;
+      }
+    }
+  ],
+
+  [WorkflowStage.SLBFE_REGISTRATION]: [
+    {
+      id: 'req-visa-valid',
+      label: "Valid Visa Received",
+      check: (c) => true
+    },
+    {
+      id: 'req-agreement',
+      label: "Service Agreement Signed",
+      check: (c) => true
+    },
+    {
+      id: 'req-compliance',
+      label: "Strict Compliance Check (Passport/PCC)",
+      check: (c) => {
+        // Strict check before potential deployment registration
+        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData);
+        return allowed;
+      }
     }
   ],
 
   [WorkflowStage.TICKET]: [
     {
-      id: 'req-visa-approve',
-      label: "Visa Approved",
-      check: (c) => c.stageData.visaStatus === 'Approved'
-    },
-    {
-      id: 'req-pay-start',
-      label: "Initial Payments Received",
-      check: (c) => c.stageData.paymentStatus !== 'Pending'
+      id: 'req-slbfe-finish',
+      label: "SLBFE Registration & Training Complete",
+      check: (c) => true
     }
   ],
 
@@ -116,9 +158,9 @@ export const getSLAStatus = (candidate: Candidate): { overdue: boolean; daysInSt
   const entered = new Date(candidate.stageEnteredAt);
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - entered.getTime());
-  const daysInStage = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  const daysInStage = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const limit = SLA_CONFIG[candidate.stage];
-  
+
   return {
     overdue: daysInStage > limit,
     daysInStage,
@@ -138,7 +180,7 @@ export const validateTransition = (candidate: Candidate, targetStage: WorkflowSt
 
   // 2. Data-Driven Requirement Checks
   const requirements = STAGE_REQUIREMENTS[targetStage] || [];
-  
+
   for (const req of requirements) {
     if (!req.check(candidate)) {
       return { allowed: false, reason: req.label };

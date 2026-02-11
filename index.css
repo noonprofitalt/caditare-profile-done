@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-300;
+}
+
+/* PRINT STYLES */
+@media print {
+  @page {
+    margin: 0.5cm;
+    size: A4 portrait;
+  }
+
+  /* Hide navigation, sidebars, buttons */
+  nav, 
+  aside, 
+  header, 
+  button, 
+  .no-print,
+  .fixed,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Reset layout for print */
+  body {
+    background: white !important;
+    font-size: 12pt;
+    color: black !important;
+  }
+
+  /* Expand main content */
+  main, 
+  .max-w-7xl {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Ensure background colors print (for status badges etc) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Specific tweaks for candidate profile */
+  .grid {
+    display: block !important;
+  }
+  
+  /* Force page breaks */
+  h2, h3 {
+    page-break-after: avoid;
+  }
+  
+  .bg-white {
+    box-shadow: none !important;
+    border: 1px solid #eee !important;
+  }
+}

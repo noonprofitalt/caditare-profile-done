@@ -1,8 +1,8 @@
-import { Candidate, WorkTask, SystemAlert, WorkflowStage, StageStatus, DocumentStatus } from '../types';
+import { Candidate, WorkTask, SystemAlert, WorkflowStage, StageStatus, DocumentStatus, PassportStatus, PCCStatus } from '../types';
 import { getSLAStatus } from './workflowEngine';
 
 export class TaskEngine {
-  
+
   /**
    * Scans all candidates and generates a prioritized To-Do list for the staff.
    */
@@ -46,7 +46,7 @@ export class TaskEngine {
 
       // 3. HIGH: Payment Due (Mock logic for Ticket stage)
       if (c.stage === WorkflowStage.TICKET && c.stageData.paymentStatus !== 'Completed') {
-         tasks.push({
+        tasks.push({
           id: `task-pay-${c.id}`,
           title: 'Collect Final Payment',
           description: 'Ticket issuance blocked. Collect outstanding balance.',
@@ -77,19 +77,19 @@ export class TaskEngine {
         });
       }
 
-      // 5. MEDIUM: Job Matching
-      if (c.stage === WorkflowStage.JOB_MATCHING && c.stageData.employerStatus === 'Pending') {
-         tasks.push({
+      // 5. MEDIUM: Application Follow-up
+      if (c.stage === WorkflowStage.APPLIED && c.stageData.employerStatus === 'Pending') {
+        tasks.push({
           id: `task-match-${c.id}`,
-          title: 'Submit to Employers',
-          description: 'Profile ready for job matching.',
+          title: 'Follow-up on Application',
+          description: 'Candidate applied but no employer response yet.',
           priority: 'Medium',
           candidateId: c.id,
           candidateName: c.name,
           stage: c.stage,
           dueDate: 'This Week',
-          actionLabel: 'Match Job',
-          type: 'APPROVAL'
+          actionLabel: 'Contact Employer',
+          type: 'FOLLOW_UP'
         });
       }
     });
@@ -104,7 +104,7 @@ export class TaskEngine {
    */
   static generateAlerts(candidates: Candidate[]): SystemAlert[] {
     const alerts: SystemAlert[] = [];
-    
+
     // SLA Alert
     const overdueCount = candidates.filter(c => getSLAStatus(c).overdue).length;
     if (overdueCount > 0) {
@@ -130,5 +130,40 @@ export class TaskEngine {
     }
 
     return alerts;
+
+    // Compliance Alerts
+    const expiringPassports = candidates.filter(c => c.passportData?.status === PassportStatus.EXPIRING).length;
+    const expiredPassports = candidates.filter(c => c.passportData?.status === PassportStatus.EXPIRED).length;
+    const expiredPCCs = candidates.filter(c => c.pccData?.status === PCCStatus.EXPIRED).length;
+
+    if (expiredPassports > 0) {
+      alerts.push({
+        id: 'alert-ppt-exp',
+        type: 'DELAY',
+        message: `${expiredPassports} candidates have EXPIRED Passports.`,
+        timestamp: new Date().toISOString(),
+        count: expiredPassports
+      });
+    }
+
+    if (expiringPassports > 0) {
+      alerts.push({
+        id: 'alert-ppt-soon',
+        type: 'WARNING',
+        message: `${expiringPassports} passports are expiring within 6 months.`,
+        timestamp: new Date().toISOString(),
+        count: expiringPassports
+      });
+    }
+
+    if (expiredPCCs > 0) {
+      alerts.push({
+        id: 'alert-pcc-exp',
+        type: 'WARNING',
+        message: `${expiredPCCs} PCCs have expired (> 180 days).`,
+        timestamp: new Date().toISOString(),
+        count: expiredPCCs
+      });
+    }
   }
 }
