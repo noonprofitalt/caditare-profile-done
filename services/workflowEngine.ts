@@ -1,4 +1,4 @@
-import { Candidate, WorkflowStage, StageStatus, DocumentCategory, DocumentStatus, StageData } from '../types';
+import { Candidate, WorkflowStage, DocumentStatus, ProfileCompletionStatus } from '../types';
 import { ComplianceService } from './complianceService';
 
 // SLA Configuration (in days)
@@ -53,42 +53,59 @@ export const STAGE_REQUIREMENTS: Record<WorkflowStage, Requirement[]> = {
 
   [WorkflowStage.APPLIED]: [
     {
+      id: 'req-profile-complete',
+      label: "Profile must be 100% complete",
+      check: (c) => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE
+    },
+    {
       id: 'req-verified',
       label: "Candidate Verified",
-      check: (c) => c.stage === WorkflowStage.VERIFICATION // Implicit, but good to check status if we had one
+      check: (c) => c.stage === WorkflowStage.VERIFICATION
     }
   ],
 
   [WorkflowStage.OFFER_RECEIVED]: [
     {
+      id: 'req-profile-complete',
+      label: "Profile must be 100% complete",
+      check: (c) => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE
+    },
+    {
       id: 'req-applied',
       label: "Must have applied to job",
-      check: (c) => true // Can be stricter if we track 'Job Application' events
+      check: () => true
     }
   ],
 
   [WorkflowStage.WP_RECEIVED]: [
     {
+      id: 'req-profile-complete',
+      label: "Profile must be 100% complete",
+      check: (c) => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE
+    },
+    {
       id: 'req-offer-signed',
       label: "Offer Letter Signed & Uploaded",
-      check: (c) => {
-        // Mock check for now, ideally check for specific 'Offer Letter' doc type
-        return true;
-      }
+      check: () => true
     }
   ],
 
   [WorkflowStage.EMBASSY_APPLIED]: [
     {
+      id: 'req-profile-complete',
+      label: "Profile must be 100% complete",
+      check: (c) => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE
+    },
+    {
       id: 'req-wp-approve',
       label: "Work Permit / Quota Approved",
-      check: (c) => true
+      check: () => true
     },
     {
       id: 'req-compliance',
       label: "Passport & PCC Compliance",
       check: (c) => {
-        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData);
+        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData, c.stageData?.medicalStatus);
         return allowed;
       }
     }
@@ -96,15 +113,20 @@ export const STAGE_REQUIREMENTS: Record<WorkflowStage, Requirement[]> = {
 
   [WorkflowStage.VISA_RECEIVED]: [
     {
+      id: 'req-profile-complete',
+      label: "Profile must be 100% complete",
+      check: (c) => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE
+    },
+    {
       id: 'req-visa-lodge',
       label: "Visa Lodgement Completed",
-      check: (c) => true
+      check: () => true
     },
     {
       id: 'req-compliance',
       label: "Passport & PCC Compliance",
       check: (c) => {
-        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData);
+        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData, c.stageData?.medicalStatus);
         return allowed;
       }
     }
@@ -112,21 +134,25 @@ export const STAGE_REQUIREMENTS: Record<WorkflowStage, Requirement[]> = {
 
   [WorkflowStage.SLBFE_REGISTRATION]: [
     {
+      id: 'req-profile-complete',
+      label: "Profile must be 100% complete",
+      check: (c) => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE
+    },
+    {
       id: 'req-visa-valid',
       label: "Valid Visa Received",
-      check: (c) => true
+      check: () => true
     },
     {
       id: 'req-agreement',
       label: "Service Agreement Signed",
-      check: (c) => true
+      check: () => true
     },
     {
       id: 'req-compliance',
-      label: "Strict Compliance Check (Passport/PCC)",
+      label: "Strict Compliance Check (Passport/PCC/Medical)",
       check: (c) => {
-        // Strict check before potential deployment registration
-        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData);
+        const { allowed } = ComplianceService.isCompliant(c.passportData, c.pccData, c.stageData?.medicalStatus);
         return allowed;
       }
     }
@@ -134,13 +160,23 @@ export const STAGE_REQUIREMENTS: Record<WorkflowStage, Requirement[]> = {
 
   [WorkflowStage.TICKET]: [
     {
+      id: 'req-profile-complete',
+      label: "Profile must be 100% complete",
+      check: (c) => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE
+    },
+    {
       id: 'req-slbfe-finish',
       label: "SLBFE Registration & Training Complete",
-      check: (c) => true
+      check: () => true
     }
   ],
 
   [WorkflowStage.DEPARTURE]: [
+    {
+      id: 'req-profile-complete',
+      label: "Profile must be 100% complete",
+      check: (c) => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE
+    },
     {
       id: 'req-tick-issue',
       label: "Flight Ticket Issued",

@@ -1,53 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { PartnerService } from '../services/partnerService';
 import { CandidateService } from '../services/candidateService';
 import { JobService } from '../services/jobService';
-import { Employer, EmployerStatus, EmployerDocument, Candidate, Job } from '../types';
+import { Employer, EmployerStatus } from '../types';
 import {
-    Building2, Users, MapPin, Mail, Phone, ExternalLink,
+    Building2, Users, MapPin, Mail,
     ShieldCheck, AlertTriangle, Clock, Search, Plus,
-    ChevronRight, MoreVertical, FileText, Globe, Star,
-    DollarSign, Briefcase
+    ChevronRight, FileText, Star,
+    Briefcase
 } from 'lucide-react';
 
 const PartnerManager: React.FC = () => {
     const { id } = useParams<{ id?: string }>();
     const navigate = useNavigate();
-    const [employers, setEmployers] = useState<Employer[]>([]);
+
+    // Lazy load employers
+    const [employers] = useState<Employer[]>(() => PartnerService.getEmployers() || []);
+
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
-    const [employerJobs, setEmployerJobs] = useState<Job[]>([]);
-    const [employerCandidates, setEmployerCandidates] = useState<Candidate[]>([]);
 
-    useEffect(() => {
-        const allEmployers = PartnerService.getEmployers() || [];
-        setEmployers(allEmployers);
-
-        // Auto-select employer if ID is in URL
+    // Initialize selectedEmployer based on ID if present, otherwise null
+    const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(() => {
         if (id) {
-            const employer = allEmployers.find(e => e.id === id);
-            if (employer) {
-                setSelectedEmployer(employer);
-            }
+            return PartnerService.getEmployers()?.find(e => e.id === id) || null;
         }
-    }, [id]);
+        return null;
+    });
 
-    // Load jobs and candidates for selected employer
-    useEffect(() => {
-        if (selectedEmployer) {
-            const jobs = JobService.getJobsByEmployerId(selectedEmployer.id);
-            setEmployerJobs(jobs);
+    // Derive jobs and candidates using useMemo
+    const employerJobs = useMemo(() => {
+        if (!selectedEmployer) return [];
+        return JobService.getJobsByEmployerId(selectedEmployer.id);
+    }, [selectedEmployer]);
 
-            // Find all candidates matched to this employer's jobs
-            const allCandidates = CandidateService.getCandidates() || [];
-            const jobIds = jobs.map(j => j.id);
-            const matchedCandidates = allCandidates.filter(c => jobIds.includes(c.jobId));
-            setEmployerCandidates(matchedCandidates);
-        } else {
-            setEmployerJobs([]);
-            setEmployerCandidates([]);
-        }
+    const employerCandidates = useMemo(() => {
+        if (!selectedEmployer) return [];
+        const jobs = JobService.getJobsByEmployerId(selectedEmployer.id);
+        const jobIds = jobs.map(j => j.id);
+        const allCandidates = CandidateService.getCandidates() || [];
+        return allCandidates.filter(c => c.jobId && jobIds.includes(c.jobId));
     }, [selectedEmployer]);
 
     const filteredEmployers = employers.filter(e => {

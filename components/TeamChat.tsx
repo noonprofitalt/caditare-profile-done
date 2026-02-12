@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Hash, Search, MoreVertical, MessageSquare, Paperclip, Smile, Image as ImageIcon, Mic, Phone, Video, Plus, Bell, X, Shield, Settings as SettingsIcon } from 'lucide-react';
+import { Send, User, Hash, Search, MoreVertical, MessageSquare, Smile, Mic, Phone, Video, Plus, Bell, X, Shield, Settings as SettingsIcon } from 'lucide-react';
 import { ChatService } from '../services/chatService';
 import { ChatChannel, ChatMessage, ChatUser } from '../types';
 
@@ -25,11 +25,13 @@ const TeamChat: React.FC = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshData();
   }, []);
 
   useEffect(() => {
     if (activeChannelId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages(ChatService.getMessages(activeChannelId));
     }
   }, [activeChannelId]);

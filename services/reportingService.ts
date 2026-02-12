@@ -1,23 +1,15 @@
 import { MOCK_CANDIDATES } from './mockData';
-import { Candidate, WorkflowStage, SystemSnapshot, BottleneckMetric, StaffPerformanceMetric, StageStatus } from '../types';
+import { Candidate, WorkflowStage, SystemSnapshot, BottleneckMetric, StaffPerformanceMetric } from '../types';
 import { SLA_CONFIG, STAGE_ORDER, getSLAStatus } from './workflowEngine';
 
-// ESTIMATED FEES for Financial Projections (Mock Data)
-const ESTIMATED_FEES: Record<string, number> = {
-  [WorkflowStage.REGISTRATION]: 50,
-  [WorkflowStage.MEDICAL]: 150,
-  [WorkflowStage.VISA]: 500,
-  [WorkflowStage.TICKET]: 400,
-};
-
 export class ReportingService {
-  
+
   /**
    * Generates a complete 360 system snapshot
    */
   static getSystemSnapshot(): SystemSnapshot {
     const candidates = MOCK_CANDIDATES;
-    
+
     return {
       timestamp: new Date().toISOString(),
       kpi: this.calculateKPIs(candidates),
@@ -35,14 +27,14 @@ export class ReportingService {
     const total = candidates.length;
     const completed = candidates.filter(c => c.stage === WorkflowStage.DEPARTURE).length;
     const active = total - completed;
-    
+
     // Critical Delays
     const delays = candidates.filter(c => getSLAStatus(c).overdue).length;
 
     // Revenue Estimation (Sum of payment history + estimates)
     const revenue = candidates.reduce((sum, c) => {
-       const paid = c.stageData.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
-       return sum + paid;
+      const paid = c.stageData.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
+      return sum + paid;
     }, 0);
 
     return {
@@ -62,7 +54,7 @@ export class ReportingService {
     return STAGE_ORDER.map(stage => {
       const inStage = candidates.filter(c => c.stage === stage);
       const count = inStage.length;
-      
+
       // Calculate Average Days in this stage for current candidates
       const totalDays = inStage.reduce((sum, c) => sum + getSLAStatus(c).daysInStage, 0);
       const avgDays = count > 0 ? Math.round(totalDays / count) : 0;
@@ -92,7 +84,7 @@ export class ReportingService {
     candidates.forEach(c => {
       c.timelineEvents.forEach(evt => {
         const actor = evt.actor;
-        if (actor === 'System' || actor === 'Admin User' && false) return; // Optional filter
+        if (actor === 'System' || (actor === 'Admin User' && false)) return; // Optional filter
 
         if (!staffMap[actor]) {
           staffMap[actor] = { actions: 0, lastActive: evt.timestamp, stages: {} };
@@ -102,7 +94,7 @@ export class ReportingService {
         if (new Date(evt.timestamp) > new Date(staffMap[actor].lastActive)) {
           staffMap[actor].lastActive = evt.timestamp;
         }
-        
+
         // Track which stage they work in most
         const stage = evt.stage || 'General';
         staffMap[actor].stages[stage] = (staffMap[actor].stages[stage] || 0) + 1;
@@ -110,15 +102,15 @@ export class ReportingService {
     });
 
     return Object.entries(staffMap).map(([name, data]) => {
-       // Find most active stage
-       const sortedStages = Object.entries(data.stages).sort((a, b) => b[1] - a[1]);
-       
-       return {
-         name,
-         actionsPerformed: data.actions,
-         lastActive: data.lastActive,
-         mostActiveStage: sortedStages[0] ? sortedStages[0][0] : 'General'
-       };
+      // Find most active stage
+      const sortedStages = Object.entries(data.stages).sort((a, b) => b[1] - a[1]);
+
+      return {
+        name,
+        actionsPerformed: data.actions,
+        lastActive: data.lastActive,
+        mostActiveStage: sortedStages[0] ? sortedStages[0][0] : 'General'
+      };
     }).sort((a, b) => b.actionsPerformed - a.actionsPerformed);
   }
 
@@ -132,25 +124,25 @@ export class ReportingService {
   }
 
   private static calculateFinancials(candidates: Candidate[]) {
-     let collected = 0;
-     let pending = 0;
+    let collected = 0;
+    let pending = 0;
 
-     candidates.forEach(c => {
-        // Collected
-        const paid = c.stageData.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
-        collected += paid;
+    candidates.forEach(c => {
+      // Collected
+      const paid = c.stageData.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
+      collected += paid;
 
-        // Pending (Logic: If stage passed but no payment recorded, assume pending fee)
-        // This is a rough estimation logic for the dashboard
-        if (c.stageData.paymentStatus === 'Pending' || c.stageData.paymentStatus === 'Partial') {
-            pending += 500; // Mock average pending per candidate
-        }
-     });
+      // Pending (Logic: If stage passed but no payment recorded, assume pending fee)
+      // This is a rough estimation logic for the dashboard
+      if (c.stageData.paymentStatus === 'Pending' || c.stageData.paymentStatus === 'Partial') {
+        pending += 500; // Mock average pending per candidate
+      }
+    });
 
-     return {
-       totalCollected: collected,
-       pendingCollection: pending
-     };
+    return {
+      totalCollected: collected,
+      pendingCollection: pending
+    };
   }
 
   /**
@@ -158,19 +150,19 @@ export class ReportingService {
    */
   static generateCandidateCSV(candidate: Candidate): string {
     const headers = [
-        "Field,Value",
-        `Name,${candidate.name}`,
-        `Passport,${candidate.nic}`,
-        `Role,${candidate.role}`,
-        `Current Stage,${candidate.stage}`,
-        `Status,${candidate.stageStatus}`,
-        `Total Paid,${candidate.stageData.paymentHistory?.reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0}`,
-        `Address,${candidate.location}`
+      "Field,Value",
+      `Name,${candidate.name}`,
+      `Passport,${candidate.nic}`,
+      `Role,${candidate.role}`,
+      `Current Stage,${candidate.stage}`,
+      `Status,${candidate.stageStatus}`,
+      `Total Paid,${candidate.stageData.paymentHistory?.reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0}`,
+      `Address,${candidate.location}`
     ].join('\n');
-    
+
     const eventsHeader = "\n\nTimeline History\nDate,Event,Actor,Description";
-    const events = candidate.timelineEvents.map(e => 
-        `${new Date(e.timestamp).toLocaleDateString()},${e.title},${e.actor},${e.description?.replace(/,/g, ' ')}`
+    const events = candidate.timelineEvents.map(e =>
+      `${new Date(e.timestamp).toLocaleDateString()},${e.title},${e.actor},${e.description?.replace(/,/g, ' ')}`
     ).join('\n');
 
     return headers + eventsHeader + events;

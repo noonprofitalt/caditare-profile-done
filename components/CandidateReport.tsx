@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, BarChart as BarChartIcon, FileSearch, User, MapPin, ShieldAlert, BrainCircuit, Bot, Upload, ArrowRight, ExternalLink } from 'lucide-react';
+import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, FileSearch, User, MapPin, ShieldAlert, BrainCircuit, Bot, Upload, ArrowRight, ExternalLink } from 'lucide-react';
 import { Candidate } from '../types';
 import { ReportService, SystemReport } from '../services/reportService';
 import ReactMarkdown from 'react-markdown';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 interface CandidateReportProps {
     candidate: Candidate;
@@ -13,16 +13,17 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
     const [report, setReport] = useState<SystemReport | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const generate = async () => {
+    const generate = React.useCallback(async () => {
         setIsLoading(true);
         const data = await ReportService.generateReport(candidate);
         setReport(data);
         setIsLoading(false);
-    };
+    }, [candidate]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         generate();
-    }, [candidate.id]);
+    }, [generate]);
 
     const getRiskStyles = (score: string) => {
         switch (score) {

@@ -1,4 +1,4 @@
-import { Candidate, WorkflowStage, StageStatus, Job, JobStatus, DocumentType, DocumentStatus, DocumentCategory, CandidateDocument, TimelineEvent, PassportStatus, PCCStatus } from "../types";
+import { Candidate, WorkflowStage, StageStatus, Job, JobStatus, DocumentType, DocumentStatus, DocumentCategory, CandidateDocument, PassportStatus, PCCStatus } from "../types";
 
 export const MOCK_JOBS: Job[] = [
   {
@@ -100,7 +100,7 @@ const hoursAgo = (hours: number, baseDate?: string) => {
 }
 
 // Create a candidate with some docs filled
-const candidateWithDocs = (base: any, filledCount: number): Candidate => {
+const candidateWithDocs = (base: Partial<Candidate> & { name: string }, filledCount: number): Candidate => {
   const docs = generateRequiredDocs();
 
   // Simulate some filled docs
@@ -139,7 +139,7 @@ const candidateWithDocs = (base: any, filledCount: number): Candidate => {
     city: base.city || city,
     education: base.education || ['Bachelor\'s Degree'],
     documents: docs
-  };
+  } as Candidate;
 };
 
 export const MOCK_CANDIDATES: Candidate[] = [

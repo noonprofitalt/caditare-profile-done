@@ -1,16 +1,12 @@
 import { CandidateService } from '../services/candidateService';
 import { WorkflowStage, StageStatus, Candidate } from '../types';
 import { STAGE_ORDER, getSLAStatus } from '../services/workflowEngine';
-import { AlertTriangle, Clock, MoreHorizontal } from 'lucide-react';
+import { AlertTriangle, MoreHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const KanbanBoard: React.FC = () => {
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-
-  useEffect(() => {
-    setCandidates(CandidateService.getCandidates());
-  }, []);
+  const [candidates] = useState<Candidate[]>(() => CandidateService.getCandidates());
 
   const getColumns = () => {
     return STAGE_ORDER.map(stage => {

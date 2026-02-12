@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, MessageCircle, Shield } from 'lucide-react';
-import { Candidate, CandidateComment } from '../types';
+import { CandidateComment } from '../types';
 import { CandidateService } from '../services/candidateService';
 
 interface CandidateChatProps {
@@ -58,8 +58,8 @@ const CandidateChat: React.FC<CandidateChatProps> = ({ candidateId, comments, on
                                         </span>
                                     </div>
                                     <div className={`p-3 text-sm shadow-sm ${isSystem
-                                            ? 'bg-slate-50 border border-slate-100 rounded-lg italic text-slate-500'
-                                            : 'bg-white border border-slate-200 rounded-2xl rounded-tl-none text-slate-700 leading-relaxed'
+                                        ? 'bg-slate-50 border border-slate-100 rounded-lg italic text-slate-500'
+                                        : 'bg-white border border-slate-200 rounded-2xl rounded-tl-none text-slate-700 leading-relaxed'
                                         }`}>
                                         {comment.text}
                                     </div>

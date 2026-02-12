@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GeminiService } from '../services/geminiService';
 import { CandidateService } from '../services/candidateService';
 import { PartnerService } from '../services/partnerService';
@@ -6,7 +6,6 @@ import { JobService } from '../services/jobService';
 import {
    Building2,
    Shield,
-   Bell,
    Download,
    Save,
    Globe,
@@ -30,16 +29,10 @@ const Settings: React.FC = () => {
 
    const [activeTab, setActiveTab] = useState<'agency' | 'security' | 'data' | 'ai'>('data'); // Default to safe tab
    const [isSaved, setIsSaved] = useState(false);
-   const [apiKey, setApiKey] = useState('');
+   const [apiKey, setApiKey] = useState(() => localStorage.getItem('globalworkforce_gemini_api_key') || '');
    const [scanning, setScanning] = useState(false);
    const [integrityIssues, setIntegrityIssues] = useState<string[]>([]);
    const [scanComplete, setScanComplete] = useState(false);
-
-   useEffect(() => {
-      // Load existing API key if any
-      const storedKey = localStorage.getItem('globalworkforce_gemini_api_key');
-      if (storedKey) setApiKey(storedKey);
-   }, []);
 
    const handleSave = () => {
       if (activeTab === 'ai') {

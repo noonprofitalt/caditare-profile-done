@@ -1,8 +1,7 @@
 import React from 'react';
 import { WorkflowStage } from '../types';
 import {
-    X, MoveRight, Building2, Download, Send,
-    CheckCircle2, Users
+    X, MoveRight, Building2, Download, Send
 } from 'lucide-react';
 
 interface BulkActionsToolbarProps {

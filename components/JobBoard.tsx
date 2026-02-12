@@ -7,8 +7,7 @@ import { Job, JobStatus, Candidate, WorkflowStage, Employer } from '../types';
 import { MOCK_JOBS } from '../services/mockData';
 import {
   MapPin, DollarSign, Clock, Plus, Briefcase, Users, Target,
-  ChevronRight, BrainCircuit, Star, Search, Filter, Bot, RefreshCw,
-  CheckCircle2, XCircle, AlertCircle, Building2
+  ChevronRight, Search, Bot, RefreshCw, CheckCircle2
 } from 'lucide-react';
 import { STAGE_ORDER } from '../services/workflowEngine';
 import Skeleton from './ui/Skeleton';
@@ -83,11 +82,10 @@ const JobBoard: React.FC = () => {
 
   const renderFunnel = (job: Job) => {
     const funnel = getJobFunnel(job.id);
-    const totalApplied = Object.values(funnel).reduce((a, b) => a + b, 0);
 
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-8">
-        {STAGE_ORDER.map((stage, idx) => (
+        {STAGE_ORDER.map((stage) => (
           <div key={stage} className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
             <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 truncate" title={stage}>{stage}</p>
             <h4 className="text-xl font-bold text-slate-800">{funnel[stage]}</h4>

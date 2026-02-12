@@ -1,4 +1,4 @@
-import { PassportData, PassportStatus, PCCData, PCCStatus } from '../types';
+import { PassportData, PassportStatus, PCCData, PCCStatus, MedicalStatus, Candidate, AppNotification } from '../types';
 
 export class ComplianceService {
 
@@ -70,9 +70,61 @@ export class ComplianceService {
     }
 
     /**
+     * Validates medical status and scheduled date
+     */
+    static validateMedicalStatus(
+        medicalStatus?: MedicalStatus,
+        scheduledDate?: string
+    ): { valid: boolean; message?: string } {
+        // If no medical status set, it's valid (optional field)
+        if (!medicalStatus) {
+            return { valid: true };
+        }
+
+        // If status is "Scheduled", date is mandatory
+        if (medicalStatus === MedicalStatus.SCHEDULED) {
+            if (!scheduledDate) {
+                return {
+                    valid: false,
+                    message: 'Medical scheduled date is required when status is "Scheduled".'
+                };
+            }
+
+            // Validate date is not in the past (allow today)
+            const scheduled = new Date(scheduledDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (scheduled < today) {
+                return {
+                    valid: false,
+                    message: 'Medical scheduled date cannot be in the past.'
+                };
+            }
+        }
+
+        return { valid: true };
+    }
+
+    /**
+     * Check if medical appointment is overdue
+     */
+    static isMedicalOverdue(medicalStatus?: MedicalStatus, scheduledDate?: string): boolean {
+        if (medicalStatus !== MedicalStatus.SCHEDULED || !scheduledDate) {
+            return false;
+        }
+
+        const scheduled = new Date(scheduledDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        return scheduled < today;
+    }
+
+    /**
      * Helper to check if a candidate is compliant for Visa/Departure stages
      */
-    static isCompliant(passport?: PassportData, pcc?: PCCData): { allowed: boolean; reasons: string[] } {
+    static isCompliant(passport?: PassportData, pcc?: PCCData, medicalStatus?: MedicalStatus): { allowed: boolean; reasons: string[] } {
         const reasons: string[] = [];
 
         // Passport Check
@@ -100,9 +152,130 @@ export class ComplianceService {
             reasons.push(`PCC is ${pcc.status} (Age: ${pcc.ageDays} days).`);
         }
 
+        // Medical Check (for visa stages, medical should be completed)
+        if (medicalStatus === MedicalStatus.FAILED) {
+            reasons.push("Medical examination has FAILED.");
+        } else if (medicalStatus === MedicalStatus.NOT_STARTED) {
+            reasons.push("Medical examination has not been started.");
+        } else if (medicalStatus === MedicalStatus.SCHEDULED) {
+            reasons.push("Medical examination is scheduled but not yet completed.");
+        }
+
         return {
             allowed: reasons.length === 0,
             reasons
         };
+    }
+
+    /**
+     * Generate compliance alerts for a candidate
+     */
+    static generateComplianceAlerts(candidate: Candidate): AppNotification[] {
+        const alerts: AppNotification[] = [];
+        const now = new Date();
+
+        // Passport Expiry Alerts
+        if (candidate.passportData) {
+            const { status, validityDays, expiryDate } = candidate.passportData;
+
+            if (status === PassportStatus.EXPIRED) {
+                alerts.push({
+                    id: `passport-expired-${candidate.id}`,
+                    type: 'DELAY',
+                    title: '🚨 Passport Expired',
+                    message: `${candidate.name}'s passport has expired. Immediate renewal required.`,
+                    timestamp: now.toISOString(),
+                    isRead: false,
+                    candidateId: candidate.id,
+                    link: `/candidates/${candidate.id}`
+                });
+            } else if (status === PassportStatus.EXPIRING) {
+                alerts.push({
+                    id: `passport-expiring-${candidate.id}`,
+                    type: 'WARNING',
+                    title: '⚠️ Passport Expiring Soon',
+                    message: `${candidate.name}'s passport expires in ${validityDays} days (${expiryDate}). Plan renewal.`,
+                    timestamp: now.toISOString(),
+                    isRead: false,
+                    candidateId: candidate.id,
+                    link: `/candidates/${candidate.id}`
+                });
+            }
+        }
+
+        // PCC Expiry Alerts
+        if (candidate.pccData) {
+            const { status, ageDays, expiryDate } = candidate.pccData;
+
+            if (status === PCCStatus.EXPIRED) {
+                alerts.push({
+                    id: `pcc-expired-${candidate.id}`,
+                    type: 'DELAY',
+                    title: '🚨 PCC Expired',
+                    message: `${candidate.name}'s Police Clearance Certificate has expired (${ageDays} days old). Renewal required.`,
+                    timestamp: now.toISOString(),
+                    isRead: false,
+                    candidateId: candidate.id,
+                    link: `/candidates/${candidate.id}`
+                });
+            } else if (status === PCCStatus.EXPIRING) {
+                alerts.push({
+                    id: `pcc-expiring-${candidate.id}`,
+                    type: 'WARNING',
+                    title: '⚠️ PCC Expiring Soon',
+                    message: `${candidate.name}'s PCC is ${ageDays} days old. Expires on ${expiryDate}.`,
+                    timestamp: now.toISOString(),
+                    isRead: false,
+                    candidateId: candidate.id,
+                    link: `/candidates/${candidate.id}`
+                });
+            }
+        }
+
+        // Medical Appointment Alerts
+        if (candidate.stageData?.medicalStatus === MedicalStatus.SCHEDULED && candidate.stageData?.medicalScheduledDate) {
+            const scheduledDate = new Date(candidate.stageData.medicalScheduledDate);
+            const daysUntil = Math.ceil((scheduledDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (daysUntil < 0) {
+                // Overdue
+                alerts.push({
+                    id: `medical-overdue-${candidate.id}`,
+                    type: 'DELAY',
+                    title: '🚨 Medical Appointment Overdue',
+                    message: `${candidate.name}'s medical appointment was scheduled for ${candidate.stageData.medicalScheduledDate}. Update status.`,
+                    timestamp: now.toISOString(),
+                    isRead: false,
+                    candidateId: candidate.id,
+                    link: `/candidates/${candidate.id}`
+                });
+            } else if (daysUntil === 0) {
+                // Today
+                alerts.push({
+                    id: `medical-today-${candidate.id}`,
+                    type: 'INFO',
+                    title: '📅 Medical Appointment Today',
+                    message: `${candidate.name} has a medical appointment scheduled today.`,
+                    timestamp: now.toISOString(),
+                    isRead: false,
+                    candidateId: candidate.id,
+                    link: `/candidates/${candidate.id}`
+                });
+            } else if (daysUntil <= 7) {
+                // Within 7 days
+                alerts.push({
+                    id: `medical-upcoming-${candidate.id}`,
+                    type: 'INFO',
+                    title: '📅 Upcoming Medical Appointment',
+                    message: `${candidate.name}'s medical appointment is in ${daysUntil} day${daysUntil !== 1 ? 's' : ''} (${candidate.stageData.medicalScheduledDate}).`,
+                    timestamp: now.toISOString(),
+                    isRead: false,
+                    candidateId: candidate.id,
+                    link: `/candidates/${candidate.id}`
+                });
+            }
+        }
+
+        return alerts;
     }
 }

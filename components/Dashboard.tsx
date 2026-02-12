@@ -3,11 +3,11 @@ import { TaskEngine } from '../services/taskEngine';
 import { CandidateService } from '../services/candidateService';
 import { NotificationService } from '../services/notificationService';
 import { FinanceService } from '../services/financeService';
-import { WorkTask, SystemAlert, Candidate, WorkflowStage } from '../types';
-import { Link, useNavigate } from 'react-router-dom';
+import { WorkTask, SystemAlert, Candidate, WorkflowStage, ProfileCompletionStatus } from '../types';
+import { useNavigate } from 'react-router-dom';
 import {
    CheckCircle, AlertTriangle, Clock, Activity, ArrowRight,
-   Calendar, Zap, Bell, FileText, UserPlus, UploadCloud, Search,
+   Calendar, Zap, Bell, FileText, UserPlus,
    Briefcase, TrendingUp, MessageCircle, Layout, Settings as SettingsIcon, FilePlus
 } from 'lucide-react';
 import Skeleton from './ui/Skeleton';
@@ -21,7 +21,7 @@ const Dashboard: React.FC = () => {
    const navigate = useNavigate();
 
    useEffect(() => {
-      setIsLoading(true);
+      // setIsLoading(true); // Already true by default
       // Simulate loading delay
       setTimeout(() => {
          const data = CandidateService.getCandidates() || [];
@@ -57,6 +57,11 @@ const Dashboard: React.FC = () => {
 
    const activeCandidates = candidates.length;
    const criticalIssues = tasks.filter(t => t.priority === 'Critical').length;
+
+   // Profile Completion Stats
+   const quickProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK).length;
+   const partialProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL).length;
+   const completeProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length;
 
    return (
       <div className="p-6 max-w-[1600px] mx-auto space-y-6 relative h-[calc(100vh-4rem)] overflow-y-auto">
@@ -122,6 +127,98 @@ const Dashboard: React.FC = () => {
                         <p className="text-xs text-green-600 mt-1 font-medium flex items-center"><CheckCircle size={10} className="mr-1" /> Ready for Invoicing</p>
                      </div>
                      <div className="bg-green-50 p-3 rounded-lg"><Calendar size={24} className="text-green-600" /></div>
+                  </div>
+               </>
+            )}
+         </div>
+
+         {/* Profile Completion Status Widgets */}
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {isLoading ? (
+               Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                     <div className="space-y-3">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-8 w-20" />
+                        <Skeleton className="h-3 w-full" />
+                     </div>
+                  </div>
+               ))
+            ) : (
+               <>
+                  {/* Quick Profiles */}
+                  <div
+                     onClick={() => navigate('/candidates?status=quick')}
+                     className="bg-white p-4 rounded-xl shadow-sm border-2 border-red-200 hover:border-red-300 cursor-pointer hover:scale-[1.02] transition-all group"
+                  >
+                     <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                           <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Quick Profiles</h3>
+                        </div>
+                        <UserPlus size={18} className="text-red-500" />
+                     </div>
+                     <p className="text-3xl font-bold text-red-600 mb-1">{quickProfiles}</p>
+                     <p className="text-xs text-slate-500">Pending full registration</p>
+                     <button
+                        onClick={(e) => {
+                           e.stopPropagation();
+                           if (quickProfiles > 0) {
+                              const firstQuick = candidates.find(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK);
+                              if (firstQuick) navigate(`/candidates/${firstQuick.id}`);
+                           }
+                        }}
+                        className="mt-3 w-full py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors group-hover:bg-red-100"
+                     >
+                        Complete Now →
+                     </button>
+                  </div>
+
+                  {/* Partial Profiles */}
+                  <div
+                     onClick={() => navigate('/candidates?status=partial')}
+                     className="bg-white p-4 rounded-xl shadow-sm border-2 border-yellow-200 hover:border-yellow-300 cursor-pointer hover:scale-[1.02] transition-all group"
+                  >
+                     <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                           <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Partial Profiles</h3>
+                        </div>
+                        <Clock size={18} className="text-yellow-600" />
+                     </div>
+                     <p className="text-3xl font-bold text-yellow-600 mb-1">{partialProfiles}</p>
+                     <p className="text-xs text-slate-500">In-progress registrations</p>
+                     <button
+                        onClick={(e) => {
+                           e.stopPropagation();
+                           if (partialProfiles > 0) {
+                              const firstPartial = candidates.find(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL);
+                              if (firstPartial) navigate(`/candidates/${firstPartial.id}`);
+                           }
+                        }}
+                        className="mt-3 w-full py-1.5 bg-yellow-50 text-yellow-700 rounded-lg text-xs font-semibold hover:bg-yellow-100 transition-colors group-hover:bg-yellow-100"
+                     >
+                        Finish Registration →
+                     </button>
+                  </div>
+
+                  {/* Complete Profiles */}
+                  <div
+                     onClick={() => navigate('/candidates?status=complete')}
+                     className="bg-white p-4 rounded-xl shadow-sm border-2 border-green-200 hover:border-green-300 cursor-pointer hover:scale-[1.02] transition-all group"
+                  >
+                     <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                           <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Complete Profiles</h3>
+                        </div>
+                        <CheckCircle size={18} className="text-green-600" />
+                     </div>
+                     <p className="text-3xl font-bold text-green-600 mb-1">{completeProfiles}</p>
+                     <p className="text-xs text-slate-500">Ready for workflow</p>
+                     <div className="mt-3 w-full py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold text-center">
+                        {completeProfiles > 0 ? `${((completeProfiles / activeCandidates) * 100).toFixed(0)}% Complete` : 'No profiles yet'}
+                     </div>
                   </div>
                </>
             )}

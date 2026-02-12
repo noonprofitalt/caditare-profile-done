@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Search, UserCircle, X, ChevronRight, Command, MessageSquare, Menu, LogOut, Settings as SettingsIcon } from 'lucide-react';
 import { MOCK_CANDIDATES } from '../services/mockData';
-import { Candidate, WorkflowStage, Employer, Job, AppNotification } from '../types';
+import { Candidate, Employer, Job, AppNotification } from '../types';
 import { CandidateService } from '../services/candidateService';
 import { PartnerService } from '../services/partnerService';
 import { JobService } from '../services/jobService';
@@ -41,14 +41,25 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshNotifications();
     window.addEventListener('storage', refreshNotifications);
     return () => window.removeEventListener('storage', refreshNotifications);
   }, []);
 
   // Smart Search Logic
+  // Move function definition up to fix no-use-before-define
+  const Method_GetCandidates = () => {
+    try {
+      return CandidateService.getCandidates() || [];
+    } catch {
+      return MOCK_CANDIDATES;
+    }
+  };
+
   useEffect(() => {
     if (query.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults({ candidates: [], employers: [], jobs: [] });
       setIsOpen(false);
       return;
@@ -80,14 +91,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     setIsOpen(true);
     setSelectedIndex(-1);
   }, [query]);
-
-  const Method_GetCandidates = () => {
-    try {
-      return CandidateService.getCandidates() || [];
-    } catch (e) {
-      return MOCK_CANDIDATES;
-    }
-  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TimelineEvent, WorkflowStage } from '../types';
+import { TimelineEvent } from '../types';
 import { Circle, CheckCircle2, AlertCircle, FileText, MessageSquare, ArrowRight, User } from 'lucide-react';
 
 interface TimelineViewProps {
@@ -10,7 +10,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
   // Sort events newest first
   const sortedEvents = [...events].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  const getEventIcon = (type: string, isCritical?: boolean) => {
+  const getEventIcon = (type: string) => {
     switch (type) {
       case 'STAGE_TRANSITION': return <ArrowRight size={16} className="text-white" />;
       case 'STATUS_CHANGE': return <CheckCircle2 size={16} className="text-white" />;
@@ -44,11 +44,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
         {/* Continuous Line */}
         <div className="absolute left-[27px] top-2 bottom-2 w-0.5 bg-slate-200"></div>
 
-        {sortedEvents.map((event, index) => (
+        {sortedEvents.map((event) => (
           <div key={event.id} className="relative flex gap-6 group">
             {/* Timeline Dot */}
             <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${getEventColor(event.type, event.metadata?.isCritical)}`}>
-              {getEventIcon(event.type, event.metadata?.isCritical)}
+              {getEventIcon(event.type)}
             </div>
 
             {/* Content */}
@@ -59,22 +59,22 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
                   {new Date(event.timestamp).toLocaleString()}
                 </span>
               </div>
-              
+
               <p className="text-xs text-slate-600 mb-2">{event.description}</p>
-              
+
               <div className="flex items-center gap-3">
-                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-wide border border-slate-200">
-                    {event.stage}
-                 </span>
-                 <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                    <User size={10} />
-                    {event.actor}
-                 </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-wide border border-slate-200">
+                  {event.stage}
+                </span>
+                <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                  <User size={10} />
+                  {event.actor}
+                </div>
               </div>
             </div>
           </div>
         ))}
-        
+
         {sortedEvents.length === 0 && (
           <div className="text-center py-8 text-slate-500 text-sm italic">
             No history recorded yet.

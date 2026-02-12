@@ -1,4 +1,4 @@
-import { ChatChannel, ChatMessage, ChatUser } from '../types';
+import { ChatChannel, ChatMessage, ChatUser, ChatMessageContext } from '../types';
 
 // Mock Data
 const MOCK_USERS: ChatUser[] = [
@@ -50,7 +50,7 @@ export const ChatService = {
         return allMessages[channelId] || [];
     },
 
-    sendMessage: (channelId: string, text: string, context?: any) => {
+    sendMessage: (channelId: string, text: string, context?: ChatMessageContext) => {
         const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
         const allMessages = stored ? JSON.parse(stored) : { ...INITIAL_MESSAGES };
 
@@ -73,7 +73,7 @@ export const ChatService = {
     },
 
     // Automated System Post
-    systemPost: (channelId: string, text: string, type: 'INFO' | 'SUCCESS' | 'WARNING' = 'INFO', context?: any) => {
+    systemPost: (channelId: string, text: string, context?: ChatMessageContext) => {
         const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
         const allMessages = stored ? JSON.parse(stored) : { ...INITIAL_MESSAGES };
 

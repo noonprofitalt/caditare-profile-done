@@ -18,6 +18,37 @@ export enum WorkflowStage {
   DEPARTURE = 'Departed',
 }
 
+export enum Country {
+  SAUDI_ARABIA = 'Saudi Arabia',
+  UAE = 'United Arab Emirates',
+  QATAR = 'Qatar',
+  KUWAIT = 'Kuwait',
+  OMAN = 'Oman',
+  BAHRAIN = 'Bahrain',
+  MALAYSIA = 'Malaysia',
+  SINGAPORE = 'Singapore',
+  ROMANIA = 'Romania',
+  POLAND = 'Poland',
+}
+
+export enum MedicalStatus {
+  NOT_STARTED = 'Not Started',
+  SCHEDULED = 'Scheduled',
+  COMPLETED = 'Completed',
+  FAILED = 'Failed',
+}
+
+export enum ProfileCompletionStatus {
+  QUICK = 'QUICK',           // Quick Add form only
+  PARTIAL = 'PARTIAL',       // Started full form, not completed
+  COMPLETE = 'COMPLETE'      // Full registration completed
+}
+
+export enum RegistrationSource {
+  QUICK_FORM = 'QUICK_FORM',
+  FULL_FORM = 'FULL_FORM'
+}
+
 export enum StageStatus {
   PENDING = 'Pending',
   IN_PROGRESS = 'In Progress',
@@ -36,8 +67,10 @@ export interface PaymentRecord {
 
 // Sub-status specific data tracking
 export interface StageData {
-  medicalStatus?: 'Pending' | 'Scheduled' | 'Cleared' | 'Failed';
+  medicalStatus?: MedicalStatus;
   medicalScheduledDate?: string;
+  medicalCompletedDate?: string;
+  medicalNotes?: string;
   policeStatus?: 'Pending' | 'Applied' | 'Issued' | 'Rejected';
   visaStatus?: 'Pending' | 'Submitted' | 'Approved' | 'Rejected';
   employerStatus?: 'Pending' | 'Selected' | 'Rejected';
@@ -170,9 +203,15 @@ export interface Candidate {
   email: string;
   phone: string;
   secondaryPhone?: string;
+  additionalContactNumbers?: string[]; // Dynamic contact numbers from Quick Add/Full Form
   role: string;
   experienceYears: number;
   skills: string[];
+
+  // Profile Completion Tracking (Dual-Form System)
+  profileCompletionStatus: ProfileCompletionStatus;
+  registrationSource: RegistrationSource;
+  profileCompletionPercentage: number; // 0-100
 
   // Extended Personal Profile
   firstName?: string;
@@ -188,6 +227,7 @@ export interface Candidate {
   // Application Form Specific Fields
   refNo?: string; // Application Reference Number
   country?: string; // Target country
+  targetCountry?: Country;
   position?: string; // Desired position
   religion?: string;
   maritalStatus?: 'Single' | 'Married' | 'Divorced' | 'Widowed';
@@ -502,7 +542,7 @@ export interface ChatMessageContext {
   type: 'CANDIDATE' | 'JOB' | 'SYSTEM_EVENT';
   id: string;
   label: string; // "John Doe" or "Visa Approved"
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ChatMessage {

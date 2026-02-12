@@ -1,14 +1,15 @@
 import React from 'react';
-import { PassportData, PCCData, PassportStatus, PCCStatus } from '../types';
-import { CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Calendar, Globe } from 'lucide-react';
+import { PassportData, PCCData, MedicalStatus, StageData } from '../types';
+import { CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Calendar, Activity } from 'lucide-react';
 
 interface ComplianceWidgetProps {
     passport?: PassportData;
     pcc?: PCCData;
-    onUpdate?: (data: any) => void;
+    stageData?: StageData;
+    onUpdate?: (data: { passport: Partial<PassportData>; pcc: Partial<PCCData> }) => void;
 }
 
-const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ passport, pcc, onUpdate }) => {
+const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ passport, pcc, stageData, onUpdate }) => {
     const [isEditing, setIsEditing] = React.useState(false);
 
     // Form State
@@ -25,14 +26,14 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ passport, pcc, onUp
         if (onUpdate) {
             onUpdate({
                 passport: {
-                    number: formData.passportNumber,
+                    passportNumber: formData.passportNumber,
                     country: formData.passportCountry,
-                    issued: formData.passportIssued,
-                    expiry: formData.passportExpiry
+                    issuedDate: formData.passportIssued,
+                    expiryDate: formData.passportExpiry
                 },
                 pcc: {
-                    issued: formData.pccIssued,
-                    lastInspection: formData.pccLastInspection
+                    issuedDate: formData.pccIssued,
+                    lastInspectionDate: formData.pccLastInspection
                 }
             });
         }
@@ -210,6 +211,58 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ passport, pcc, onUp
                         )
                     )}
                 </div>
+
+                {/* Medical Status Section */}
+                {stageData?.medicalStatus && (
+                    <div className={`p-4 rounded-lg border ${stageData.medicalStatus === MedicalStatus.COMPLETED ? 'bg-green-50 border-green-200' :
+                        stageData.medicalStatus === MedicalStatus.FAILED ? 'bg-red-50 border-red-200' :
+                            stageData.medicalStatus === MedicalStatus.SCHEDULED ? 'bg-blue-50 border-blue-200' :
+                                'bg-slate-50 border-slate-200'
+                        }`}>
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                                <Activity size={16} className={
+                                    stageData.medicalStatus === MedicalStatus.COMPLETED ? 'text-green-600' :
+                                        stageData.medicalStatus === MedicalStatus.FAILED ? 'text-red-600' :
+                                            stageData.medicalStatus === MedicalStatus.SCHEDULED ? 'text-blue-600' :
+                                                'text-slate-400'
+                                } />
+                                <span className="font-bold text-sm uppercase tracking-wide">Medical Status</span>
+                            </div>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${stageData.medicalStatus === MedicalStatus.COMPLETED ? 'bg-green-100 text-green-700 border-green-300' :
+                                stageData.medicalStatus === MedicalStatus.FAILED ? 'bg-red-100 text-red-700 border-red-300' :
+                                    stageData.medicalStatus === MedicalStatus.SCHEDULED ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                                        'bg-slate-100 text-slate-600 border-slate-300'
+                                }`}>
+                                {stageData.medicalStatus}
+                            </span>
+                        </div>
+
+                        <div className="text-sm space-y-1">
+                            {stageData.medicalScheduledDate && (
+                                <div className="flex justify-between items-center">
+                                    <span className="opacity-75 flex items-center gap-1">
+                                        <Calendar size={14} />
+                                        Scheduled:
+                                    </span>
+                                    <span className="font-medium text-blue-600">{stageData.medicalScheduledDate}</span>
+                                </div>
+                            )}
+                            {stageData.medicalCompletedDate && (
+                                <div className="flex justify-between">
+                                    <span className="opacity-75">Completed:</span>
+                                    <span className="font-medium text-green-600">{stageData.medicalCompletedDate}</span>
+                                </div>
+                            )}
+                            {stageData.medicalNotes && (
+                                <div className="mt-2 pt-2 border-t border-black/5">
+                                    <span className="text-xs opacity-75 block mb-1">Notes:</span>
+                                    <p className="text-xs italic">{stageData.medicalNotes}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

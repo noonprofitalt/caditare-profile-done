@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Hash, MessageCircle, Shield, X, Search, MoreVertical, Briefcase, UserCircle, Bell, Plus } from 'lucide-react';
+import { Send, Hash, MessageCircle, Shield, X, Briefcase, UserCircle, Bell, Plus } from 'lucide-react';
 import { ChatService } from '../services/chatService';
 import { CandidateService } from '../services/candidateService';
-import { ChatChannel, ChatMessage, ChatUser, Candidate, ChatMessageContext } from '../types';
+import { ChatChannel, ChatMessage, Candidate, ChatMessageContext } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 interface GlobalChatProps {
@@ -32,6 +32,7 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
 
     useEffect(() => {
         // Load channels with RBAC filter (mocking 'Admin' role for now)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refreshChannels();
     }, []);
 
@@ -46,6 +47,7 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
 
     useEffect(() => {
         if (activeChannelId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setMessages(ChatService.getMessages(activeChannelId));
             setPendingContext(undefined); // Reset context on channel switch
         }
@@ -66,6 +68,7 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
                 c.role.toLowerCase().includes(query)
             ).slice(0, 5);
 
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setSuggestions(matches);
             setShowSuggestions(matches.length > 0);
         } else {

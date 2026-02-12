@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FinanceService } from '../services/financeService';
 import { CandidateService } from '../services/candidateService';
@@ -8,10 +8,10 @@ import {
     Invoice, InvoiceStatus
 } from '../types';
 import {
-    DollarSign, TrendingUp, TrendingDown, Receipt,
+    TrendingUp, TrendingDown, Receipt,
     ArrowUpRight, ArrowDownRight, Search, Filter,
-    Download, Plus, Calendar, CreditCard, PieChart,
-    ChevronRight, FileText, AlertCircle
+    Download, Plus, CreditCard, PieChart,
+    FileText, AlertCircle
 } from 'lucide-react';
 
 const FinanceLedger: React.FC = () => {
@@ -22,20 +22,12 @@ const FinanceLedger: React.FC = () => {
     const [newTxDescription, setNewTxDescription] = useState('');
     const [newTxCategory, setNewTxCategory] = useState<TransactionCategory>(TransactionCategory.OFFICE_RENT);
 
-    const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
-    const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [projection, setProjection] = useState(0);
-    const [actualRevenue, setActualRevenue] = useState(0);
-    const [expenses, setExpenses] = useState(0);
+    const [transactions, setTransactions] = useState<FinanceTransaction[]>(() => FinanceService.getTransactions() || []);
+    const [invoices, setInvoices] = useState<Invoice[]>(() => FinanceService.getInvoices() || []);
+    const [projection, setProjection] = useState(() => FinanceService.getProjectedRevenue() || 0);
+    const [actualRevenue, setActualRevenue] = useState(() => FinanceService.getTotalActualRevenue() || 0);
+    const [expenses, setExpenses] = useState(() => FinanceService.getTotalExpenses() || 0);
     const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'invoices'>('overview');
-
-    useEffect(() => {
-        setTransactions(FinanceService.getTransactions() || []);
-        setInvoices(FinanceService.getInvoices() || []);
-        setProjection(FinanceService.getProjectedRevenue() || 0);
-        setActualRevenue(FinanceService.getTotalActualRevenue() || 0);
-        setExpenses(FinanceService.getTotalExpenses() || 0);
-    }, []);
 
     const netProfit = actualRevenue - expenses;
 
@@ -187,7 +179,7 @@ const FinanceLedger: React.FC = () => {
                         ].map((tab) => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
+                                onClick={() => setActiveTab(tab.id as 'overview' | 'transactions' | 'invoices')}
                                 className={`flex items-center gap-2 px-6 sm:px-8 py-5 text-sm font-bold transition-all relative ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
                                     }`}
                             >

@@ -2,24 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { ReportingService } from '../services/reportingService';
 import { SystemSnapshot } from '../types';
 import {
-   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area
+   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
 import {
    LayoutDashboard, Activity, Users, AlertTriangle, TrendingUp, DollarSign,
-   FileText, Download, RefreshCw, Server, BrainCircuit, ShieldCheck, MessageSquare
+   Download, RefreshCw, Server, BrainCircuit, ShieldCheck, MessageSquare
 } from 'lucide-react';
 import AIPlayground from './AIPlayground';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
 const IntelligenceEngine: React.FC = () => {
    const [snapshot, setSnapshot] = useState<SystemSnapshot | null>(null);
    const [activeTab, setActiveTab] = useState<'dashboard' | 'workflow' | 'staff' | 'financial' | 'assistant'>('dashboard');
    const [isLoading, setIsLoading] = useState(false);
-
-   useEffect(() => {
-      refreshData();
-   }, []);
 
    const refreshData = () => {
       setIsLoading(true);
@@ -29,6 +23,11 @@ const IntelligenceEngine: React.FC = () => {
          setIsLoading(false);
       }, 600);
    };
+
+   useEffect(() => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      refreshData();
+   }, []);
 
    const handleExportReport = () => {
       const csvContent = ReportingService.generateFullSystemCSV();
@@ -276,7 +275,7 @@ const IntelligenceEngine: React.FC = () => {
             ].map(tab => (
                <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as 'dashboard' | 'workflow' | 'staff' | 'financial' | 'assistant')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                      }`}
                >

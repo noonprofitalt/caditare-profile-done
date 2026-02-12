@@ -122,7 +122,7 @@ export class ReportService {
                 slaStatus: { daysInStage, status: slaStatus },
                 documentSummary: `Missing: ${documentGaps.missing.length}, Rejected: ${documentGaps.rejected.length}`
             }
-        } as any);
+        } as Candidate & { additionalAuditData: Record<string, unknown> });
 
         return {
             timestamp: new Date().toISOString(),

@@ -1,5 +1,8 @@
-import { Candidate, WorkflowStage, StageStatus } from '../types';
+import { Candidate, TimelineEvent, ProfileCompletionStatus, RegistrationSource, WorkflowStage, StageStatus } from '../types';
 import { MOCK_CANDIDATES } from './mockData';
+import { ProfileCompletionService } from './profileCompletionService';
+import { ProfileMergeService } from './profileMergeService';
+
 
 const STORAGE_KEY = 'globalworkforce_candidates';
 
@@ -10,7 +13,7 @@ export class CandidateService {
             try {
                 const parsed = JSON.parse(stored);
                 if (Array.isArray(parsed)) {
-                    return parsed.map((c: any) => ({
+                    const candidates = parsed.map((c: Candidate) => ({
                         ...c,
                         documents: Array.isArray(c.documents) ? c.documents : [],
                         timelineEvents: Array.isArray(c.timelineEvents) ? c.timelineEvents : [],
@@ -19,8 +22,14 @@ export class CandidateService {
                         education: Array.isArray(c.education) ? c.education : [],
                         workflowLogs: Array.isArray(c.workflowLogs) ? c.workflowLogs : [],
                         preferredCountries: Array.isArray(c.preferredCountries) ? c.preferredCountries : [],
-                        jobRoles: Array.isArray(c.jobRoles) ? c.jobRoles : []
+                        jobRoles: Array.isArray(c.jobRoles) ? c.jobRoles : [],
+                        // Auto-migrate legacy candidates
+                        profileCompletionStatus: c.profileCompletionStatus || ProfileCompletionStatus.COMPLETE,
+                        registrationSource: c.registrationSource || RegistrationSource.FULL_FORM,
+                        profileCompletionPercentage: c.profileCompletionPercentage ?? 100,
+                        additionalContactNumbers: c.additionalContactNumbers || []
                     }));
+                    return candidates;
                 }
                 return [];
             } catch (e) {
@@ -101,7 +110,7 @@ export class CandidateService {
                     const previousStage = previousEvent.stage;
 
                     // Create a rollback event
-                    const rollbackEvent: any = {
+                    const rollbackEvent: TimelineEvent = {
                         id: `evt-rollback-${Date.now()}`,
                         type: 'MANUAL_OVERRIDE',
                         title: `Rollback to ${previousStage}`,
@@ -119,5 +128,113 @@ export class CandidateService {
                 }
             }
         }
+    }
+
+    // ===== DUAL-FORM SYSTEM METHODS =====
+
+    /**
+     * Create a Quick Add candidate with minimal required fields
+     * @param data - Minimal candidate data from Quick Add form
+     * @returns Created candidate
+     */
+    static createQuickCandidate(data: Partial<Candidate>): Candidate {
+        const candidate: Candidate = {
+            id: `cand-${Date.now()}`,
+            name: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            whatsapp: data.whatsapp,
+            nic: data.nic,
+            role: data.role || 'Not Specified',
+            experienceYears: data.experienceYears || 0,
+            skills: data.skills || [],
+            location: data.location || '',
+            preferredCountries: data.preferredCountries || [],
+            jobRoles: data.jobRoles || [],
+            avatarUrl: data.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || 'User')}&background=random`,
+
+            // Profile Completion Tracking
+            profileCompletionStatus: ProfileCompletionStatus.QUICK,
+            registrationSource: RegistrationSource.QUICK_FORM,
+            profileCompletionPercentage: 0, // Will be calculated
+
+            // Workflow
+            stage: WorkflowStage.REGISTRATION,
+            stageStatus: StageStatus.PENDING,
+            stageEnteredAt: new Date().toISOString(),
+            stageData: {},
+            workflowLogs: [],
+
+            // Arrays
+            documents: [],
+            timelineEvents: [],
+            comments: [],
+            additionalContactNumbers: data.additionalContactNumbers || []
+        };
+
+        // Calculate initial completion percentage
+        const updatedCandidate = ProfileCompletionService.updateCompletionData(candidate);
+
+        // Create timeline event
+        const quickAddEvent: TimelineEvent = {
+            id: `evt-quickadd-${Date.now()}`,
+            type: 'SYSTEM',
+            title: 'Quick Add Registration',
+            description: 'Candidate added via Quick Add form',
+            timestamp: new Date().toISOString(),
+            actor: 'System',
+            stage: WorkflowStage.REGISTRATION,
+            metadata: {}
+        };
+
+        updatedCandidate.timelineEvents = [quickAddEvent];
+
+        this.addCandidate(updatedCandidate);
+        return updatedCandidate;
+    }
+
+    /**
+     * Upgrade a Quick Add profile to Full Application
+     * @param candidateId - ID of candidate to upgrade
+     * @param fullData - Complete data from Full Application form
+     */
+    static upgradeToFullProfile(candidateId: string, fullData: Partial<Candidate>): void {
+        const candidates = this.getCandidates();
+        const index = candidates.findIndex(c => c.id === candidateId);
+
+        if (index !== -1) {
+            const existingCandidate = candidates[index];
+            const mergedCandidate = ProfileMergeService.mergeProfiles(existingCandidate, fullData);
+
+            // Update registration source if upgrading from Quick
+            if (existingCandidate.profileCompletionStatus === ProfileCompletionStatus.QUICK) {
+                mergedCandidate.registrationSource = RegistrationSource.FULL_FORM;
+            }
+
+            candidates[index] = mergedCandidate;
+            this.saveCandidates(candidates);
+        }
+    }
+
+    /**
+     * Get all incomplete candidates (QUICK or PARTIAL)
+     * @returns Array of incomplete candidates
+     */
+    static getIncompleteCandidates(): Candidate[] {
+        const candidates = this.getCandidates();
+        return candidates.filter(c =>
+            c.profileCompletionStatus === ProfileCompletionStatus.QUICK ||
+            c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL
+        );
+    }
+
+    /**
+     * Get candidates by completion status
+     * @param status - ProfileCompletionStatus to filter by
+     * @returns Array of matching candidates
+     */
+    static getCandidatesByCompletionStatus(status: ProfileCompletionStatus): Candidate[] {
+        const candidates = this.getCandidates();
+        return candidates.filter(c => c.profileCompletionStatus === status);
     }
 }

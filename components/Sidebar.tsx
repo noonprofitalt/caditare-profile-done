@@ -10,7 +10,8 @@ import {
   KanbanSquare,
   BrainCircuit,
   Target,
-  DollarSign
+  DollarSign,
+  UserPlus
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -18,7 +19,7 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
       ? 'bg-blue-600 text-white shadow-md'
@@ -55,6 +56,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <NavLink to="/candidates" className={linkClass}>
           <Users size={20} />
           <span>Candidates</span>
+        </NavLink>
+        <NavLink to="/candidates/quick-add" className={linkClass}>
+          <UserPlus size={20} />
+          <span>Quick Add</span>
         </NavLink>
         <NavLink to="/jobs" className={linkClass}>
           <Briefcase size={20} />

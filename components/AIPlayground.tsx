@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, BrainCircuit, Bot, User, RefreshCw, AlertCircle } from 'lucide-react';
+import { Send, BrainCircuit, Bot, User, RefreshCw } from 'lucide-react';
 import { GeminiService } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 
@@ -9,7 +9,7 @@ const AIPlayground: React.FC = () => {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [hasApiKey, setHasApiKey] = useState(GeminiService.hasApiKey());
+    const [hasApiKey] = useState(GeminiService.hasApiKey());
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {

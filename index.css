@@ -52,7 +52,7 @@
   }
 
   /* Expand main content */
-  main, 
+  main,
   .max-w-7xl {
     max-width: none !important;
     width: 100% !important;

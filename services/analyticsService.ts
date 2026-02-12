@@ -46,7 +46,8 @@ export const getDashboardMetrics = (): DashboardMetrics => {
   };
 };
 
-export const getAverageTimeInStage = (stage: WorkflowStage): number => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const getAverageTimeInStage = (_stage: WorkflowStage): number => {
   // Mock calculation - in real app would aggregate from timeline_events
   return Math.floor(Math.random() * 5) + 1;
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Candidate, WorkflowStage, StageStatus } from '../types';
 import { STAGE_ORDER, getSLAStatus, STAGE_REQUIREMENTS, getNextStage } from '../services/workflowEngine';
-import { CheckCircle2, Circle, Clock, AlertTriangle, XCircle, ArrowRight, Lock, Unlock, CheckSquare } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, AlertTriangle, XCircle, ArrowRight, Lock, Unlock } from 'lucide-react';
 
 interface WorkflowTrackerProps {
   candidate: Candidate;
@@ -65,8 +65,8 @@ const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ candidate }) => {
               </span>
               {index === currentStageIdx && (
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${candidate.stageStatus === StageStatus.IN_PROGRESS ? 'bg-blue-50 border-blue-200 text-blue-600' :
-                    candidate.stageStatus === StageStatus.ON_HOLD ? 'bg-orange-50 border-orange-200 text-orange-600' :
-                      'bg-slate-100 text-slate-600'
+                  candidate.stageStatus === StageStatus.ON_HOLD ? 'bg-orange-50 border-orange-200 text-orange-600' :
+                    'bg-slate-100 text-slate-600'
                   }`}>
                   {candidate.stageStatus}
                 </span>

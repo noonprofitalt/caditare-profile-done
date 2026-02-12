@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Candidate, StageData, DocumentType, DocumentStatus, PaymentRecord, JobRole } from '../types';
+import React, { useState } from 'react';
+import { Candidate, StageData, DocumentType, DocumentStatus, PaymentRecord, JobRole, Country } from '../types';
 import { TemplateService } from '../services/templateService';
-import { X, Save, User, MapPin, Briefcase, Mail, Phone, Globe, Award, Activity, Calendar, FileText, CreditCard, Plus, Trash2, ChevronDown, Check } from 'lucide-react';
+import { X, Save, User, Briefcase, Globe, Activity, FileText, CreditCard, Plus, Trash2, ChevronDown, Check } from 'lucide-react';
 
 interface CandidateFormProps {
   initialData?: Partial<Candidate>;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Partial<Candidate>) => void;
   onClose: () => void;
   title: string;
 }
@@ -53,16 +53,14 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     paymentNotes: initialData?.stageData?.paymentNotes || '',
 
     // photo docs status
-    passportPhotosStatus: passportPhotosDoc?.status || DocumentStatus.MISSING,
-    fullPhotoStatus: fullPhotoDoc?.status || DocumentStatus.MISSING,
-    targetCountry: initialData?.preferredCountries?.[0] || 'UAE (United Arab Emirates)',
+    passportPhotosStatus: passportPhotosDoc?.status || DocumentStatus.PENDING,
+    fullPhotoStatus: fullPhotoDoc?.status || DocumentStatus.PENDING,
+    targetCountry: initialData?.targetCountry || Country.SAUDI_ARABIA,
   });
 
-  // Payment History State
+  // Re-added missing states for JSX compatibility
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>(initialData?.stageData?.paymentHistory || []);
   const [newPayment, setNewPayment] = useState({ date: '', amount: '', notes: '' });
-
-  // UI States
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(!!initialData?.secondaryPhone);
   const [jobRoles, setJobRoles] = useState<JobRole[]>(initialData?.jobRoles || []);
   const [newJobRole, setNewJobRole] = useState<JobRole>({ title: '', experienceYears: 0, skillLevel: 'Skilled', notes: '' });
@@ -70,21 +68,16 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showEducationDropdown, setShowEducationDropdown] = useState(false);
 
-  const [age, setAge] = useState<string>('Auto-calculated');
-
-  useEffect(() => {
-    if (formData.dob) {
-      const birthDate = new Date(formData.dob);
-      const today = new Date();
-      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        calculatedAge--;
-      }
-      setAge(calculatedAge.toString());
-    } else {
-      setAge('Auto-calculated');
+  const age = React.useMemo(() => {
+    if (!formData.dob) return '';
+    const birthDate = new Date(formData.dob);
+    const today = new Date();
+    let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      calculatedAge--;
     }
+    return calculatedAge.toString();
   }, [formData.dob]);
 
   const handleAddPayment = () => {
@@ -108,12 +101,12 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
 
     const stageDataUpdate: StageData = {
       ...initialData?.stageData,
-      employerStatus: formData.employerStatus as any,
-      medicalStatus: formData.medicalStatus as any,
+      employerStatus: formData.employerStatus as StageData['employerStatus'],
+      medicalStatus: formData.medicalStatus as StageData['medicalStatus'],
       medicalScheduledDate: formData.medicalStatus === 'Scheduled' ? formData.medicalScheduledDate : undefined,
-      policeStatus: formData.policeStatus as any,
-      visaStatus: formData.visaStatus as any,
-      paymentStatus: formData.paymentStatus as any,
+      policeStatus: formData.policeStatus as StageData['policeStatus'],
+      visaStatus: formData.visaStatus as StageData['visaStatus'],
+      paymentStatus: formData.paymentStatus as StageData['paymentStatus'],
       paymentNotes: formData.paymentNotes,
       paymentHistory: paymentHistory,
     };
@@ -548,7 +541,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                     <label className="text-[10px] uppercase font-bold text-slate-400">Level</label>
                     <select
                       value={newJobRole.skillLevel}
-                      onChange={e => setNewJobRole(p => ({ ...p, skillLevel: e.target.value as any }))}
+                      onChange={e => setNewJobRole(p => ({ ...p, skillLevel: e.target.value as JobRole['skillLevel'] }))}
                       className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded outline-none"
                     >
                       <option>Beginner</option>

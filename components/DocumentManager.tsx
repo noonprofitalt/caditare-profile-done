@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Candidate, CandidateDocument, DocumentType, DocumentStatus, DocumentCategory, DocumentLog } from '../types';
+import { Candidate, CandidateDocument, DocumentStatus, DocumentCategory, DocumentLog } from '../types';
 import { NotificationService } from '../services/notificationService';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, Clock, XCircle, Eye, Download, History, Lock, ShieldCheck } from 'lucide-react';
 
@@ -40,6 +40,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   const handleFileUpload = (doc: CandidateDocument, file: File) => {
     // Mock upload process
     const newLog: DocumentLog = {
+      // eslint-disable-next-line react-hooks/purity
       id: `log-${Date.now()}`,
       action: 'UPLOAD',
       user: 'Admin User', // In real app, current user
@@ -66,6 +67,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
 
   const handleVerification = (doc: CandidateDocument, status: DocumentStatus, reason?: string) => {
     const newLog: DocumentLog = {
+      // eslint-disable-next-line react-hooks/purity
       id: `log-${Date.now()}`,
       action: status === DocumentStatus.APPROVED ? 'APPROVE' : status === DocumentStatus.REJECTED ? 'REJECT' : 'REQUEST_CORRECTION',
       user: 'Admin User',
@@ -162,90 +164,12 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
 
   const renderVerifyModal = () => {
     if (!selectedDoc) return null;
-    const [rejectReason, setRejectReason] = useState('');
-
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <div>
-              <h3 className="font-bold text-lg text-slate-800">Verify: {selectedDoc.type}</h3>
-              <p className="text-xs text-slate-500">Version {selectedDoc.version} • Uploaded by {selectedDoc.uploadedBy} on {selectedDoc.uploadedAt}</p>
-            </div>
-            <button onClick={() => setSelectedDoc(null)} className="text-slate-400 hover:text-slate-600"><XCircle size={24} /></button>
-          </div>
-
-          <div className="flex-1 flex overflow-hidden">
-            {/* File Preview Mock */}
-            <div className="flex-1 bg-slate-800 flex items-center justify-center p-8">
-              <div className="bg-white p-8 rounded shadow-lg max-w-lg w-full text-center aspect-[3/4] flex flex-col items-center justify-center">
-                <FileText size={64} className="text-slate-300 mb-4" />
-                <p className="text-slate-500">Document Preview</p>
-                <p className="font-mono text-xs text-slate-400 mt-2">{selectedDoc.type}_v{selectedDoc.version}.pdf</p>
-                <button className="mt-6 text-blue-600 text-sm hover:underline flex items-center gap-1">
-                  <Download size={14} /> Download Securely
-                </button>
-              </div>
-            </div>
-
-            {/* Actions Panel */}
-            <div className="w-80 border-l border-slate-200 p-6 overflow-y-auto bg-white">
-              <h4 className="font-bold text-slate-800 mb-4">Verification Actions</h4>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => handleVerification(selectedDoc, DocumentStatus.APPROVED)}
-                  className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2"
-                >
-                  <CheckCircle size={18} /> Approve Document
-                </button>
-
-                <hr className="border-slate-100 my-4" />
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">Rejection / Correction Reason</label>
-                  <textarea
-                    className="w-full p-3 border border-slate-200 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-red-500 outline-none resize-none"
-                    rows={3}
-                    placeholder="Why is this rejected?"
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                  ></textarea>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => handleVerification(selectedDoc, DocumentStatus.CORRECTION_REQUIRED, rejectReason)}
-                      disabled={!rejectReason}
-                      className="px-3 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg text-xs font-medium hover:bg-orange-100 disabled:opacity-50"
-                    >
-                      Request Fix
-                    </button>
-                    <button
-                      onClick={() => handleVerification(selectedDoc, DocumentStatus.REJECTED, rejectReason)}
-                      disabled={!rejectReason}
-                      className="px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-100 disabled:opacity-50"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <h4 className="font-bold text-slate-800 mb-2 text-sm flex items-center gap-2"><History size={14} /> Audit Trail</h4>
-                <div className="space-y-3">
-                  {selectedDoc.logs.map(log => (
-                    <div key={log.id} className="text-xs border-l-2 border-slate-200 pl-3 py-1">
-                      <p className="font-semibold text-slate-700">{log.action}</p>
-                      <p className="text-slate-500">{log.user} • {log.timestamp}</p>
-                      {log.details && <p className="text-slate-400 mt-1 italic">{log.details}</p>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <VerifyModal
+        selectedDoc={selectedDoc}
+        onClose={() => setSelectedDoc(null)}
+        onVerify={handleVerification}
+      />
     );
   };
 
@@ -342,6 +266,100 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
 
       {viewMode === 'upload' && renderUploadModal()}
       {viewMode === 'verify' && renderVerifyModal()}
+    </div>
+  );
+};
+
+interface VerifyModalProps {
+  selectedDoc: CandidateDocument;
+  onClose: () => void;
+  onVerify: (doc: CandidateDocument, status: DocumentStatus, reason?: string) => void;
+}
+
+const VerifyModal: React.FC<VerifyModalProps> = ({ selectedDoc, onClose, onVerify }) => {
+  const [rejectReason, setRejectReason] = useState('');
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
+        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <div>
+            <h3 className="font-bold text-lg text-slate-800">Verify: {selectedDoc.type}</h3>
+            <p className="text-xs text-slate-500">Version {selectedDoc.version} • Uploaded by {selectedDoc.uploadedBy} on {selectedDoc.uploadedAt}</p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><XCircle size={24} /></button>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* File Preview Mock */}
+          <div className="flex-1 bg-slate-800 flex items-center justify-center p-8">
+            <div className="bg-white p-8 rounded shadow-lg max-w-lg w-full text-center aspect-[3/4] flex flex-col items-center justify-center">
+              <FileText size={64} className="text-slate-300 mb-4" />
+              <p className="text-slate-500">Document Preview</p>
+              <p className="font-mono text-xs text-slate-400 mt-2">{selectedDoc.type}_v{selectedDoc.version}.pdf</p>
+              <button className="mt-6 text-blue-600 text-sm hover:underline flex items-center gap-1">
+                <Download size={14} /> Download Securely
+              </button>
+            </div>
+          </div>
+
+          {/* Actions Panel */}
+          <div className="w-80 border-l border-slate-200 p-6 overflow-y-auto bg-white">
+            <h4 className="font-bold text-slate-800 mb-4">Verification Actions</h4>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => onVerify(selectedDoc, DocumentStatus.APPROVED)}
+                className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center justify-center gap-2"
+              >
+                <CheckCircle size={18} /> Approve Document
+              </button>
+
+              <hr className="border-slate-100 my-4" />
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">Rejection / Correction Reason</label>
+                <textarea
+                  className="w-full p-3 border border-slate-200 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-red-500 outline-none resize-none"
+                  rows={3}
+                  placeholder="Why is this rejected?"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                ></textarea>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => onVerify(selectedDoc, DocumentStatus.CORRECTION_REQUIRED, rejectReason)}
+                    disabled={!rejectReason}
+                    className="px-3 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg text-xs font-medium hover:bg-orange-100 disabled:opacity-50"
+                  >
+                    Request Fix
+                  </button>
+                  <button
+                    onClick={() => onVerify(selectedDoc, DocumentStatus.REJECTED, rejectReason)}
+                    disabled={!rejectReason}
+                    className="px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-100 disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h4 className="font-bold text-slate-800 mb-2 text-sm flex items-center gap-2"><History size={14} /> Audit Trail</h4>
+              <div className="space-y-3">
+                {selectedDoc.logs.map(log => (
+                  <div key={log.id} className="text-xs border-l-2 border-slate-200 pl-3 py-1">
+                    <p className="font-semibold text-slate-700">{log.action}</p>
+                    <p className="text-slate-500">{log.user} • {log.timestamp}</p>
+                    {log.details && <p className="text-slate-400 mt-1 italic">{log.details}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

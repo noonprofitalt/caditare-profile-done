@@ -1,4 +1,4 @@
-import { DocumentType, DocumentCategory, CandidateDocument, DocumentStatus } from '../types';
+import { DocumentType, DocumentCategory, CandidateDocument, DocumentStatus, Country } from '../types';
 
 export interface CountryTemplate {
     country: string;
@@ -7,7 +7,7 @@ export interface CountryTemplate {
 
 const TEMPLATES: CountryTemplate[] = [
     {
-        country: 'UAE (United Arab Emirates)',
+        country: Country.UAE,
         requiredDocuments: [
             { type: DocumentType.PASSPORT, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
             { type: DocumentType.CV, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
@@ -20,7 +20,7 @@ const TEMPLATES: CountryTemplate[] = [
         ]
     },
     {
-        country: 'Saudi Arabia',
+        country: Country.SAUDI_ARABIA,
         requiredDocuments: [
             { type: DocumentType.PASSPORT, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
             { type: DocumentType.CV, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
@@ -32,7 +32,7 @@ const TEMPLATES: CountryTemplate[] = [
         ]
     },
     {
-        country: 'Qatar',
+        country: Country.QATAR,
         requiredDocuments: [
             { type: DocumentType.PASSPORT, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
             { type: DocumentType.CV, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
@@ -66,6 +66,6 @@ export class TemplateService {
 
     static generateDefaultDocs(): CandidateDocument[] {
         // Falls back to a general set if no country selected
-        return this.getRequiredDocumentsForCountry('UAE (United Arab Emirates)');
+        return this.getRequiredDocumentsForCountry(Country.UAE);
     }
 }

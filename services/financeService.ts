@@ -134,7 +134,7 @@ export class FinanceService {
             // If already departed, it's actual revenue, not projected
             if (candidate.stage === WorkflowStage.DEPARTURE) return total;
 
-            const employer = employers.find(e => e.id === candidate.jobId || (candidate as any).employerId); // fallback
+            const employer = employers.find(e => e.id === candidate.jobId || (candidate as Candidate & { employerId?: string }).employerId); // fallback
             const commission = employer?.commissionPerHire || 450; // Use default if no specific employer found
 
             return total + commission;

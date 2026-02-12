@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Candidate, WorkflowStage, StageStatus } from '../types';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Candidate, WorkflowStage, StageStatus, MedicalStatus, Country, JobRole, ProfileCompletionStatus, RegistrationSource } from '../types';
 import { CandidateService } from '../services/candidateService';
-import { Plus, Trash2, Save, X } from 'lucide-react';
+import { ComplianceService } from '../services/complianceService';
+import { ProfileCompletionService } from '../services/profileCompletionService';
+import { Plus, Trash2, Save, X, AlertCircle, CheckCircle, Calendar, FileEdit, TrendingUp } from 'lucide-react';
+import MultiSelect from './ui/MultiSelect';
+import JobRoleEntry from './JobRoleEntry';
 
 const DigitalApplicationForm: React.FC = () => {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState<Partial<Candidate>>({
+    const [searchParams] = useSearchParams();
+    const upgradeId = searchParams.get('upgrade');
+    const [isUpgradeMode, setIsUpgradeMode] = useState(false);
+    const [existingCandidate, setExistingCandidate] = useState<Candidate | null>(null);
+    const [formData, setFormData] = useState<Partial<Candidate>>(() => ({
         // Header
         refNo: `APP-${Date.now()}`,
         applicationDate: new Date().toISOString().split('T')[0],
@@ -72,7 +80,7 @@ const DigitalApplicationForm: React.FC = () => {
         timelineEvents: [],
         comments: [],
         documents: []
-    });
+    }));
 
     const [educationRows, setEducationRows] = useState([
         { courseName: '', level: '', institute: '', year: '' }
@@ -87,14 +95,100 @@ const DigitalApplicationForm: React.FC = () => {
         { name: '', gender: 'M' as 'M' | 'F', age: 0 }
     ]);
 
+    // NEW: Job Roles State
+    const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
+
+    // NEW: Education Multi-Select State
+    const [selectedEducation, setSelectedEducation] = useState<string[]>([]);
+    const educationOptions = ['Primary', 'O/L', 'A/L', 'Diploma', 'Degree', 'Masters', 'PhD', 'Vocational', 'Professional Certificate'];
+
+    // NEW: Preferred Countries Multi-Select State
+    const [preferredCountries, setPreferredCountries] = useState<string[]>([]);
+    const countryOptions = Object.values(Country);
+
+    // NEW: Medical Status State
+    const [medicalStatus, setMedicalStatus] = useState<MedicalStatus>(MedicalStatus.NOT_STARTED);
+    const [medicalScheduledDate, setMedicalScheduledDate] = useState('');
+    const [medicalNotes, setMedicalNotes] = useState('');
+
+    // NEW: Passport Compliance State
+    const [passportNumber, setPassportNumber] = useState('');
+    const [passportIssuedDate, setPassportIssuedDate] = useState('');
+    const [passportExpiryDate, setPassportExpiryDate] = useState('');
+    const [passportCountry, setPassportCountry] = useState('Sri Lanka');
+
+    // NEW: PCC Tracking State
+    const [pccIssuedDate, setPccIssuedDate] = useState('');
+    const [pccLastInspectionDate, setPccLastInspectionDate] = useState('');
+
+    // NEW: Additional Contact Numbers State
+    const [additionalContacts, setAdditionalContacts] = useState<string[]>([]);
+
+    // Load existing candidate data if in upgrade mode
+    useEffect(() => {
+        if (upgradeId) {
+            const candidate = CandidateService.getCandidateById(upgradeId);
+            if (candidate) {
+                setIsUpgradeMode(true);
+                setExistingCandidate(candidate);
+
+                // Pre-fill form data
+                setFormData(candidate);
+
+                // Pre-fill additional states
+                if (candidate.education) setSelectedEducation(candidate.education);
+                if (candidate.preferredCountries) setPreferredCountries(candidate.preferredCountries);
+                if (candidate.jobRoles) setJobRoles(candidate.jobRoles);
+                if (candidate.additionalContactNumbers) setAdditionalContacts(candidate.additionalContactNumbers);
+
+                // Pre-fill medical status
+                if (candidate.stageData?.medicalStatus) {
+                    setMedicalStatus(candidate.stageData.medicalStatus);
+                    if (candidate.stageData.medicalScheduledDate) setMedicalScheduledDate(candidate.stageData.medicalScheduledDate);
+                    if (candidate.stageData.medicalNotes) setMedicalNotes(candidate.stageData.medicalNotes);
+                }
+
+                // Pre-fill passport data
+                if (candidate.passportData) {
+                    setPassportNumber(candidate.passportData.passportNumber || '');
+                    setPassportIssuedDate(candidate.passportData.issuedDate || '');
+                    setPassportExpiryDate(candidate.passportData.expiryDate || '');
+                    setPassportCountry(candidate.passportData.country || 'Sri Lanka');
+                }
+
+                // Pre-fill PCC data
+                if (candidate.pccData) {
+                    setPccIssuedDate(candidate.pccData.issuedDate || '');
+                    setPccLastInspectionDate(candidate.pccData.lastInspectionDate || '');
+                }
+
+                // Pre-fill dynamic rows
+                if (candidate.educationalQualifications && candidate.educationalQualifications.length > 0) {
+                    setEducationRows(candidate.educationalQualifications);
+                }
+                if (candidate.employmentHistory && candidate.employmentHistory.length > 0) {
+                    const local = candidate.employmentHistory.filter(e => e.type === 'Local');
+                    const foreign = candidate.employmentHistory.filter(e => e.type === 'Foreign');
+                    setEmploymentRows({ local, foreign });
+                }
+                if (candidate.children && candidate.children.length > 0) {
+                    setChildrenRows(candidate.children);
+                }
+            }
+        }
+    }, [upgradeId]);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleInputChange = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleNestedChange = (field: string, nestedField: string, value: any) => {
         setFormData(prev => ({
             ...prev,
-            [field]: { ...(prev[field] as any), [nestedField]: value }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [field]: { ...((prev as any)[field]), [nestedField]: value }
         }));
     };
 
@@ -142,6 +236,21 @@ const DigitalApplicationForm: React.FC = () => {
         setChildrenRows(childrenRows.filter((_, i) => i !== index));
     };
 
+    // Helper functions for additional contacts
+    const addContactNumber = () => {
+        setAdditionalContacts([...additionalContacts, '']);
+    };
+
+    const removeContactNumber = (index: number) => {
+        setAdditionalContacts(additionalContacts.filter((_, i) => i !== index));
+    };
+
+    const updateContactNumber = (index: number, value: string) => {
+        const updated = [...additionalContacts];
+        updated[index] = value;
+        setAdditionalContacts(updated);
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -151,7 +260,24 @@ const DigitalApplicationForm: React.FC = () => {
             ...employmentRows.foreign.map(row => ({ ...row, type: 'Foreign' as const }))
         ];
 
-        // Create candidate with all data
+        // Evaluate Passport Data
+        let passportData = undefined;
+        if (passportNumber && passportExpiryDate && passportIssuedDate) {
+            passportData = ComplianceService.evaluatePassport(
+                passportExpiryDate,
+                passportNumber,
+                passportCountry,
+                passportIssuedDate
+            );
+        }
+
+        // Evaluate PCC Data
+        let pccData = undefined;
+        if (pccIssuedDate) {
+            pccData = ComplianceService.evaluatePCC(pccIssuedDate, pccLastInspectionDate);
+        }
+
+        // Create candidate data
         const candidateData: Partial<Candidate> = {
             ...formData,
             educationalQualifications: educationRows,
@@ -159,15 +285,88 @@ const DigitalApplicationForm: React.FC = () => {
             children: childrenRows,
             role: formData.position || 'General Worker',
             location: formData.district || '',
-            preferredCountries: formData.country ? [formData.country] : [],
-            id: `candidate-${Date.now()}`
+            preferredCountries: preferredCountries,
+            education: selectedEducation,
+            jobRoles: jobRoles,
+            additionalContactNumbers: additionalContacts,
+            passportData,
+            pccData,
+            stageData: {
+                ...formData.stageData,
+                medicalStatus,
+                medicalScheduledDate: medicalStatus === MedicalStatus.SCHEDULED ? medicalScheduledDate : undefined,
+                medicalNotes: medicalNotes || undefined
+            }
         };
 
-        // Save to localStorage
-        CandidateService.addCandidate(candidateData as Candidate);
+        if (isUpgradeMode && existingCandidate) {
+            // UPGRADE MODE: Update existing candidate
+            const updatedCandidate: Candidate = {
+                ...existingCandidate,
+                ...candidateData,
+                id: existingCandidate.id,
+                // Preserve critical fields
+                stage: existingCandidate.stage,
+                stageStatus: existingCandidate.stageStatus,
+                stageEnteredAt: existingCandidate.stageEnteredAt,
+                workflowLogs: existingCandidate.workflowLogs,
+                comments: existingCandidate.comments,
+                timelineEvents: existingCandidate.timelineEvents,
+                documents: existingCandidate.documents,
+                avatarUrl: existingCandidate.avatarUrl
+            };
 
-        // Navigate to candidates list
-        navigate('/candidates');
+            // Update profile completion
+            const completionData = ProfileCompletionService.updateCompletionData(updatedCandidate);
+            const finalCandidate = { ...updatedCandidate, ...completionData };
+
+            // Add timeline event for profile upgrade
+            if (!finalCandidate.timelineEvents) finalCandidate.timelineEvents = [];
+            finalCandidate.timelineEvents.unshift({
+                id: `evt-upgrade-${Date.now()}`,
+                type: 'SYSTEM',
+                title: existingCandidate.profileCompletionStatus === ProfileCompletionStatus.QUICK
+                    ? 'Profile Upgraded from Quick Add'
+                    : 'Profile Completed',
+                description: `Profile completion updated from ${existingCandidate.profileCompletionPercentage}% to ${finalCandidate.profileCompletionPercentage}%`,
+                timestamp: new Date().toISOString(),
+                actor: 'Staff User',
+                stage: existingCandidate.stage
+            });
+
+            CandidateService.updateCandidate(finalCandidate);
+            navigate(`/candidates/${finalCandidate.id}`);
+        } else {
+            // NEW CANDIDATE MODE
+            const newCandidate: Candidate = {
+                ...candidateData as Candidate,
+                id: `candidate-${Date.now()}`,
+                stage: WorkflowStage.REGISTRATION,
+                stageStatus: StageStatus.PENDING,
+                stageEnteredAt: new Date().toISOString(),
+                avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateData.name || 'New Applicant')}`,
+                workflowLogs: [],
+                comments: [],
+                timelineEvents: [{
+                    id: `evt-${Date.now()}`,
+                    type: 'SYSTEM',
+                    title: 'Full Application Submitted',
+                    description: 'Candidate registered via Digital Application Form.',
+                    timestamp: new Date().toISOString(),
+                    actor: 'Staff User',
+                    stage: WorkflowStage.REGISTRATION
+                }],
+                documents: [],
+                registrationSource: RegistrationSource.FULL_FORM
+            };
+
+            // Calculate profile completion
+            const completionData = ProfileCompletionService.updateCompletionData(newCandidate);
+            const finalCandidate = { ...newCandidate, ...completionData };
+
+            CandidateService.addCandidate(finalCandidate);
+            navigate('/candidates');
+        }
     };
 
     return (
@@ -220,6 +419,38 @@ const DigitalApplicationForm: React.FC = () => {
                     </div>
                 </div>
 
+                {/* UPGRADE MODE BANNER */}
+                {isUpgradeMode && existingCandidate && (
+                    <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <FileEdit size={24} />
+                                <div>
+                                    <h3 className="font-bold text-sm">
+                                        {existingCandidate.profileCompletionStatus === ProfileCompletionStatus.QUICK
+                                            ? 'Upgrading Quick Add Profile'
+                                            : 'Completing Profile Registration'}
+                                    </h3>
+                                    <p className="text-xs text-yellow-100">
+                                        {existingCandidate.name} • Current Completion: {existingCandidate.profileCompletionPercentage}%
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <TrendingUp size={18} />
+                                <span className="text-xs font-bold">Fill in missing information below</span>
+                            </div>
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="mt-3 w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-white transition-all duration-500"
+                                style={{ width: `${existingCandidate.profileCompletionPercentage}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
                     {/* SECTION 1: PERSONAL DETAILS */}
                     <section className="space-y-6">
@@ -238,15 +469,98 @@ const DigitalApplicationForm: React.FC = () => {
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport No</label>
-                                <input
-                                    type="text"
-                                    value={formData.passportData?.passportNumber || ''}
-                                    onChange={(e) => handleNestedChange('passportData', 'passportNumber', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
+                        </div>
+
+                        {/* PASSPORT COMPLIANCE SECTION */}
+                        <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                            <h3 className="text-sm font-black text-blue-800 uppercase mb-4 flex items-center gap-2">
+                                <CheckCircle size={18} />
+                                Passport Compliance
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport Number</label>
+                                    <input
+                                        type="text"
+                                        value={passportNumber}
+                                        onChange={(e) => setPassportNumber(e.target.value)}
+                                        placeholder="e.g., N1234567"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport Country</label>
+                                    <input
+                                        type="text"
+                                        value={passportCountry}
+                                        onChange={(e) => setPassportCountry(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Issued Date</label>
+                                    <input
+                                        type="date"
+                                        value={passportIssuedDate}
+                                        onChange={(e) => setPassportIssuedDate(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Expiry Date</label>
+                                    <input
+                                        type="date"
+                                        value={passportExpiryDate}
+                                        onChange={(e) => setPassportExpiryDate(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
                             </div>
+
+                            {/* Auto-calculated Validity Status */}
+                            {passportNumber && passportExpiryDate && passportIssuedDate && (
+                                <div className="mt-4 p-3 bg-white rounded-lg border border-blue-100">
+                                    {(() => {
+                                        const passport = ComplianceService.evaluatePassport(
+                                            passportExpiryDate,
+                                            passportNumber,
+                                            passportCountry,
+                                            passportIssuedDate
+                                        );
+                                        return (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-slate-600 uppercase">Validity Status:</span>
+                                                <div className="flex items-center gap-2">
+                                                    {passport.status === 'VALID' && (
+                                                        <>
+                                                            <CheckCircle size={16} className="text-green-600" />
+                                                            <span className="text-sm font-bold text-green-700">
+                                                                VALID ({passport.validityDays} days remaining)
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {passport.status === 'EXPIRING' && (
+                                                        <>
+                                                            <AlertCircle size={16} className="text-yellow-600" />
+                                                            <span className="text-sm font-bold text-yellow-700">
+                                                                EXPIRING SOON ({passport.validityDays} days)
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {passport.status === 'EXPIRED' && (
+                                                        <>
+                                                            <X size={16} className="text-red-600" />
+                                                            <span className="text-sm font-bold text-red-700">
+                                                                EXPIRED
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            )}
                         </div>
 
                         <div>
@@ -329,26 +643,77 @@ const DigitalApplicationForm: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Contact No *</label>
-                                <input
-                                    type="tel"
-                                    required
-                                    value={formData.phone}
-                                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
+                        {/* Contact Information - Dynamic */}
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Primary Phone */}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                        Telephone Number *
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        required
+                                        value={formData.phone}
+                                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
+                                {/* WhatsApp */}
+                                <div className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                            WhatsApp Number *
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            required
+                                            value={formData.whatsapp}
+                                            onChange={(e) => handleInputChange('whatsapp', e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+
+                                    {/* Add Contact Button */}
+                                    <button
+                                        type="button"
+                                        onClick={addContactNumber}
+                                        className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1 border border-blue-200"
+                                        title="Add another contact number"
+                                    >
+                                        <Plus size={18} />
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">WhatsApp</label>
-                                <input
-                                    type="tel"
-                                    value={formData.whatsapp}
-                                    onChange={(e) => handleInputChange('whatsapp', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
+
+                            {/* Additional Contact Numbers */}
+                            {additionalContacts.map((contact, index) => (
+                                <div key={index} className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                            Secondary Phone {index > 0 ? `${index + 1}` : ''} (Optional)
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            value={contact}
+                                            onChange={(e) => updateContactNumber(index, e.target.value)}
+                                            placeholder="Alternative number"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeContactNumber(index)}
+                                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                                        title="Remove this contact number"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            ))}
+
+                            {/* Email */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Email</label>
                                 <input
@@ -425,11 +790,182 @@ const DigitalApplicationForm: React.FC = () => {
                         </div>
                     </section>
 
+                    {/* SECTION 1.5: MEDICAL STATUS WORKFLOW */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-green-600 pb-2">
+                            Medical Status
+                        </h2>
+
+                        <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                        Medical Status *
+                                    </label>
+                                    <select
+                                        value={medicalStatus}
+                                        onChange={(e) => setMedicalStatus(e.target.value as MedicalStatus)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-medium"
+                                        required
+                                    >
+                                        <option value={MedicalStatus.NOT_STARTED}>Not Started</option>
+                                        <option value={MedicalStatus.SCHEDULED}>Scheduled</option>
+                                        <option value={MedicalStatus.COMPLETED}>Completed</option>
+                                        <option value={MedicalStatus.FAILED}>Failed</option>
+                                    </select>
+                                </div>
+
+                                {medicalStatus === MedicalStatus.SCHEDULED && (
+                                    <div className="animate-in fade-in slide-in-from-top-2">
+                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1 flex items-center gap-2">
+                                            <Calendar size={14} />
+                                            Scheduled Date *
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={medicalScheduledDate}
+                                            onChange={(e) => setMedicalScheduledDate(e.target.value)}
+                                            required
+                                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-4">
+                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                    Medical Notes (Optional)
+                                </label>
+                                <textarea
+                                    value={medicalNotes}
+                                    onChange={(e) => setMedicalNotes(e.target.value)}
+                                    rows={2}
+                                    placeholder="Any additional medical information..."
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* SECTION 1.6: PCC TRACKING */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-purple-600 pb-2">
+                            Police Clearance Certificate (PCC)
+                        </h2>
+
+                        <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-xl">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                        PCC Issued Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={pccIssuedDate}
+                                        onChange={(e) => setPccIssuedDate(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                        Last Inspection Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={pccLastInspectionDate}
+                                        onChange={(e) => setPccLastInspectionDate(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Auto-calculated PCC Status */}
+                            {pccIssuedDate && (
+                                <div className="mt-4 p-3 bg-white rounded-lg border border-purple-100">
+                                    {(() => {
+                                        const pcc = ComplianceService.evaluatePCC(pccIssuedDate, pccLastInspectionDate);
+                                        return (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-slate-600 uppercase">PCC Status:</span>
+                                                <div className="flex items-center gap-2">
+                                                    {pcc.status === 'VALID' && (
+                                                        <>
+                                                            <CheckCircle size={16} className="text-green-600" />
+                                                            <span className="text-sm font-bold text-green-700">
+                                                                VALID ({pcc.ageDays} days old)
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {pcc.status === 'EXPIRING' && (
+                                                        <>
+                                                            <AlertCircle size={16} className="text-yellow-600" />
+                                                            <span className="text-sm font-bold text-yellow-700">
+                                                                EXPIRING SOON ({pcc.ageDays} days old)
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                    {pcc.status === 'EXPIRED' && (
+                                                        <>
+                                                            <X size={16} className="text-red-600" />
+                                                            <span className="text-sm font-bold text-red-700">
+                                                                EXPIRED ({pcc.ageDays} days old)
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    {/* SECTION 1.7: PREFERRED COUNTRIES */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-indigo-600 pb-2">
+                            Preferred Countries
+                        </h2>
+
+                        <MultiSelect
+                            options={countryOptions}
+                            selected={preferredCountries}
+                            onChange={setPreferredCountries}
+                            label="Select Preferred Countries"
+                            placeholder="Choose countries..."
+                            searchPlaceholder="Search countries..."
+                        />
+                    </section>
+
+                    {/* SECTION 1.8: PROFESSIONAL JOB ROLES */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-orange-600 pb-2">
+                            Professional Experience & Job Roles
+                        </h2>
+
+                        <JobRoleEntry
+                            jobRoles={jobRoles}
+                            onChange={setJobRoles}
+                        />
+                    </section>
+
                     {/* SECTION 2: EDUCATION */}
                     <section className="space-y-4">
                         <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-blue-600 pb-2">
                             Educational / Professional Qualifications
                         </h2>
+
+                        {/* Education Multi-Select */}
+                        <div className="mb-6">
+                            <MultiSelect
+                                options={educationOptions}
+                                selected={selectedEducation}
+                                onChange={setSelectedEducation}
+                                label="Highest Education Levels"
+                                placeholder="Select education levels..."
+                                searchPlaceholder="Search education levels..."
+                            />
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
