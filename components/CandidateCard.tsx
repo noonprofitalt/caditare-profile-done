@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Candidate, ProfileCompletionStatus, WorkflowStage } from '../types';
-import { Phone, Mail, MapPin, Calendar, ChevronDown, ChevronUp, FileText, CheckCircle, AlertCircle, Clock, ArrowRight } from 'lucide-react';
+import { Candidate, ProfileCompletionStatus, WorkflowStage, MedicalStatus } from '../types';
+import { Phone, Mail, MapPin, Calendar, ChevronDown, ChevronUp, FileText, CheckCircle, AlertCircle, Clock, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ProfileCompletionService } from '../services/profileCompletionService';
 
@@ -42,16 +42,16 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
     // Get stage color
     const getStageColor = () => {
         switch (candidate.stage) {
-            case WorkflowStage.REGISTRATION:
+            case WorkflowStage.REGISTERED:
                 return 'bg-blue-100 text-blue-700 border-blue-200';
-            case WorkflowStage.INTERVIEW:
+            case WorkflowStage.VERIFIED:
                 return 'bg-purple-100 text-purple-700 border-purple-200';
-            case WorkflowStage.MEDICAL:
-                return 'bg-pink-100 text-pink-700 border-pink-200';
-            case WorkflowStage.TRAINING:
+            case WorkflowStage.APPLIED:
                 return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-            case WorkflowStage.DEPLOYMENT:
+            case WorkflowStage.VISA_RECEIVED:
                 return 'bg-green-100 text-green-700 border-green-200';
+            case WorkflowStage.DEPARTED:
+                return 'bg-emerald-100 text-emerald-700 border-emerald-200';
             default:
                 return 'bg-slate-100 text-slate-700 border-slate-200';
         }
@@ -216,7 +216,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {ProfileCompletionService.getMissingFields(candidate).slice(0, 10).map((field, idx) => (
-                                    <span key={idx} className="px-2 py-1 bg-white border border-yellow-300 rounded text-xs text-yellow-800">
+                                    <span key={`missing-${field}-${idx}`} className="px-2 py-1 bg-white border border-yellow-300 rounded text-xs text-yellow-800">
                                         {field}
                                     </span>
                                 ))}
@@ -232,6 +232,27 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
                     {/* Compliance Status */}
                     <div>
                         <h4 className="font-semibold text-sm text-slate-700 mb-2">Compliance & Documents</h4>
+
+                        {/* Active Flags Warning */}
+                        {candidate.complianceFlags?.some(f => !f.isResolved) && (
+                            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <h5 className="flex items-center gap-2 text-xs font-bold text-red-800 uppercase tracking-wide mb-2">
+                                    <AlertTriangle size={14} /> Active Compliance Flags
+                                </h5>
+                                <div className="space-y-1">
+                                    {candidate.complianceFlags.filter(f => !f.isResolved).map(flag => (
+                                        <div key={flag.id} className="flex items-start gap-2 text-sm text-red-700">
+                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${flag.severity === 'CRITICAL' ? 'bg-red-200 text-red-900' : 'bg-orange-100 text-orange-800'
+                                                }`}>
+                                                {flag.severity}
+                                            </span>
+                                            <span>{flag.reason}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-3 gap-3">
                             <div className="flex items-center gap-2">
                                 <div className={`w-2 h-2 rounded-full ${candidate.passportData?.status === 'VALID' ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -242,7 +263,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
                                 <span className="text-sm text-slate-600">PCC</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${candidate.stageData?.medicalStatus === 'COMPLETED' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                                <div className={`w-2 h-2 rounded-full ${candidate.stageData?.medicalStatus === MedicalStatus.COMPLETED ? 'bg-green-500' : 'bg-yellow-500'}`} />
                                 <span className="text-sm text-slate-600">Medical</span>
                             </div>
                         </div>
@@ -254,7 +275,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
                             <h4 className="font-semibold text-sm text-slate-700 mb-2">Recent Activity</h4>
                             <div className="space-y-2">
                                 {candidate.timelineEvents.slice(-3).reverse().map((event, idx) => (
-                                    <div key={idx} className="flex items-start gap-2 text-sm">
+                                    <div key={event.id || `event-${idx}`} className="flex items-start gap-2 text-sm">
                                         <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5" />
                                         <div className="flex-1">
                                             <div className="text-slate-900 font-medium">{event.title}</div>

@@ -1,4 +1,4 @@
-import { Candidate, WorkflowStage, StageStatus, Job, JobStatus, DocumentType, DocumentStatus, DocumentCategory, CandidateDocument, PassportStatus, PCCStatus } from "../types";
+import { Candidate, WorkflowStage, StageStatus, Job, JobStatus, DocumentType, DocumentStatus, DocumentCategory, CandidateDocument, PassportStatus, PCCStatus, MedicalStatus } from "../types";
 
 export const MOCK_JOBS: Job[] = [
   {
@@ -124,13 +124,11 @@ const candidateWithDocs = (base: Partial<Candidate> & { name: string }, filledCo
   // Populate new profile fields if not present
   const names = base.name.split(' ');
   const firstName = base.firstName || names[0];
-  const lastName = base.lastName || names.slice(1).join(' ');
   const city = base.location ? base.location.split(',')[0].trim() : 'Unknown';
 
   return {
     ...base,
     firstName,
-    lastName,
     nic: base.nic || '199012345678',
     dob: base.dob || '1990-01-15',
     gender: base.gender || 'Male',
@@ -149,7 +147,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     email: 'ahmed.h@example.com',
     phone: '+20 123 456 7890',
     role: 'Civil Engineer',
-    stage: WorkflowStage.APPLIED,
+    stage: WorkflowStage.REGISTERED,
     stageStatus: StageStatus.IN_PROGRESS,
     stageEnteredAt: daysAgo(3),
     stageData: {
@@ -173,11 +171,11 @@ export const MOCK_CANDIDATES: Candidate[] = [
     workflowLogs: [],
     timelineEvents: [
       { id: '1', type: 'STAGE_TRANSITION', title: 'Moved to Applied', timestamp: daysAgo(3), actor: 'System', stage: WorkflowStage.APPLIED },
-      { id: '2', type: 'DOCUMENT', title: 'Passport Verified', description: 'Document approved by verification team', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFICATION },
-      { id: '3', type: 'STATUS_CHANGE', title: 'Verification Completed', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFICATION },
-      { id: '4', type: 'STAGE_TRANSITION', title: 'Moved to Verification', timestamp: daysAgo(5), actor: 'System', stage: WorkflowStage.VERIFICATION },
-      { id: '5', type: 'DOCUMENT', title: 'Passport Uploaded', timestamp: daysAgo(6), actor: 'Ahmed Hassan', stage: WorkflowStage.REGISTRATION },
-      { id: '6', type: 'SYSTEM', title: 'Profile Created', timestamp: daysAgo(6), actor: 'System', stage: WorkflowStage.REGISTRATION },
+      { id: '2', type: 'DOCUMENT', title: 'Passport Verified', description: 'Document approved by verification team', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFIED },
+      { id: '3', type: 'STATUS_CHANGE', title: 'Verification Completed', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFIED },
+      { id: '4', type: 'STAGE_TRANSITION', title: 'Moved to Verification', timestamp: daysAgo(5), actor: 'System', stage: WorkflowStage.VERIFIED },
+      { id: '5', type: 'DOCUMENT', title: 'Passport Uploaded', timestamp: daysAgo(6), actor: 'Ahmed Hassan', stage: WorkflowStage.REGISTERED },
+      { id: '6', type: 'SYSTEM', title: 'Profile Created', timestamp: daysAgo(6), actor: 'System', stage: WorkflowStage.REGISTERED },
     ],
     experienceYears: 8,
     skills: ['Project Management', 'AutoCAD', 'Structural Analysis'],
@@ -193,14 +191,14 @@ export const MOCK_CANDIDATES: Candidate[] = [
     phone: '+63 912 345 6789',
     gender: 'Female',
     role: 'Nurse',
-    stage: WorkflowStage.REGISTRATION,
+    stage: WorkflowStage.REGISTERED,
     stageStatus: StageStatus.PENDING,
     stageEnteredAt: daysAgo(1),
     stageData: {},
     // No Data yet (New Reg)
     workflowLogs: [],
     timelineEvents: [
-      { id: '1', type: 'SYSTEM', title: 'Profile Created', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.REGISTRATION },
+      { id: '1', type: 'SYSTEM', title: 'Profile Created', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.REGISTERED },
     ],
     experienceYears: 5,
     skills: ['Patient Care', 'ICU', 'Emergency Response'],
@@ -220,7 +218,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     stageEnteredAt: daysAgo(16), // Overdue
     stageData: {
       employerStatus: 'Selected',
-      medicalStatus: 'Cleared',
+      medicalStatus: MedicalStatus.COMPLETED,
       policeStatus: 'Issued',
       visaStatus: 'Submitted',
       paymentStatus: 'Partial'
@@ -258,7 +256,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     phone: '+359 88 123 4567',
     gender: 'Female',
     role: 'Hotel Receptionist',
-    stage: WorkflowStage.VERIFICATION,
+    stage: WorkflowStage.VERIFIED,
     stageStatus: StageStatus.ON_HOLD,
     stageEnteredAt: daysAgo(4), // Overdue SLA 2
     stageData: {},
@@ -278,9 +276,9 @@ export const MOCK_CANDIDATES: Candidate[] = [
     },
     workflowLogs: [],
     timelineEvents: [
-      { id: '1', type: 'ALERT', title: 'SLA Warning', description: 'Verification is taking longer than expected.', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.VERIFICATION, metadata: { isCritical: false } },
-      { id: '2', type: 'NOTE', title: 'Correction Requested', description: 'Passport photo is blurry. Please re-upload.', timestamp: daysAgo(2), actor: 'Sarah Connor', stage: WorkflowStage.VERIFICATION },
-      { id: '3', type: 'STAGE_TRANSITION', title: 'Moved to Verification', timestamp: daysAgo(4), actor: 'System', stage: WorkflowStage.VERIFICATION },
+      { id: '1', type: 'ALERT', title: 'SLA Warning', description: 'Verification is taking longer than expected.', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.VERIFIED, metadata: { isCritical: false } },
+      { id: '2', type: 'NOTE', title: 'Correction Requested', description: 'Passport photo is blurry. Please re-upload.', timestamp: daysAgo(2), actor: 'Sarah Connor', stage: WorkflowStage.VERIFIED },
+      { id: '3', type: 'STAGE_TRANSITION', title: 'Moved to Verification', timestamp: daysAgo(4), actor: 'System', stage: WorkflowStage.VERIFIED },
     ],
     experienceYears: 3,
     skills: ['Customer Service', 'Multi-lingual', 'Booking Systems'],

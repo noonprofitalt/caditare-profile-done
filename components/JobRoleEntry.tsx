@@ -50,7 +50,7 @@ const JobRoleEntry: React.FC<JobRoleEntryProps> = ({ jobRoles, onChange }) => {
                 <div className="space-y-3">
                     {jobRoles.map((role, index) => (
                         <div
-                            key={index}
+                            key={`${role.title || 'new'}-${role.experienceYears}-${index}`}
                             className="bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-300 transition-all shadow-sm hover:shadow-md"
                         >
                             <div className="flex items-start justify-between mb-3">
@@ -143,12 +143,12 @@ const JobRoleEntry: React.FC<JobRoleEntryProps> = ({ jobRoles, onChange }) => {
                                     <span className="text-xs text-slate-500">Skill Level:</span>
                                     <span
                                         className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${role.skillLevel === 'Expert'
-                                                ? 'bg-purple-100 text-purple-700'
-                                                : role.skillLevel === 'Skilled'
-                                                    ? 'bg-blue-100 text-blue-700'
-                                                    : role.skillLevel === 'Intermediate'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-slate-100 text-slate-600'
+                                            ? 'bg-purple-100 text-purple-700'
+                                            : role.skillLevel === 'Skilled'
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : role.skillLevel === 'Intermediate'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-slate-100 text-slate-600'
                                             }`}
                                     >
                                         {role.skillLevel}

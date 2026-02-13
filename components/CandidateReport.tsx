@@ -217,7 +217,7 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                                 <div className="space-y-4">
                                     {/* Field Level Issues */}
                                     {report.dataQuality.map((issue, idx) => (
-                                        <div key={idx} className="flex items-start justify-between gap-4 p-4 bg-amber-50 border border-amber-200 rounded-xl group hover:border-amber-300 hover:shadow-md transition-all">
+                                        <div key={`issue-${issue.field}-${issue.issue}-${idx}`} className="flex items-start justify-between gap-4 p-4 bg-amber-50 border border-amber-200 rounded-xl group hover:border-amber-300 hover:shadow-md transition-all">
                                             <div className="flex items-start gap-4">
                                                 <ShieldAlert size={18} className="text-amber-500 mt-0.5 shrink-0" />
                                                 <div>

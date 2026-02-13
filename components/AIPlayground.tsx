@@ -74,7 +74,7 @@ const AIPlayground: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
                 {messages.map((msg, idx) => (
-                    <div key={idx} className={`flex gap-4 ${msg.role === 'ai' ? '' : 'flex-row-reverse'}`}>
+                    <div key={`msg-${msg.role}-${msg.content.substring(0, 20)}-${idx}`} className={`flex gap-4 ${msg.role === 'ai' ? '' : 'flex-row-reverse'}`}>
                         <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${msg.role === 'ai' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
                             {msg.role === 'ai' ? <Bot size={18} /> : <User size={18} />}
                         </div>

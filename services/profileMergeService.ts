@@ -32,6 +32,22 @@ export class ProfileMergeService {
         const merged: Candidate = {
             ...existingCandidate,
             ...newData,
+            personalInfo: {
+                ...existingCandidate.personalInfo,
+                ...(newData.personalInfo || {})
+            },
+            contactInfo: {
+                ...existingCandidate.contactInfo,
+                ...(newData.contactInfo || {})
+            },
+            professionalProfile: {
+                ...existingCandidate.professionalProfile,
+                ...(newData.professionalProfile || {})
+            },
+            medicalData: {
+                ...existingCandidate.medicalData,
+                ...(newData.medicalData || {})
+            },
             ...preservedFields
         };
 

@@ -21,6 +21,7 @@ const FinanceLedger = React.lazy(() => import('./components/FinanceLedger'));
 const DigitalApplicationForm = React.lazy(() => import('./components/DigitalApplicationForm'));
 const QuickAddForm = React.lazy(() => import('./components/QuickAddForm'));
 const DevTools = React.lazy(() => import('./components/DevTools'));
+const ComponentShowcase = React.lazy(() => import('./components/ComponentShowcase'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -75,6 +76,7 @@ const App: React.FC = () => {
                           <Route path="/finance" element={<FinanceLedger />} />
                           <Route path="/team-chat" element={<TeamChat />} />
                           <Route path="/settings" element={<Settings />} />
+                          <Route path="/showcase" element={<ComponentShowcase />} />
                           <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
                       </Suspense>

@@ -17,6 +17,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
       case 'DOCUMENT': return <FileText size={16} className="text-white" />;
       case 'NOTE': return <MessageSquare size={16} className="text-white" />;
       case 'ALERT': return <AlertCircle size={16} className="text-white" />;
+      case 'MANUAL_OVERRIDE': return <AlertCircle size={16} className="text-white" />;
       case 'SYSTEM': return <User size={16} className="text-white" />;
       default: return <Circle size={16} className="text-white" />;
     }
@@ -28,6 +29,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
       case 'STAGE_TRANSITION': return 'bg-blue-600 ring-4 ring-blue-100';
       case 'STATUS_CHANGE': return 'bg-green-500 ring-4 ring-green-100';
       case 'ALERT': return 'bg-orange-500 ring-4 ring-orange-100';
+      case 'MANUAL_OVERRIDE': return 'bg-orange-600 ring-4 ring-orange-100';
       case 'DOCUMENT': return 'bg-purple-500 ring-4 ring-purple-100';
       default: return 'bg-slate-400 ring-4 ring-slate-100';
     }

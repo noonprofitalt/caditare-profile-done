@@ -1,4 +1,4 @@
-import { Candidate, ProfileCompletionStatus, PassportStatus, PCCStatus, MedicalStatus, DocumentCategory, DocumentStatus } from '../types';
+import { Candidate, ProfileCompletionStatus, PassportStatus, PCCStatus, MedicalStatus, DocumentCategory, DocumentStatus, DocumentType } from '../types';
 
 /**
  * Profile Completion Service
@@ -13,58 +13,64 @@ export class ProfileCompletionService {
     static calculateCompletionPercentage(candidate: Partial<Candidate>): number {
         let score = 0;
 
-        // Personal Info (20%)
-        const personalFields: (keyof Candidate)[] = ['name', 'nic', 'dob', 'gender', 'address', 'phone'];
-        const personalFilled = personalFields.filter(field => {
-            const value = candidate[field];
-            return value !== undefined && value !== null && value !== '';
-        }).length;
-        score += (personalFilled / personalFields.length) * 20;
+        // 1. Primary Identity (25%)
+        // NIC (10%)
+        const nic = candidate.personalInfo?.nic || candidate.nic;
+        if (nic && nic.length >= 10) score += 10;
 
-        // Passport Compliance (15%)
-        if (candidate.passportData?.status === PassportStatus.VALID) {
-            score += 15;
-        }
+        // Passport (15%) - Valid if at least one valid passport exists
+        const hasValidPassport = candidate.passports?.some(p => p.status === PassportStatus.VALID) ||
+            candidate.passportData?.status === PassportStatus.VALID;
+        if (hasValidPassport) score += 15;
 
-        // Medical Info (10%)
-        if (candidate.stageData?.medicalStatus === MedicalStatus.COMPLETED) {
-            score += 10;
-        }
+        // 2. Contact Authenticity (15%)
+        // Primary Phone (10%)
+        const phone = candidate.contactInfo?.primaryPhone || candidate.phone;
+        if (phone && phone.length >= 10) score += 10;
 
-        // PCC Compliance (10%)
-        if (candidate.pccData?.status === PCCStatus.VALID) {
-            score += 10;
-        }
+        // WhatsApp (5%)
+        const whatsapp = candidate.contactInfo?.whatsappPhone || candidate.whatsapp;
+        if (whatsapp && whatsapp.length >= 10) score += 5;
 
-        // Education (15%)
-        if (candidate.educationalQualifications && candidate.educationalQualifications.length > 0) {
-            score += 15;
-        }
+        // 3. Professional Depth (25%)
+        // Education (12.5%)
+        const hasEducation = (candidate.professionalProfile?.education && candidate.professionalProfile.education.length > 0) ||
+            (candidate.educationalQualifications && candidate.educationalQualifications.length > 0) ||
+            (candidate.education && candidate.education.length > 0);
+        if (hasEducation) score += 12.5;
 
-        // Experience (15%)
-        if (candidate.employmentHistory && candidate.employmentHistory.length > 0) {
-            score += 15;
-        }
+        // Experience (12.5%)
+        const hasExperience = (candidate.professionalProfile?.employmentHistory && candidate.professionalProfile.employmentHistory.length > 0) ||
+            (candidate.employmentHistory && candidate.employmentHistory.length > 0);
+        if (hasExperience) score += 12.5;
 
-        // Family Info (10%)
-        const familyFields: (keyof Candidate)[] = ['fatherName', 'motherName', 'guardianName'];
-        const hasFamilyInfo = familyFields.some(field => {
-            const value = candidate[field];
-            return value !== undefined && value !== null && value !== '';
-        });
-        if (hasFamilyInfo) {
-            score += 10;
-        }
+        // 4. Medical Compliance (15%)
+        // Status (10%)
+        const medicalStatus = candidate.medicalData?.status || candidate.stageData?.medicalStatus;
+        if (medicalStatus === MedicalStatus.COMPLETED) score += 10;
 
-        // Documents (5%)
-        if (candidate.documents) {
-            const mandatoryDocs = candidate.documents.filter(
-                d => d.category === DocumentCategory.MANDATORY_REGISTRATION &&
-                    d.status === DocumentStatus.APPROVED
+        // Date (5%)
+        const medicalDate = candidate.medicalData?.completedDate || candidate.stageData?.medicalCompletedDate;
+        if (medicalDate) score += 5;
+
+        // 5. Documents (20%) - Categorized Checklist
+        if (candidate.documents && candidate.documents.length > 0) {
+            const approvedDocuments = candidate.documents.filter(d => d.status === DocumentStatus.APPROVED);
+
+            // Check for specific mandatory categories
+            const hasPassport = approvedDocuments.some(d => d.type === DocumentType.PASSPORT);
+            const hasCV = approvedDocuments.some(d => d.type === DocumentType.CV);
+            const hasPhoto = approvedDocuments.some(d => d.type === DocumentType.PASSPORT_PHOTOS || d.type === DocumentType.FULL_PHOTO);
+            const hasEdu = approvedDocuments.some(d =>
+                d.type === DocumentType.EDU_OL ||
+                d.type === DocumentType.EDU_AL ||
+                d.type === DocumentType.EDU_PROFESSIONAL
             );
-            if (mandatoryDocs.length >= 3) {
-                score += 5;
-            }
+
+            if (hasPassport) score += 5;
+            if (hasCV) score += 5;
+            if (hasPhoto) score += 5;
+            if (hasEdu) score += 5;
         }
 
         return Math.round(score);

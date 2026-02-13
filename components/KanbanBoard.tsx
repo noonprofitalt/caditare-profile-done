@@ -1,6 +1,6 @@
 import { CandidateService } from '../services/candidateService';
 import { WorkflowStage, StageStatus, Candidate } from '../types';
-import { STAGE_ORDER, getSLAStatus } from '../services/workflowEngine';
+import { STAGE_ORDER, WorkflowEngine, SLA_CONFIG } from '../services/workflowEngine';
 import { AlertTriangle, MoreHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
@@ -22,22 +22,22 @@ const KanbanBoard: React.FC = () => {
 
   const getStageColor = (stage: string) => {
     switch (stage) {
-      case WorkflowStage.REGISTRATION: return 'bg-blue-50 border-blue-200';
-      case WorkflowStage.VERIFICATION: return 'bg-purple-50 border-purple-200';
+      case WorkflowStage.REGISTERED: return 'bg-blue-50 border-blue-200';
+      case WorkflowStage.VERIFIED: return 'bg-purple-50 border-purple-200';
       case WorkflowStage.APPLIED: return 'bg-yellow-50 border-yellow-200';
       case WorkflowStage.OFFER_RECEIVED: return 'bg-orange-50 border-orange-200';
       case WorkflowStage.WP_RECEIVED: return 'bg-pink-50 border-pink-200';
       case WorkflowStage.EMBASSY_APPLIED: return 'bg-indigo-50 border-indigo-200';
       case WorkflowStage.VISA_RECEIVED: return 'bg-violet-50 border-violet-200';
       case WorkflowStage.SLBFE_REGISTRATION: return 'bg-teal-50 border-teal-200';
-      case WorkflowStage.TICKET: return 'bg-sky-50 border-sky-200';
-      case WorkflowStage.DEPARTURE: return 'bg-green-50 border-green-200';
+      case WorkflowStage.TICKET_ISSUED: return 'bg-sky-50 border-sky-200';
+      case WorkflowStage.DEPARTED: return 'bg-green-50 border-green-200';
       default: return 'bg-slate-50 border-slate-200';
     }
   };
 
   const renderCard = (candidate: Candidate) => {
-    const sla = getSLAStatus(candidate);
+    const sla = WorkflowEngine.calculateSLAStatus(candidate);
 
     return (
       <div key={candidate.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-all cursor-pointer group">
@@ -62,10 +62,10 @@ const KanbanBoard: React.FC = () => {
             {candidate.stageStatus}
           </span>
 
-          {sla.overdue && (
-            <div className="flex items-center gap-1 text-red-600" title={`Overdue: ${sla.daysInStage} days (Limit: ${sla.slaLimit})`}>
+          {sla.status === 'OVERDUE' && (
+            <div className="flex items-center gap-1 text-red-600" title={`Overdue: ${sla.daysElapsed} days (Limit: ${SLA_CONFIG[candidate.stage]})`}>
               <AlertTriangle size={12} />
-              <span className="text-[10px] font-bold">{sla.daysInStage}d</span>
+              <span className="text-[10px] font-bold">{sla.daysElapsed}d</span>
             </div>
           )}
         </div>

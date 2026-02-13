@@ -83,145 +83,155 @@ const Dashboard: React.FC = () => {
                <>
                   <div
                      onClick={() => navigate('/candidates')}
-                     className="bg-slate-900 text-white p-5 rounded-xl shadow-lg flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-transform"
+                     className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-xl shadow-xl flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative overflow-hidden"
                   >
-                     <div>
+                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                     <div className="relative z-10">
                         <p className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Active Workforce</p>
-                        <h3 className="text-3xl font-bold">{activeCandidates}</h3>
-                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1"><Activity size={10} className="text-green-400" /> System Operational</p>
+                        <h3 className="text-4xl font-bold mb-1">{activeCandidates}</h3>
+                        <p className="text-xs text-slate-400 flex items-center gap-1"><Activity size={12} className="text-green-400" /> System Operational</p>
                      </div>
-                     <div className="bg-slate-800 p-3 rounded-lg"><Briefcase size={24} className="text-blue-400" /></div>
+                     <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/20 relative z-10"><Briefcase size={28} className="text-blue-400" /></div>
                   </div>
 
                   <div
                      onClick={() => navigate('/pipeline')}
-                     className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between group hover:border-red-200 transition-all cursor-pointer hover:scale-[1.02]"
+                     className="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-xl shadow-xl flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative overflow-hidden"
                   >
-                     <div>
-                        <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1">Critical Actions</p>
-                        <h3 className="text-3xl font-bold text-red-600">{criticalIssues}</h3>
-                        <p className="text-xs text-red-500 mt-1 font-semibold">Immediate attention required</p>
+                     <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-red-700/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                     <div className="relative z-10">
+                        <p className="text-red-100 text-xs uppercase font-bold tracking-wider mb-1">Critical Actions</p>
+                        <h3 className="text-4xl font-bold mb-1">{criticalIssues}</h3>
+                        <p className="text-xs text-red-100 font-medium">Immediate attention required</p>
                      </div>
-                     <div className="bg-red-50 p-3 rounded-lg group-hover:bg-red-100 transition-colors"><Zap size={24} className="text-red-500" /></div>
+                     <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl border border-white/30 relative z-10"><Zap size={28} className="text-yellow-300" /></div>
                   </div>
 
                   <div
                      onClick={() => navigate('/finance')}
-                     className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-blue-300 transition-all hover:scale-[1.02]"
+                     className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 rounded-xl shadow-xl flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative overflow-hidden"
                   >
-                     <div>
-                        <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1">Projected Revenue</p>
-                        <h3 className="text-3xl font-bold text-blue-600">${projectedRevenue.toLocaleString()}</h3>
-                        <p className="text-xs text-slate-400 mt-1">Expected Pipeline Value</p>
+                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                     <div className="relative z-10">
+                        <p className="text-blue-100 text-xs uppercase font-bold tracking-wider mb-1">Projected Revenue</p>
+                        <h3 className="text-4xl font-bold mb-1">${projectedRevenue.toLocaleString()}</h3>
+                        <p className="text-xs text-blue-100">Expected Pipeline Value</p>
                      </div>
-                     <div className="bg-blue-50 p-3 rounded-lg"><TrendingUp size={24} className="text-blue-600" /></div>
+                     <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl border border-white/30 relative z-10"><TrendingUp size={28} className="text-green-300" /></div>
                   </div>
 
                   <div
                      onClick={() => navigate('/candidates?stage=Departed')}
-                     className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-green-300 transition-all hover:scale-[1.02]"
+                     className="bg-gradient-to-br from-green-600 to-green-700 text-white p-6 rounded-xl shadow-xl flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative overflow-hidden"
                   >
-                     <div>
-                        <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1">Departures</p>
-                        <h3 className="text-3xl font-bold text-slate-800">{candidates.filter(c => c.stage === WorkflowStage.DEPARTURE).length}</h3>
-                        <p className="text-xs text-green-600 mt-1 font-medium flex items-center"><CheckCircle size={10} className="mr-1" /> Ready for Invoicing</p>
+                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-green-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                     <div className="relative z-10">
+                        <p className="text-green-100 text-xs uppercase font-bold tracking-wider mb-1">Departures</p>
+                        <h3 className="text-4xl font-bold mb-1">{candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length}</h3>
+                        <p className="text-xs text-green-100 font-medium flex items-center"><CheckCircle size={12} className="mr-1" /> Ready for Invoicing</p>
                      </div>
-                     <div className="bg-green-50 p-3 rounded-lg"><Calendar size={24} className="text-green-600" /></div>
+                     <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl border border-white/30 relative z-10"><Calendar size={28} className="text-yellow-300" /></div>
                   </div>
                </>
             )}
          </div>
 
-         {/* Profile Completion Status Widgets */}
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {isLoading ? (
-               Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                     <div className="space-y-3">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-8 w-20" />
-                        <Skeleton className="h-3 w-full" />
-                     </div>
-                  </div>
-               ))
-            ) : (
-               <>
-                  {/* Quick Profiles */}
-                  <div
-                     onClick={() => navigate('/candidates?status=quick')}
-                     className="bg-white p-4 rounded-xl shadow-sm border-2 border-red-200 hover:border-red-300 cursor-pointer hover:scale-[1.02] transition-all group"
-                  >
-                     <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                           <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Quick Profiles</h3>
-                        </div>
-                        <UserPlus size={18} className="text-red-500" />
-                     </div>
-                     <p className="text-3xl font-bold text-red-600 mb-1">{quickProfiles}</p>
-                     <p className="text-xs text-slate-500">Pending full registration</p>
-                     <button
-                        onClick={(e) => {
-                           e.stopPropagation();
-                           if (quickProfiles > 0) {
-                              const firstQuick = candidates.find(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK);
-                              if (firstQuick) navigate(`/candidates/${firstQuick.id}`);
-                           }
-                        }}
-                        className="mt-3 w-full py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors group-hover:bg-red-100"
-                     >
-                        Complete Now →
-                     </button>
-                  </div>
+         {/* Database Health Overview */}
+         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+               <div>
+                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                     <Activity className="text-blue-600" size={24} />
+                     Database Health
+                  </h2>
+                  <p className="text-sm text-slate-600 mt-1">Profile completion status across all candidates</p>
+               </div>
+               <button
+                  onClick={() => navigate('/candidates?status=quick')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+               >
+                  View Incomplete
+               </button>
+            </div>
 
-                  {/* Partial Profiles */}
-                  <div
-                     onClick={() => navigate('/candidates?status=partial')}
-                     className="bg-white p-4 rounded-xl shadow-sm border-2 border-yellow-200 hover:border-yellow-300 cursor-pointer hover:scale-[1.02] transition-all group"
-                  >
-                     <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                           <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Partial Profiles</h3>
-                        </div>
-                        <Clock size={18} className="text-yellow-600" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+               {/* Radial Progress */}
+               <div className="flex items-center justify-center">
+                  <div className="relative w-32 h-32">
+                     <svg className="transform -rotate-90 w-32 h-32">
+                        <circle
+                           cx="64"
+                           cy="64"
+                           r="56"
+                           stroke="currentColor"
+                           strokeWidth="12"
+                           fill="transparent"
+                           className="text-slate-200"
+                        />
+                        <circle
+                           cx="64"
+                           cy="64"
+                           r="56"
+                           stroke="currentColor"
+                           strokeWidth="12"
+                           fill="transparent"
+                           strokeDasharray={`${2 * Math.PI * 56}`}
+                           strokeDashoffset={`${2 * Math.PI * 56 * (1 - (completeProfiles / activeCandidates || 0))}`}
+                           className="text-green-600 transition-all duration-1000"
+                           strokeLinecap="round"
+                        />
+                     </svg>
+                     <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-bold text-slate-900">{activeCandidates > 0 ? Math.round((completeProfiles / activeCandidates) * 100) : 0}%</span>
+                        <span className="text-xs text-slate-500">Complete</span>
                      </div>
-                     <p className="text-3xl font-bold text-yellow-600 mb-1">{partialProfiles}</p>
-                     <p className="text-xs text-slate-500">In-progress registrations</p>
-                     <button
-                        onClick={(e) => {
-                           e.stopPropagation();
-                           if (partialProfiles > 0) {
-                              const firstPartial = candidates.find(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL);
-                              if (firstPartial) navigate(`/candidates/${firstPartial.id}`);
-                           }
-                        }}
-                        className="mt-3 w-full py-1.5 bg-yellow-50 text-yellow-700 rounded-lg text-xs font-semibold hover:bg-yellow-100 transition-colors group-hover:bg-yellow-100"
-                     >
-                        Finish Registration →
-                     </button>
                   </div>
+               </div>
 
-                  {/* Complete Profiles */}
-                  <div
-                     onClick={() => navigate('/candidates?status=complete')}
-                     className="bg-white p-4 rounded-xl shadow-sm border-2 border-green-200 hover:border-green-300 cursor-pointer hover:scale-[1.02] transition-all group"
-                  >
-                     <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                           <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Complete Profiles</h3>
-                        </div>
-                        <CheckCircle size={18} className="text-green-600" />
-                     </div>
-                     <p className="text-3xl font-bold text-green-600 mb-1">{completeProfiles}</p>
-                     <p className="text-xs text-slate-500">Ready for workflow</p>
-                     <div className="mt-3 w-full py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold text-center">
-                        {completeProfiles > 0 ? `${((completeProfiles / activeCandidates) * 100).toFixed(0)}% Complete` : 'No profiles yet'}
-                     </div>
+               {/* Quick Profiles */}
+               <div
+                  onClick={() => navigate('/candidates?status=quick')}
+                  className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl p-4 cursor-pointer hover:scale-[1.02] transition-all group"
+               >
+                  <div className="flex items-center gap-2 mb-2">
+                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                     <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Quick Add</h3>
                   </div>
-               </>
-            )}
+                  <p className="text-3xl font-bold text-red-600 mb-1">{quickProfiles}</p>
+                  <p className="text-xs text-slate-600">Pending full registration</p>
+                  <div className="mt-3 text-xs font-semibold text-red-700 group-hover:underline">Complete Now →</div>
+               </div>
+
+               {/* Partial Profiles */}
+               <div
+                  onClick={() => navigate('/candidates?status=partial')}
+                  className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-200 rounded-xl p-4 cursor-pointer hover:scale-[1.02] transition-all group"
+               >
+                  <div className="flex items-center gap-2 mb-2">
+                     <Clock size={14} className="text-yellow-600" />
+                     <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">In Progress</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-yellow-600 mb-1">{partialProfiles}</p>
+                  <p className="text-xs text-slate-600">Partially completed</p>
+                  <div className="mt-3 text-xs font-semibold text-yellow-700 group-hover:underline">Finish Registration →</div>
+               </div>
+
+               {/* Complete Profiles */}
+               <div
+                  onClick={() => navigate('/candidates?status=complete')}
+                  className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-4 cursor-pointer hover:scale-[1.02] transition-all group"
+               >
+                  <div className="flex items-center gap-2 mb-2">
+                     <CheckCircle size={14} className="text-green-600" />
+                     <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Complete</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-green-600 mb-1">{completeProfiles}</p>
+                  <p className="text-xs text-slate-600">Ready for workflow</p>
+                  <div className="mt-3 text-xs font-semibold text-green-700">
+                     {completeProfiles > 0 ? `${((completeProfiles / activeCandidates) * 100).toFixed(0)}% of database` : 'No profiles yet'}
+                  </div>
+               </div>
+            </div>
          </div>
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
@@ -229,13 +239,17 @@ const Dashboard: React.FC = () => {
             {/* 2. MAIN WORK QUEUE (Personal To-Do) */}
             <div className="lg:col-span-2 space-y-4">
                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                     <Zap className="text-yellow-500 fill-yellow-500" size={20} /> My Priority Work Queue
-                  </h2>
+                  <div>
+                     <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <Zap className="text-yellow-500 fill-yellow-500" size={24} />
+                        My Priority Work Queue
+                     </h2>
+                     <p className="text-sm text-slate-600 mt-1">Tasks requiring your attention, sorted by urgency</p>
+                  </div>
                   <div className="flex gap-2 text-sm">
-                     <button className="px-3 py-1 bg-slate-200 text-slate-700 rounded-full font-medium text-xs hover:bg-slate-300">All</button>
-                     <button className="px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-full font-medium text-xs hover:bg-slate-50">Critical</button>
-                     <button className="px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-full font-medium text-xs hover:bg-slate-50">Approvals</button>
+                     <button className="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">All</button>
+                     <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg font-medium text-xs hover:bg-slate-50 transition-colors">Critical</button>
+                     <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg font-medium text-xs hover:bg-slate-50 transition-colors">Approvals</button>
                   </div>
                </div>
 
@@ -266,33 +280,33 @@ const Dashboard: React.FC = () => {
                            <div
                               key={task.id}
                               onClick={() => navigate(`/candidates/${task.candidateId}`)}
-                              className={`p-4 hover:bg-slate-50 transition-all cursor-pointer group flex items-start gap-4 ${getPriorityColor(task.priority)}`}
+                              className={`p-5 hover:bg-slate-50 transition-all cursor-pointer group flex items-start gap-4 ${getPriorityColor(task.priority)}`}
                            >
-                              <div className="pt-1">
-                                 {task.priority === 'Critical' ? <AlertTriangle className="text-red-500" size={20} /> :
-                                    task.priority === 'High' ? <Clock className="text-orange-500" size={20} /> :
-                                       <FileText className="text-blue-500" size={20} />}
+                              <div className="pt-1 shrink-0">
+                                 {task.priority === 'Critical' ? <AlertTriangle className="text-red-500" size={24} /> :
+                                    task.priority === 'High' ? <Clock className="text-orange-500" size={24} /> :
+                                       <FileText className="text-blue-500" size={24} />}
                               </div>
-                              <div className="flex-1">
-                                 <div className="flex justify-between items-start">
-                                    <h4 className="font-bold text-slate-800 group-hover:text-blue-600">{task.title}</h4>
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${task.priority === 'Critical' ? 'bg-red-100 text-red-700' :
-                                       task.priority === 'High' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600'
+                              <div className="flex-1 min-w-0">
+                                 <div className="flex justify-between items-start gap-3 mb-2">
+                                    <h4 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-base">{task.title}</h4>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0 ${task.priority === 'Critical' ? 'bg-red-100 text-red-700' :
+                                       task.priority === 'High' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
                                        }`}>
                                        {task.priority}
                                     </span>
                                  </div>
-                                 <p className="text-sm text-slate-600 mt-1">{task.description}</p>
-                                 <div className="flex items-center gap-4 mt-3 text-xs text-slate-400">
-                                    <span className="flex items-center gap-1 font-medium text-slate-700">
-                                       <UserPlus size={12} /> {task.candidateName}
+                                 <p className="text-sm text-slate-600 mb-3">{task.description}</p>
+                                 <div className="flex items-center gap-4 text-xs">
+                                    <span className="flex items-center gap-1.5 font-medium text-slate-700">
+                                       <UserPlus size={14} /> {task.candidateName}
                                     </span>
-                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{task.stage}</span>
+                                    <span className="bg-slate-100 px-2 py-1 rounded-md text-slate-600 font-medium">{task.stage}</span>
                                     <span className="ml-auto text-orange-600 font-bold">Due: {task.dueDate}</span>
                                  </div>
                               </div>
-                              <div className="self-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                 <button className="bg-white border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50">
+                              <div className="self-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                 <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm">
                                     {task.actionLabel}
                                  </button>
                               </div>

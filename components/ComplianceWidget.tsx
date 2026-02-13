@@ -1,18 +1,37 @@
 import React from 'react';
-import { PassportData, PCCData, MedicalStatus, StageData } from '../types';
-import { CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Calendar, Activity } from 'lucide-react';
+import { Candidate, PassportData, PCCData, MedicalStatus, ComplianceFlag } from '../types';
+import { CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Calendar, Activity, AlertOctagon, Flag, Plus, Trash2 } from 'lucide-react';
+import { ComplianceEngine } from '../services/compliance/ComplianceEngine';
+import { ComplianceSeverity } from '../services/compliance/ComplianceTypes';
+import { CandidateService } from '../services/candidateService';
 
 interface ComplianceWidgetProps {
-    passport?: PassportData;
-    pcc?: PCCData;
-    stageData?: StageData;
-    onUpdate?: (data: { passport: Partial<PassportData>; pcc: Partial<PCCData> }) => void;
+    candidate: Candidate;
+    onUpdate?: (data: any) => void; // General update trigger
+    onRefresh?: () => void; // Trigger reload
 }
 
-const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ passport, pcc, stageData, onUpdate }) => {
-    const [isEditing, setIsEditing] = React.useState(false);
+const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ candidate, onUpdate, onRefresh }) => {
+    const passport = candidate.passportData;
+    const pcc = candidate.pccData;
+    const stageData = candidate.stageData;
 
-    // Form State
+    // Report
+    const report = ComplianceEngine.evaluateCandidate(candidate);
+    const score = report.scoreCard.overallScore;
+    const criticalIssues = report.results.filter(r => r.issue?.severity === ComplianceSeverity.CRITICAL);
+    const warningIssues = report.results.filter(r => r.issue?.severity === ComplianceSeverity.WARNING);
+
+    // State
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [showAddFlag, setShowAddFlag] = React.useState(false);
+    const [flagForm, setFlagForm] = React.useState({
+        type: 'BEHAVIORAL' as ComplianceFlag['type'],
+        severity: 'WARNING' as ComplianceFlag['severity'],
+        reason: ''
+    });
+
+    // Form State for Docs
     const [formData, setFormData] = React.useState({
         passportNumber: passport?.passportNumber || '',
         passportCountry: passport?.country || '',
@@ -40,6 +59,29 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ passport, pcc, stag
         setIsEditing(false);
     };
 
+    const handleAddFlag = async () => {
+        if (!flagForm.reason) return;
+        await CandidateService.addComplianceFlag(candidate.id, {
+            type: flagForm.type,
+            severity: flagForm.severity,
+            reason: flagForm.reason,
+            createdBy: 'User' // In real app, get current user
+        });
+        setShowAddFlag(false);
+        setFlagForm({ type: 'BEHAVIORAL', severity: 'WARNING', reason: '' });
+        if (onRefresh) onRefresh();
+        else if (onUpdate) onUpdate({});
+    };
+
+    const handleResolveFlag = async (flagId: string) => {
+        const notes = prompt("Enter resolution notes:");
+        if (notes) {
+            await CandidateService.resolveComplianceFlag(candidate.id, flagId, notes, 'User');
+            if (onRefresh) onRefresh();
+            else if (onUpdate) onUpdate({});
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'VALID': return 'bg-green-50 text-green-700 border-green-200';
@@ -62,90 +104,218 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ passport, pcc, stag
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                    <ShieldCheck className="text-blue-600" size={20} />
+                    <ShieldCheck className={score === 100 ? "text-green-600" : "text-blue-600"} size={20} />
                     <h3 className="font-bold text-slate-800">Compliance & Travel Docs</h3>
                 </div>
-                <button
-                    onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                    className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                    {isEditing ? 'Save Changes' : 'Edit Details'}
-                </button>
+                <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-bold uppercase text-slate-400">Score</span>
+                        <span className={`text-lg font-black ${score === 100 ? 'text-green-600' : score < 50 ? 'text-red-600' : 'text-amber-600'}`}>
+                            {score}%
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+                        className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                        {isEditing ? 'Save' : 'Edit'}
+                    </button>
+                    <button
+                        onClick={() => setShowAddFlag(!showAddFlag)}
+                        className="text-xs font-bold text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                    >
+                        <Flag size={12} /> Flag
+                    </button>
+                </div>
             </div>
 
+            {/* Flag Form */}
+            {showAddFlag && (
+                <div className="mb-4 bg-red-50 p-3 rounded-lg border border-red-100 animate-in fade-in slide-in-from-top-2">
+                    <h4 className="text-xs font-bold text-red-800 mb-2">Add Compliance Flag</h4>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                        <select
+                            value={flagForm.type}
+                            onChange={(e) => setFlagForm({ ...flagForm, type: e.target.value as any })}
+                            className="text-xs border-red-200 rounded"
+                        >
+                            <option value="LEGAL">Legal</option>
+                            <option value="MEDICAL">Medical</option>
+                            <option value="DOCUMENT">Document</option>
+                            <option value="BEHAVIORAL">Behavioral</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                        <select
+                            value={flagForm.severity}
+                            onChange={(e) => setFlagForm({ ...flagForm, severity: e.target.value as any })}
+                            className="text-xs border-red-200 rounded"
+                        >
+                            <option value="WARNING">Warning</option>
+                            <option value="CRITICAL">Critical (Blocker)</option>
+                        </select>
+                    </div>
+                    <textarea
+                        value={flagForm.reason}
+                        onChange={(e) => setFlagForm({ ...flagForm, reason: e.target.value })}
+                        placeholder="Reason for flagging..."
+                        className="w-full text-xs border-red-200 rounded mb-2 h-16"
+                    />
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => setShowAddFlag(false)} className="text-xs text-slate-500">Cancel</button>
+                        <button onClick={handleAddFlag} className="text-xs bg-red-600 text-white px-3 py-1 rounded font-bold">Add Flag</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Active Flags List */}
+            {candidate.complianceFlags && candidate.complianceFlags.some(f => !f.isResolved) && (
+                <div className="mb-4 space-y-2">
+                    {candidate.complianceFlags.filter(f => !f.isResolved).map(flag => (
+                        <div key={flag.id} className={`p-2 rounded-md border flex justify-between items-start ${flag.severity === 'CRITICAL' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                            <div className="flex gap-2">
+                                <Flag size={14} className={flag.severity === 'CRITICAL' ? 'text-red-600' : 'text-amber-600'} />
+                                <div>
+                                    <p className={`text-xs font-bold ${flag.severity === 'CRITICAL' ? 'text-red-800' : 'text-amber-800'}`}>
+                                        {flag.type} - {flag.severity}
+                                    </p>
+                                    <p className="text-xs text-slate-700">{flag.reason}</p>
+                                    <p className="text-[10px] text-slate-400 mt-1">By {flag.createdBy} on {new Date(flag.createdAt).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => handleResolveFlag(flag.id)}
+                                className="text-[10px] text-blue-600 hover:underline bg-white/50 px-2 py-1 rounded border border-blue-100"
+                            >
+                                Resolve
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Compliance Issues Summary */}
+            {(criticalIssues.length > 0 || warningIssues.length > 0) && (
+                <div className="mb-4 space-y-2">
+                    {criticalIssues.map((item, idx) => (
+                        <div key={`crit-${idx}`} className="bg-red-50 border border-red-100 p-2 rounded-md flex gap-2 items-start">
+                            <AlertOctagon size={14} className="text-red-600 mt-0.5" />
+                            <div>
+                                <p className="text-xs font-bold text-red-700">{item.issue?.message}</p>
+                                <p className="text-[10px] text-red-500">{item.issue?.remedy}</p>
+                            </div>
+                        </div>
+                    ))}
+                    {warningIssues.map((item, idx) => (
+                        <div key={`warn-${idx}`} className="bg-amber-50 border border-amber-100 p-2 rounded-md flex gap-2 items-start">
+                            <AlertTriangle size={14} className="text-amber-600 mt-0.5" />
+                            <p className="text-xs font-medium text-amber-700">{item.issue?.message}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ... Existing Passport/PCC/Medical Sections ... */}
             <div className="space-y-4">
                 {/* Passport Section */}
-                <div className={`p-4 rounded-lg border ${passport ? getStatusColor(passport.status) : 'bg-slate-50 border-slate-200 border-dashed'}`}>
-                    <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm uppercase tracking-wide">Passport</span>
-                            {passport && !isEditing && getStatusIcon(passport.status)}
+                {/* Check for multiple passports or single legacy passport */}
+                {(candidate.passports && candidate.passports.length > 0 ? candidate.passports : (passport ? [passport] : [])).map((ppt, idx) => (
+                    <div key={idx} className={`p-4 rounded-lg border mb-3 ${ppt ? getStatusColor(ppt.status) : 'bg-slate-50 border-slate-200 border-dashed'}`}>
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm uppercase tracking-wide">Passport {candidate.passports && candidate.passports.length > 1 ? `#${idx + 1}` : ''}</span>
+                                {ppt && !isEditing && getStatusIcon(ppt.status)}
+                            </div>
+                            {ppt && !isEditing && (
+                                <span className="text-xs font-bold px-2 py-0.5 bg-white/50 rounded-full border border-black/5">
+                                    {ppt.status}
+                                </span>
+                            )}
                         </div>
-                        {passport && !isEditing && (
-                            <span className="text-xs font-bold px-2 py-0.5 bg-white/50 rounded-full border border-black/5">
-                                {passport.status}
-                            </span>
-                        )}
-                    </div>
 
-                    {isEditing ? (
-                        <div className="space-y-3 mt-2">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-1">Passport Number</label>
-                                <input
-                                    type="text"
-                                    value={formData.passportNumber}
-                                    onChange={e => setFormData({ ...formData, passportNumber: e.target.value })}
-                                    className="w-full text-sm border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Enter Passport No."
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 mb-1">Issued Date</label>
-                                    <input
-                                        type="date"
-                                        value={formData.passportIssued}
-                                        onChange={e => setFormData({ ...formData, passportIssued: e.target.value })}
-                                        className="w-full text-sm border-slate-300 rounded-md"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 mb-1">Expiry Date</label>
-                                    <input
-                                        type="date"
-                                        value={formData.passportExpiry}
-                                        onChange={e => setFormData({ ...formData, passportExpiry: e.target.value })}
-                                        className="w-full text-sm border-slate-300 rounded-md"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        passport ? (
-                            <div className="text-sm space-y-1">
-                                <div className="flex justify-between">
-                                    <span className="opacity-75">Number:</span>
-                                    <span className="font-mono font-bold">{passport.passportNumber}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="opacity-75">Expiry:</span>
-                                    <span>{passport.expiryDate}</span>
-                                </div>
-                                <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5">
-                                    <span className="text-xs opacity-75">Validity:</span>
-                                    <span className={`font-bold ${passport.validityDays < 180 ? 'text-red-600' : 'text-green-700'}`}>
-                                        {passport.validityDays} days remaining
-                                    </span>
-                                </div>
+                        {isEditing ? (
+                            <div className="space-y-3 mt-2">
+                                {/* Simple single-edit mode for primary passport only (idx 0) for now to avoid complexity in widget */}
+                                {idx === 0 && (
+                                    <>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 mb-1">Passport Number</label>
+                                            <input
+                                                type="text"
+                                                value={formData.passportNumber}
+                                                onChange={e => setFormData({ ...formData, passportNumber: e.target.value })}
+                                                className="w-full text-sm border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                                placeholder="Enter Passport No."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 mb-1">Country</label>
+                                            <input
+                                                type="text"
+                                                value={formData.passportCountry}
+                                                onChange={e => setFormData({ ...formData, passportCountry: e.target.value })}
+                                                className="w-full text-sm border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 mb-1">Issued Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.passportIssued}
+                                                    onChange={e => setFormData({ ...formData, passportIssued: e.target.value })}
+                                                    className="w-full text-sm border-slate-300 rounded-md"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 mb-1">Expiry Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.passportExpiry}
+                                                    onChange={e => setFormData({ ...formData, passportExpiry: e.target.value })}
+                                                    className="w-full text-sm border-slate-300 rounded-md"
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                                {idx > 0 && <div className="text-xs text-slate-400 italic">Editing secondary passports is only available in full profile edit.</div>}
                             </div>
                         ) : (
-                            <div className="text-center py-2 text-slate-400 text-sm">
-                                No Passport Data Linked
-                            </div>
-                        )
-                    )}
-                </div>
+                            ppt ? (
+                                <div className="text-sm space-y-1">
+                                    <div className="flex justify-between">
+                                        <span className="opacity-75">Number:</span>
+                                        <span className="font-mono font-bold">{ppt.passportNumber}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="opacity-75">Country:</span>
+                                        <span>{ppt.country}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="opacity-75">Expiry:</span>
+                                        <span>{ppt.expiryDate}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5">
+                                        <span className="text-xs opacity-75">Validity:</span>
+                                        <span className={`font-bold ${ppt.validityDays < 180 ? 'text-red-600' : 'text-green-700'}`}>
+                                            {ppt.validityDays} days remaining
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-2 text-slate-400 text-sm">
+                                    No Passport Data Linked
+                                </div>
+                            )
+                        )}
+                    </div>
+                ))}
+
+                {(!candidate.passports || candidate.passports.length === 0) && !passport && (
+                    <div className="p-4 rounded-lg border bg-slate-50 border-slate-200 border-dashed text-center py-4 text-slate-400 text-sm">
+                        No Passport Data Linked
+                    </div>
+                )}
 
                 {/* PCC Section */}
                 <div className={`p-4 rounded-lg border ${pcc ? getStatusColor(pcc.status) : 'bg-slate-50 border-slate-200 border-dashed'}`}>

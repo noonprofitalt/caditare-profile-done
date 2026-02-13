@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Candidate, WorkflowStage, StageStatus, MedicalStatus, Country, JobRole, ProfileCompletionStatus, RegistrationSource } from '../types';
+import { Candidate, WorkflowStage, StageStatus, MedicalStatus, Country, JobRole, ProfileCompletionStatus, RegistrationSource, PassportData, PassportStatus, PCCStatus } from '../types';
 import { CandidateService } from '../services/candidateService';
 import { ComplianceService } from '../services/complianceService';
+import { WORKFLOW_STAGES } from '../services/workflowEngine.v2';
 import { ProfileCompletionService } from '../services/profileCompletionService';
-import { Plus, Trash2, Save, X, AlertCircle, CheckCircle, Calendar, FileEdit, TrendingUp } from 'lucide-react';
+import { NICService } from '../services/nicService';
+import { Plus, Trash2, Save, X, AlertCircle, CheckCircle, Calendar, FileEdit, TrendingUp, ShieldCheck, ShieldAlert } from 'lucide-react';
 import MultiSelect from './ui/MultiSelect';
+import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
+import MultiPhoneInput from './ui/MultiPhoneInput';
+import MultiEducationSelector from './ui/MultiEducationSelector';
+import MedicalStatusInput from './ui/MedicalStatusInput';
+import { TemplateService } from '../services/templateService';
+import { ProfileMergeService } from '../services/profileMergeService';
+import { NotificationService } from '../services/notificationService';
 import JobRoleEntry from './JobRoleEntry';
 
 const DigitalApplicationForm: React.FC = () => {
@@ -22,7 +31,9 @@ const DigitalApplicationForm: React.FC = () => {
         position: '',
 
         // Personal Details
-        name: '',
+        firstName: '',
+        middleName: '',
+        name: '', // Will be constructed
         address: '',
         nic: '',
         dob: '',
@@ -66,7 +77,7 @@ const DigitalApplicationForm: React.FC = () => {
         specialAchievements: '',
 
         // System defaults
-        stage: WorkflowStage.REGISTRATION,
+        stage: WorkflowStage.REGISTERED,
         stageStatus: StageStatus.PENDING,
         stageEnteredAt: new Date().toISOString(),
         avatarUrl: 'https://ui-avatars.com/api/?name=New+Applicant',
@@ -91,8 +102,8 @@ const DigitalApplicationForm: React.FC = () => {
         foreign: [{ position: '', companyName: '', country: '', years: 0 }]
     });
 
-    const [childrenRows, setChildrenRows] = useState([
-        { name: '', gender: 'M' as 'M' | 'F', age: 0 }
+    const [childrenRows, setChildrenRows] = useState<{ name: string; gender: 'M' | 'F'; age: number }[]>([
+        { name: '', gender: 'M', age: 0 }
     ]);
 
     // NEW: Job Roles State
@@ -109,13 +120,20 @@ const DigitalApplicationForm: React.FC = () => {
     // NEW: Medical Status State
     const [medicalStatus, setMedicalStatus] = useState<MedicalStatus>(MedicalStatus.NOT_STARTED);
     const [medicalScheduledDate, setMedicalScheduledDate] = useState('');
+    const [medicalCompletedDate, setMedicalCompletedDate] = useState('');
+    const [medicalBloodGroup, setMedicalBloodGroup] = useState('');
+    const [medicalAllergies, setMedicalAllergies] = useState('');
     const [medicalNotes, setMedicalNotes] = useState('');
 
-    // NEW: Passport Compliance State
-    const [passportNumber, setPassportNumber] = useState('');
-    const [passportIssuedDate, setPassportIssuedDate] = useState('');
-    const [passportExpiryDate, setPassportExpiryDate] = useState('');
-    const [passportCountry, setPassportCountry] = useState('Sri Lanka');
+    // NEW: Passport Compliance State (Multi-Passport)
+    const [passports, setPassports] = useState<PassportData[]>([{
+        passportNumber: '',
+        country: 'Sri Lanka',
+        issuedDate: '',
+        expiryDate: '',
+        status: PassportStatus.VALID,
+        validityDays: 0
+    }]);
 
     // NEW: PCC Tracking State
     const [pccIssuedDate, setPccIssuedDate] = useState('');
@@ -133,27 +151,42 @@ const DigitalApplicationForm: React.FC = () => {
                 setExistingCandidate(candidate);
 
                 // Pre-fill form data
-                setFormData(candidate);
+                setFormData({
+                    ...candidate,
+                    firstName: candidate.firstName || candidate.name.split(' ')[0],
+                    middleName: candidate.middleName || '',
+                    name: candidate.name, // Explicitly set Full Name
+                });
 
                 // Pre-fill additional states
                 if (candidate.education) setSelectedEducation(candidate.education);
                 if (candidate.preferredCountries) setPreferredCountries(candidate.preferredCountries);
-                if (candidate.jobRoles) setJobRoles(candidate.jobRoles);
+                if (candidate.jobRoles) {
+                    const mappedRoles: JobRole[] = candidate.jobRoles.map(r =>
+                        typeof r === 'string'
+                            ? { title: r, experienceYears: 0, skillLevel: 'Beginner' }
+                            : r
+                    );
+                    setJobRoles(mappedRoles);
+                }
                 if (candidate.additionalContactNumbers) setAdditionalContacts(candidate.additionalContactNumbers);
 
                 // Pre-fill medical status
                 if (candidate.stageData?.medicalStatus) {
                     setMedicalStatus(candidate.stageData.medicalStatus);
                     if (candidate.stageData.medicalScheduledDate) setMedicalScheduledDate(candidate.stageData.medicalScheduledDate);
+                    if (candidate.stageData.medicalCompletedDate) setMedicalCompletedDate(candidate.stageData.medicalCompletedDate);
                     if (candidate.stageData.medicalNotes) setMedicalNotes(candidate.stageData.medicalNotes);
+                    if (candidate.medicalData?.bloodGroup) setMedicalBloodGroup(candidate.medicalData.bloodGroup);
+                    if (candidate.medicalData?.allergies) setMedicalAllergies(candidate.medicalData.allergies);
                 }
 
                 // Pre-fill passport data
-                if (candidate.passportData) {
-                    setPassportNumber(candidate.passportData.passportNumber || '');
-                    setPassportIssuedDate(candidate.passportData.issuedDate || '');
-                    setPassportExpiryDate(candidate.passportData.expiryDate || '');
-                    setPassportCountry(candidate.passportData.country || 'Sri Lanka');
+                if (candidate.passports && candidate.passports.length > 0) {
+                    setPassports(candidate.passports);
+                } else if (candidate.passportData) {
+                    // Legacy migration
+                    setPassports([candidate.passportData]);
                 }
 
                 // Pre-fill PCC data
@@ -168,7 +201,9 @@ const DigitalApplicationForm: React.FC = () => {
                 }
                 if (candidate.employmentHistory && candidate.employmentHistory.length > 0) {
                     const local = candidate.employmentHistory.filter(e => e.type === 'Local');
-                    const foreign = candidate.employmentHistory.filter(e => e.type === 'Foreign');
+                    const foreign = candidate.employmentHistory
+                        .filter(e => e.type === 'Foreign')
+                        .map(e => ({ ...e, country: e.country || '' }));
                     setEmploymentRows({ local, foreign });
                 }
                 if (candidate.children && candidate.children.length > 0) {
@@ -178,9 +213,34 @@ const DigitalApplicationForm: React.FC = () => {
         }
     }, [upgradeId]);
 
+    // --- Workflow Guarding Helpers ---
+    const currentStageIndex = WORKFLOW_STAGES.indexOf(formData.stage || WorkflowStage.REGISTERED);
+    const isStageAtLeast = (stage: WorkflowStage) => {
+        return currentStageIndex >= WORKFLOW_STAGES.indexOf(stage);
+    };
+
+    const canEditPersonal = !isUpgradeMode || !isStageAtLeast(WorkflowStage.APPLIED);
+    const canEditCompliance = !isUpgradeMode || !isStageAtLeast(WorkflowStage.VISA_RECEIVED);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleInputChange = (field: string, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        const personalFields = ['firstName', 'middleName', 'name', 'nic', 'drivingLicenseNo', 'dob'];
+        if (personalFields.includes(field) && !canEditPersonal) return; // Guard
+
+        setFormData(prev => {
+            const updated = { ...prev, [field]: value };
+
+            // Smart NIC Parsing
+            if (field === 'nic') {
+                const parsed = NICService.parseNIC(value);
+                if (parsed) {
+                    updated.dob = parsed.dob;
+                    updated.gender = parsed.gender;
+                }
+            }
+
+            return updated;
+        });
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -236,20 +296,6 @@ const DigitalApplicationForm: React.FC = () => {
         setChildrenRows(childrenRows.filter((_, i) => i !== index));
     };
 
-    // Helper functions for additional contacts
-    const addContactNumber = () => {
-        setAdditionalContacts([...additionalContacts, '']);
-    };
-
-    const removeContactNumber = (index: number) => {
-        setAdditionalContacts(additionalContacts.filter((_, i) => i !== index));
-    };
-
-    const updateContactNumber = (index: number, value: string) => {
-        const updated = [...additionalContacts];
-        updated[index] = value;
-        setAdditionalContacts(updated);
-    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -260,26 +306,22 @@ const DigitalApplicationForm: React.FC = () => {
             ...employmentRows.foreign.map(row => ({ ...row, type: 'Foreign' as const }))
         ];
 
-        // Evaluate Passport Data
-        let passportData = undefined;
-        if (passportNumber && passportExpiryDate && passportIssuedDate) {
-            passportData = ComplianceService.evaluatePassport(
-                passportExpiryDate,
-                passportNumber,
-                passportCountry,
-                passportIssuedDate
-            );
-        }
-
-        // Evaluate PCC Data
-        let pccData = undefined;
-        if (pccIssuedDate) {
-            pccData = ComplianceService.evaluatePCC(pccIssuedDate, pccLastInspectionDate);
-        }
-
         // Create candidate data
+        // Priority: Recalculated from components > typed in name field
+        const compName = `${formData.firstName || ''} ${formData.middleName ? formData.middleName + ' ' : ''}`.trim();
+        const constructedName = compName || formData.name?.trim() || '';
+
+        // Construct PCC Data
+        const pccData = pccIssuedDate ? {
+            issuedDate: pccIssuedDate,
+            lastInspectionDate: pccLastInspectionDate,
+            status: PCCStatus.VALID, // Placeholder, will rely on backend/service to recalculate status
+            ageDays: 0 // Placeholder
+        } : undefined;
+
         const candidateData: Partial<Candidate> = {
             ...formData,
+            name: constructedName,
             educationalQualifications: educationRows,
             employmentHistory,
             children: childrenRows,
@@ -289,59 +331,45 @@ const DigitalApplicationForm: React.FC = () => {
             education: selectedEducation,
             jobRoles: jobRoles,
             additionalContactNumbers: additionalContacts,
-            passportData,
+            passports,
+            passportData: passports.length > 0 ? passports[0] : undefined, // Main passport for backward compat
             pccData,
             stageData: {
                 ...formData.stageData,
                 medicalStatus,
                 medicalScheduledDate: medicalStatus === MedicalStatus.SCHEDULED ? medicalScheduledDate : undefined,
+                medicalCompletedDate: medicalStatus === MedicalStatus.COMPLETED ? medicalCompletedDate : undefined,
                 medicalNotes: medicalNotes || undefined
+            },
+            medicalData: {
+                status: medicalStatus,
+                bloodGroup: medicalBloodGroup,
+                allergies: medicalAllergies,
+                notes: medicalNotes,
+                scheduledDate: medicalScheduledDate,
+                completedDate: medicalCompletedDate
             }
         };
 
         if (isUpgradeMode && existingCandidate) {
-            // UPGRADE MODE: Update existing candidate
-            const updatedCandidate: Candidate = {
-                ...existingCandidate,
-                ...candidateData,
-                id: existingCandidate.id,
-                // Preserve critical fields
-                stage: existingCandidate.stage,
-                stageStatus: existingCandidate.stageStatus,
-                stageEnteredAt: existingCandidate.stageEnteredAt,
-                workflowLogs: existingCandidate.workflowLogs,
-                comments: existingCandidate.comments,
-                timelineEvents: existingCandidate.timelineEvents,
-                documents: existingCandidate.documents,
-                avatarUrl: existingCandidate.avatarUrl
-            };
+            // UPGRADE MODE: Safely merge using the service
+            const updatedCandidate = ProfileMergeService.mergeProfiles(existingCandidate, candidateData);
 
-            // Update profile completion
-            const completionData = ProfileCompletionService.updateCompletionData(updatedCandidate);
-            const finalCandidate = { ...updatedCandidate, ...completionData };
-
-            // Add timeline event for profile upgrade
-            if (!finalCandidate.timelineEvents) finalCandidate.timelineEvents = [];
-            finalCandidate.timelineEvents.unshift({
-                id: `evt-upgrade-${Date.now()}`,
-                type: 'SYSTEM',
-                title: existingCandidate.profileCompletionStatus === ProfileCompletionStatus.QUICK
-                    ? 'Profile Upgraded from Quick Add'
-                    : 'Profile Completed',
-                description: `Profile completion updated from ${existingCandidate.profileCompletionPercentage}% to ${finalCandidate.profileCompletionPercentage}%`,
-                timestamp: new Date().toISOString(),
-                actor: 'Staff User',
-                stage: existingCandidate.stage
+            CandidateService.updateCandidate(updatedCandidate);
+            NotificationService.addNotification({
+                type: 'SUCCESS',
+                title: 'Profile Upgraded',
+                message: `${constructedName} has been upgraded to a full profile.`,
+                candidateId: existingCandidate.id
             });
 
-            CandidateService.updateCandidate(finalCandidate);
-            navigate(`/candidates/${finalCandidate.id}`);
+            navigate(`/candidates/${existingCandidate.id}`);
         } else {
             // NEW CANDIDATE MODE
             const newCandidate: Candidate = {
                 ...candidateData as Candidate,
                 id: `candidate-${Date.now()}`,
-                stage: WorkflowStage.REGISTRATION,
+                stage: WorkflowStage.REGISTERED,
                 stageStatus: StageStatus.PENDING,
                 stageEnteredAt: new Date().toISOString(),
                 avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateData.name || 'New Applicant')}`,
@@ -354,7 +382,7 @@ const DigitalApplicationForm: React.FC = () => {
                     description: 'Candidate registered via Digital Application Form.',
                     timestamp: new Date().toISOString(),
                     actor: 'Staff User',
-                    stage: WorkflowStage.REGISTRATION
+                    stage: WorkflowStage.REGISTERED
                 }],
                 documents: [],
                 registrationSource: RegistrationSource.FULL_FORM
@@ -419,37 +447,53 @@ const DigitalApplicationForm: React.FC = () => {
                     </div>
                 </div>
 
-                {/* UPGRADE MODE BANNER */}
-                {isUpgradeMode && existingCandidate && (
-                    <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <FileEdit size={24} />
-                                <div>
-                                    <h3 className="font-bold text-sm">
-                                        {existingCandidate.profileCompletionStatus === ProfileCompletionStatus.QUICK
-                                            ? 'Upgrading Quick Add Profile'
-                                            : 'Completing Profile Registration'}
-                                    </h3>
-                                    <p className="text-xs text-yellow-100">
-                                        {existingCandidate.name} • Current Completion: {existingCandidate.profileCompletionPercentage}%
-                                    </p>
+                {/* PROFILE COMPLETION BANNER */}
+                {(() => {
+                    const currentCompletion = ProfileCompletionService.calculateCompletionPercentage({
+                        ...formData,
+                        educationalQualifications: educationRows,
+                        employmentHistory: [
+                            ...employmentRows.local.map(row => ({ ...row, type: 'Local' as const })),
+                            ...employmentRows.foreign.map(row => ({ ...row, type: 'Foreign' as const }))
+                        ],
+                        children: childrenRows,
+                        education: selectedEducation,
+                        jobRoles: jobRoles,
+                        additionalContactNumbers: additionalContacts,
+                        passports,
+                        pccData: pccIssuedDate ? { issuedDate: pccIssuedDate, status: PCCStatus.VALID, ageDays: 0 } : undefined,
+                        stageData: { ...formData.stageData, medicalStatus }
+                    });
+
+                    return (
+                        <div className={`p-4 transition-colors duration-500 ${currentCompletion === 100 ? 'bg-green-600' : 'bg-gradient-to-r from-blue-600 to-blue-800'} text-white`}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    {currentCompletion === 100 ? <CheckCircle size={24} /> : <TrendingUp size={24} />}
+                                    <div>
+                                        <h3 className="font-bold text-sm uppercase tracking-wider">
+                                            {isUpgradeMode ? 'Upgrading Profile' : 'Application Progress'}
+                                        </h3>
+                                        <p className="text-xs text-blue-100 italic">
+                                            {currentCompletion}% Complete • {currentCompletion < 100 ? 'Keep going to reach 100%' : 'Excellent! Your profile is fully complete!'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="hidden md:block text-right">
+                                    <span className="text-[10px] uppercase font-black opacity-50 block">Profile Score</span>
+                                    <span className="text-xl font-black">{currentCompletion}/100</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <TrendingUp size={18} />
-                                <span className="text-xs font-bold">Fill in missing information below</span>
+                            {/* Progress Bar */}
+                            <div className="mt-3 w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-700 ease-out"
+                                    style={{ width: `${currentCompletion}%` }}
+                                />
                             </div>
                         </div>
-                        {/* Progress Bar */}
-                        <div className="mt-3 w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-white transition-all duration-500"
-                                style={{ width: `${existingCandidate.profileCompletionPercentage}%` }}
-                            />
-                        </div>
-                    </div>
-                )}
+                    );
+                })()}
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
                     {/* SECTION 1: PERSONAL DETAILS */}
@@ -460,107 +504,189 @@ const DigitalApplicationForm: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">First Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.firstName || ''}
+                                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Middle Name</label>
+                                <input
+                                    type="text"
+                                    value={formData.middleName || ''}
+                                    onChange={(e) => handleInputChange('middleName', e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
                                 <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Full Name *</label>
                                 <input
                                     type="text"
                                     required
-                                    value={formData.name}
+                                    value={formData.name || ''}
                                     onChange={(e) => handleInputChange('name', e.target.value)}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Enter full name exactly as it should appear"
                                 />
                             </div>
                         </div>
 
-                        {/* PASSPORT COMPLIANCE SECTION */}
+                        {/* PASSPORT COMPLIANCE SECTION - MULTI PASSPORT */}
                         <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                            <h3 className="text-sm font-black text-blue-800 uppercase mb-4 flex items-center gap-2">
-                                <CheckCircle size={18} />
-                                Passport Compliance
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport Number</label>
-                                    <input
-                                        type="text"
-                                        value={passportNumber}
-                                        onChange={(e) => setPassportNumber(e.target.value)}
-                                        placeholder="e.g., N1234567"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                        <ShieldCheck size={18} />
+                                        Passport Compliance
+                                    </h3>
+                                    {!canEditCompliance && (
+                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase border border-slate-200">
+                                            <ShieldAlert size={12} /> Read-only (Stage: {formData.stage})
+                                        </div>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport Country</label>
-                                    <input
-                                        type="text"
-                                        value={passportCountry}
-                                        onChange={(e) => setPassportCountry(e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Issued Date</label>
-                                    <input
-                                        type="date"
-                                        value={passportIssuedDate}
-                                        onChange={(e) => setPassportIssuedDate(e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Expiry Date</label>
-                                    <input
-                                        type="date"
-                                        value={passportExpiryDate}
-                                        onChange={(e) => setPassportExpiryDate(e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                            </div>
 
-                            {/* Auto-calculated Validity Status */}
-                            {passportNumber && passportExpiryDate && passportIssuedDate && (
-                                <div className="mt-4 p-3 bg-white rounded-lg border border-blue-100">
-                                    {(() => {
-                                        const passport = ComplianceService.evaluatePassport(
-                                            passportExpiryDate,
-                                            passportNumber,
-                                            passportCountry,
-                                            passportIssuedDate
-                                        );
-                                        return (
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-bold text-slate-600 uppercase">Validity Status:</span>
-                                                <div className="flex items-center gap-2">
-                                                    {passport.status === 'VALID' && (
-                                                        <>
-                                                            <CheckCircle size={16} className="text-green-600" />
-                                                            <span className="text-sm font-bold text-green-700">
-                                                                VALID ({passport.validityDays} days remaining)
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                    {passport.status === 'EXPIRING' && (
-                                                        <>
-                                                            <AlertCircle size={16} className="text-yellow-600" />
-                                                            <span className="text-sm font-bold text-yellow-700">
-                                                                EXPIRING SOON ({passport.validityDays} days)
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                    {passport.status === 'EXPIRED' && (
-                                                        <>
-                                                            <X size={16} className="text-red-600" />
-                                                            <span className="text-sm font-bold text-red-700">
-                                                                EXPIRED
-                                                            </span>
-                                                        </>
+                                <div className="space-y-4">
+                                    {passports.map((passport, idx) => (
+                                        <div key={idx} className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm relative group">
+                                            {idx > 0 && canEditCompliance && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPassports(passports.filter((_, i) => i !== idx))}
+                                                    className="absolute top-2 right-2 text-slate-400 hover:text-red-500 p-1"
+                                                    title="Remove Passport"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport Number</label>
+                                                    <input
+                                                        type="text"
+                                                        value={passport.passportNumber}
+                                                        onChange={(e) => {
+                                                            const updated = [...passports];
+                                                            updated[idx].passportNumber = e.target.value;
+                                                            setPassports(updated);
+                                                        }}
+                                                        readOnly={!canEditCompliance}
+                                                        placeholder="e.g., N1234567"
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport Country</label>
+                                                    <input
+                                                        type="text"
+                                                        value={passport.country}
+                                                        onChange={(e) => {
+                                                            const updated = [...passports];
+                                                            updated[idx].country = e.target.value;
+                                                            setPassports(updated);
+                                                        }}
+                                                        readOnly={!canEditCompliance}
+                                                        placeholder="e.g., Sri Lanka"
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Issued Date</label>
+                                                    <input
+                                                        type="date"
+                                                        value={passport.issuedDate ? new Date(passport.issuedDate).toISOString().split('T')[0] : ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...passports];
+                                                            updated[idx].issuedDate = e.target.value;
+                                                            setPassports(updated);
+                                                        }}
+                                                        readOnly={!canEditCompliance}
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Expiry Date</label>
+                                                    <input
+                                                        type="date"
+                                                        value={passport.expiryDate ? new Date(passport.expiryDate).toISOString().split('T')[0] : ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...passports];
+                                                            updated[idx].expiryDate = e.target.value;
+                                                            // Auto-evaluate status
+                                                            const evaluation = ComplianceService.evaluatePassport(
+                                                                e.target.value,
+                                                                passport.passportNumber,
+                                                                passport.country,
+                                                                passport.issuedDate
+                                                            );
+                                                            updated[idx].status = evaluation.status;
+                                                            updated[idx].validityDays = evaluation.validityDays;
+                                                            setPassports(updated);
+                                                        }}
+                                                        readOnly={!canEditCompliance}
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                    />
+                                                    {passport.expiryDate && (
+                                                        <div className={`mt-2 flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase w-fit ${passport.status === PassportStatus.VALID ? 'bg-green-50 text-green-700 border border-green-200' :
+                                                            passport.status === PassportStatus.EXPIRING ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                                                                'bg-red-50 text-red-700 border border-red-200'
+                                                            }`}>
+                                                            {passport.status === PassportStatus.VALID ? <ShieldCheck size={12} /> :
+                                                                passport.status === PassportStatus.EXPIRING ? <ShieldCheck size={12} className="text-yellow-500" /> :
+                                                                    <ShieldAlert size={12} />}
+                                                            {passport.status} • {passport.validityDays} Days Left
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
-                                        );
-                                    })()}
+
+                                            {/* Validity Status */}
+                                            {passport.passportNumber && passport.expiryDate && passport.issuedDate && (
+                                                <div className="mt-3 pt-3 border-t border-slate-100">
+                                                    {(() => {
+                                                        const status = ComplianceService.evaluatePassport(
+                                                            passport.expiryDate,
+                                                            passport.passportNumber,
+                                                            passport.country,
+                                                            passport.issuedDate
+                                                        );
+                                                        return (
+                                                            <div className="flex items-center gap-2 text-xs">
+                                                                <span className="font-bold text-slate-500">STATUS:</span>
+                                                                {status.status === 'VALID' ? (
+                                                                    <span className="text-green-600 font-bold flex items-center gap-1"><CheckCircle size={12} /> Valid ({status.validityDays} days)</span>
+                                                                ) : (
+                                                                    <span className="text-red-500 font-bold flex items-center gap-1"><AlertCircle size={12} /> Expired/Warning</span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setPassports([...passports, {
+                                            passportNumber: '',
+                                            country: 'Sri Lanka',
+                                            issuedDate: '',
+                                            expiryDate: '',
+                                            status: PassportStatus.VALID,
+                                            validityDays: 0
+                                        }])}
+                                        className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-bold flex items-center justify-center gap-2 mt-2 transition-colors border border-blue-200 border-dashed"
+                                    >
+                                        <Plus size={16} /> Add Another Passport
+                                    </button>
                                 </div>
-                            )}
+                            </div>
                         </div>
 
                         <div>
@@ -581,7 +707,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="text"
                                     value={formData.province}
                                     onChange={(e) => handleInputChange('province', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                             <div>
@@ -590,7 +717,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="text"
                                     value={formData.divisionalSecretariat}
                                     onChange={(e) => handleInputChange('divisionalSecretariat', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                             <div>
@@ -599,7 +727,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="text"
                                     value={formData.gsDivision}
                                     onChange={(e) => handleInputChange('gsDivision', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                             <div>
@@ -608,7 +737,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="text"
                                     value={formData.district}
                                     onChange={(e) => handleInputChange('district', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                         </div>
@@ -620,7 +750,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="text"
                                     value={formData.nic}
                                     onChange={(e) => handleInputChange('nic', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                             <div>
@@ -629,7 +760,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="text"
                                     value={formData.drivingLicenseNo}
                                     onChange={(e) => handleInputChange('drivingLicenseNo', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                             <div>
@@ -638,80 +770,30 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="date"
                                     value={formData.dob}
                                     onChange={(e) => handleInputChange('dob', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                         </div>
 
-                        {/* Contact Information - Dynamic */}
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Primary Phone */}
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-                                        Telephone Number *
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        required
-                                        value={formData.phone}
-                                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-
-                                {/* WhatsApp */}
-                                <div className="flex gap-2 items-end">
-                                    <div className="flex-1">
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-                                            WhatsApp Number *
-                                        </label>
-                                        <input
-                                            type="tel"
-                                            required
-                                            value={formData.whatsapp}
-                                            onChange={(e) => handleInputChange('whatsapp', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-
-                                    {/* Add Contact Button */}
-                                    <button
-                                        type="button"
-                                        onClick={addContactNumber}
-                                        className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1 border border-blue-200"
-                                        title="Add another contact number"
-                                    >
-                                        <Plus size={18} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Additional Contact Numbers */}
-                            {additionalContacts.map((contact, index) => (
-                                <div key={index} className="flex gap-2 items-end">
-                                    <div className="flex-1">
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                                            Secondary Phone {index > 0 ? `${index + 1}` : ''} (Optional)
-                                        </label>
-                                        <input
-                                            type="tel"
-                                            value={contact}
-                                            onChange={(e) => updateContactNumber(index, e.target.value)}
-                                            placeholder="Alternative number"
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeContactNumber(index)}
-                                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
-                                        title="Remove this contact number"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            ))}
+                        {/* Contact Information - Integrated Multi-Phone Input */}
+                        <div className="space-y-4">
+                            <MultiPhoneInput
+                                primaryPhone={formData.phone || ''}
+                                whatsappPhone={formData.whatsapp || ''}
+                                additionalPhones={additionalContacts}
+                                onPrimaryPhoneChange={(value) => {
+                                    handleInputChange('phone', value);
+                                    if (formData.whatsapp === formData.phone) {
+                                        handleInputChange('whatsapp', value);
+                                    }
+                                }}
+                                onWhatsappPhoneChange={(value) => handleInputChange('whatsapp', value)}
+                                onAdditionalPhonesChange={setAdditionalContacts}
+                                onDuplicateDetected={(phone, type) => {
+                                    console.log(`Duplicate detected: ${phone} (${type})`);
+                                }}
+                            />
 
                             {/* Email */}
                             <div>
@@ -721,6 +803,7 @@ const DigitalApplicationForm: React.FC = () => {
                                     value={formData.email}
                                     onChange={(e) => handleInputChange('email', e.target.value)}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="email@example.com"
                                 />
                             </div>
                         </div>
@@ -732,7 +815,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="number"
                                     value={formData.height?.feet || 0}
                                     onChange={(e) => handleNestedChange('height', 'feet', parseInt(e.target.value))}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                             <div>
@@ -741,7 +825,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="number"
                                     value={formData.height?.inches || 0}
                                     onChange={(e) => handleNestedChange('height', 'inches', parseInt(e.target.value))}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                             <div>
@@ -750,7 +835,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="number"
                                     value={formData.weight || 0}
                                     onChange={(e) => handleInputChange('weight', parseInt(e.target.value))}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                             <div>
@@ -759,7 +845,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="text"
                                     value={formData.religion}
                                     onChange={(e) => handleInputChange('religion', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                         </div>
@@ -770,7 +857,8 @@ const DigitalApplicationForm: React.FC = () => {
                                 <select
                                     value={formData.maritalStatus}
                                     onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    disabled={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 >
                                     <option value="Single">Single</option>
                                     <option value="Married">Married</option>
@@ -784,7 +872,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     type="text"
                                     value={formData.school}
                                     onChange={(e) => handleInputChange('school', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    readOnly={!canEditPersonal}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                 />
                             </div>
                         </div>
@@ -792,21 +881,28 @@ const DigitalApplicationForm: React.FC = () => {
 
                     {/* SECTION 1.5: MEDICAL STATUS WORKFLOW */}
                     <section className="space-y-4">
-                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-green-600 pb-2">
-                            Medical Status
-                        </h2>
+                        <div className="flex items-center justify-between border-b-2 border-green-600 pb-2">
+                            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
+                                Medical Status
+                            </h2>
+                            {!canEditCompliance && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase border border-slate-200">
+                                    <ShieldAlert size={12} /> Read-only (Stage: {formData.stage})
+                                </div>
+                            )}
+                        </div>
 
                         <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-                                        Medical Status *
+                                        Medical Status
                                     </label>
                                     <select
                                         value={medicalStatus}
                                         onChange={(e) => setMedicalStatus(e.target.value as MedicalStatus)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-medium"
-                                        required
+                                        disabled={!canEditCompliance}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                     >
                                         <option value={MedicalStatus.NOT_STARTED}>Not Started</option>
                                         <option value={MedicalStatus.SCHEDULED}>Scheduled</option>
@@ -814,22 +910,18 @@ const DigitalApplicationForm: React.FC = () => {
                                         <option value={MedicalStatus.FAILED}>Failed</option>
                                     </select>
                                 </div>
-
-                                {medicalStatus === MedicalStatus.SCHEDULED && (
-                                    <div className="animate-in fade-in slide-in-from-top-2">
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1 flex items-center gap-2">
-                                            <Calendar size={14} />
-                                            Scheduled Date *
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={medicalScheduledDate}
-                                            onChange={(e) => setMedicalScheduledDate(e.target.value)}
-                                            required
-                                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                        />
-                                    </div>
-                                )}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                        Scheduled Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={medicalScheduledDate}
+                                        onChange={(e) => setMedicalScheduledDate(e.target.value)}
+                                        readOnly={!canEditCompliance}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                    />
+                                </div>
                             </div>
 
                             <div className="mt-4">
@@ -849,9 +941,16 @@ const DigitalApplicationForm: React.FC = () => {
 
                     {/* SECTION 1.6: PCC TRACKING */}
                     <section className="space-y-4">
-                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-purple-600 pb-2">
-                            Police Clearance Certificate (PCC)
-                        </h2>
+                        <div className="flex items-center justify-between border-b-2 border-purple-600 pb-2">
+                            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
+                                Police Clearance Certificate (PCC)
+                            </h2>
+                            {!canEditCompliance && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase border border-slate-200">
+                                    <ShieldAlert size={12} /> Read-only (Stage: {formData.stage})
+                                </div>
+                            )}
+                        </div>
 
                         <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-xl">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -863,8 +962,23 @@ const DigitalApplicationForm: React.FC = () => {
                                         type="date"
                                         value={pccIssuedDate}
                                         onChange={(e) => setPccIssuedDate(e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                        readOnly={!canEditCompliance}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                     />
+                                    {pccIssuedDate && (() => {
+                                        const evaluation = ComplianceService.evaluatePCC(pccIssuedDate);
+                                        return (
+                                            <div className={`mt-2 flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase w-fit ${evaluation.status === PCCStatus.VALID ? 'bg-green-50 text-green-700 border border-green-200' :
+                                                evaluation.status === PCCStatus.EXPIRING ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                                                    'bg-red-50 text-red-700 border border-red-200'
+                                                }`}>
+                                                {evaluation.status === PCCStatus.VALID ? <ShieldCheck size={12} /> :
+                                                    evaluation.status === PCCStatus.EXPIRING ? <ShieldCheck size={12} className="text-yellow-500" /> :
+                                                        <ShieldAlert size={12} />}
+                                                {evaluation.status} • {evaluation.ageDays} Days Old
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
@@ -874,7 +988,8 @@ const DigitalApplicationForm: React.FC = () => {
                                         type="date"
                                         value={pccLastInspectionDate}
                                         onChange={(e) => setPccLastInspectionDate(e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                        readOnly={!canEditCompliance}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                     />
                                 </div>
                             </div>
@@ -927,14 +1042,20 @@ const DigitalApplicationForm: React.FC = () => {
                             Preferred Countries
                         </h2>
 
-                        <MultiSelect
-                            options={countryOptions}
-                            selected={preferredCountries}
-                            onChange={setPreferredCountries}
-                            label="Select Preferred Countries"
-                            placeholder="Choose countries..."
-                            searchPlaceholder="Search countries..."
-                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <PreferredCountriesSelector
+                                label="Europe Preferences"
+                                allowedRegions={['Europe']}
+                                selectedCountries={preferredCountries}
+                                onChange={setPreferredCountries}
+                            />
+                            <PreferredCountriesSelector
+                                label="Middle East (GCC) Preferences"
+                                allowedRegions={['Middle East (GCC)']}
+                                selectedCountries={preferredCountries}
+                                onChange={setPreferredCountries}
+                            />
+                        </div>
                     </section>
 
                     {/* SECTION 1.8: PROFESSIONAL JOB ROLES */}
@@ -957,13 +1078,10 @@ const DigitalApplicationForm: React.FC = () => {
 
                         {/* Education Multi-Select */}
                         <div className="mb-6">
-                            <MultiSelect
-                                options={educationOptions}
-                                selected={selectedEducation}
+                            <MultiEducationSelector
+                                selectedEducation={selectedEducation}
                                 onChange={setSelectedEducation}
-                                label="Highest Education Levels"
-                                placeholder="Select education levels..."
-                                searchPlaceholder="Search education levels..."
+                                required={true}
                             />
                         </div>
 
@@ -1001,7 +1119,7 @@ const DigitalApplicationForm: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {educationRows.map((row, index) => (
-                                        <tr key={index} className="border-t border-slate-100">
+                                        <tr key={`edu-${row.courseName || 'new'}-${row.year || 'year'}-${index}`} className="border-t border-slate-100">
                                             <td className="px-3 py-2 text-sm">{index + 1}</td>
                                             <td className="px-3 py-2">
                                                 <input
@@ -1092,7 +1210,7 @@ const DigitalApplicationForm: React.FC = () => {
                                     </thead>
                                     <tbody>
                                         {employmentRows.local.map((row, index) => (
-                                            <tr key={index} className="border-t border-slate-100">
+                                            <tr key={`local-${row.position || 'new'}-${row.companyName || 'company'}-${index}`} className="border-t border-slate-100">
                                                 <td className="px-3 py-2">
                                                     <input
                                                         type="text"
@@ -1165,7 +1283,7 @@ const DigitalApplicationForm: React.FC = () => {
                                     </thead>
                                     <tbody>
                                         {employmentRows.foreign.map((row, index) => (
-                                            <tr key={index} className="border-t border-slate-100">
+                                            <tr key={`foreign-${row.position || 'new'}-${row.country || 'country'}-${index}`} className="border-t border-slate-100">
                                                 <td className="px-3 py-2">
                                                     <input
                                                         type="text"
@@ -1341,7 +1459,7 @@ const DigitalApplicationForm: React.FC = () => {
                                     </thead>
                                     <tbody>
                                         {childrenRows.map((row, index) => (
-                                            <tr key={index} className="border-t border-slate-100">
+                                            <tr key={`child-${row.name || 'new'}-${row.age || 0}-${index}`} className="border-t border-slate-100">
                                                 <td className="px-3 py-2 text-sm">{index + 1}</td>
                                                 <td className="px-3 py-2">
                                                     <input
@@ -1403,6 +1521,30 @@ const DigitalApplicationForm: React.FC = () => {
                                 </button>
                             </div>
                         )}
+                    </section>
+
+                    {/* SECTION 5: MEDICAL INFORMATION */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-red-600 pb-2">
+                            Medical Information
+                        </h2>
+
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                            <MedicalStatusInput
+                                status={medicalStatus}
+                                scheduledDate={medicalScheduledDate}
+                                completedDate={medicalCompletedDate}
+                                bloodGroup={medicalBloodGroup}
+                                allergies={medicalAllergies}
+                                notes={medicalNotes}
+                                onStatusChange={setMedicalStatus}
+                                onScheduledDateChange={setMedicalScheduledDate}
+                                onCompletedDateChange={setMedicalCompletedDate}
+                                onBloodGroupChange={setMedicalBloodGroup}
+                                onAllergiesChange={setMedicalAllergies}
+                                onNotesChange={setMedicalNotes}
+                            />
+                        </div>
                     </section>
 
                     {/* OFFICE USE ONLY */}

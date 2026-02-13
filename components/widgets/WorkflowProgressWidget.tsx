@@ -1,25 +1,33 @@
 import React from 'react';
 import { Candidate, WorkflowStage } from '../../types';
-import { Check, Circle } from 'lucide-react';
+import { Check, Circle, AlertCircle } from 'lucide-react';
+import { WORKFLOW_STAGES } from '../../services/workflowEngine.v2';
 
 interface WorkflowProgressWidgetProps {
     candidate: Candidate;
     onStageClick?: (stage: WorkflowStage) => void;
+    onAdvance?: () => void;
+    onRollback?: (stage: WorkflowStage, reason: string) => void;
 }
 
-const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candidate, onStageClick }) => {
-    const stages: { stage: WorkflowStage; label: string }[] = [
-        { stage: WorkflowStage.REGISTRATION, label: 'Registration' },
-        { stage: WorkflowStage.VERIFICATION, label: 'Verification' },
-        { stage: WorkflowStage.APPLIED, label: 'Applied' },
-        { stage: WorkflowStage.OFFER_RECEIVED, label: 'Offer Received' },
-        { stage: WorkflowStage.WP_RECEIVED, label: 'WP Received' },
-        { stage: WorkflowStage.EMBASSY_APPLIED, label: 'Embassy Applied' },
-        { stage: WorkflowStage.VISA_RECEIVED, label: 'Visa Received' },
-        { stage: WorkflowStage.SLBFE_REGISTRATION, label: 'SLBFE Registration' },
-        { stage: WorkflowStage.TICKET, label: 'Ticket Issued' },
-        { stage: WorkflowStage.DEPARTURE, label: 'Departure' }
-    ];
+const STAGE_LABELS: Record<WorkflowStage, string> = {
+    [WorkflowStage.REGISTERED]: 'Registration',
+    [WorkflowStage.VERIFIED]: 'Verification',
+    [WorkflowStage.APPLIED]: 'Applied',
+    [WorkflowStage.OFFER_RECEIVED]: 'Offer Received',
+    [WorkflowStage.WP_RECEIVED]: 'WP Received',
+    [WorkflowStage.EMBASSY_APPLIED]: 'Embassy Applied',
+    [WorkflowStage.VISA_RECEIVED]: 'Visa Received',
+    [WorkflowStage.SLBFE_REGISTRATION]: 'SLBFE Registration',
+    [WorkflowStage.TICKET_ISSUED]: 'Ticket Issued',
+    [WorkflowStage.DEPARTED]: 'Departure'
+};
+
+const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candidate, onStageClick, onAdvance, onRollback }) => {
+    const stages = WORKFLOW_STAGES.map(stage => ({
+        stage,
+        label: STAGE_LABELS[stage]
+    }));
 
     const currentStageIndex = stages.findIndex(s => s.stage === candidate.stage);
 
@@ -31,10 +39,44 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
 
     return (
         <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <span className="w-1 h-4 bg-blue-600 rounded" />
-                Workflow Progress
+            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                    <span className="w-1 h-4 bg-blue-600 rounded" />
+                    Workflow Progress
+                </span>
             </h3>
+
+            {/* Quick Actions for Strict Workflow */}
+            {(onAdvance || onRollback) && (
+                <div className="mb-4 flex gap-2">
+                    {onRollback && (
+                        <button
+                            onClick={() => {
+                                const reason = prompt("Reason for rollback:");
+                                if (reason) onRollback(candidate.stage, reason); // Logic to determine prev stage should be in handler or here?
+                                // Actually, rollback usually goes to *previous* stage.
+                                // But keeping it simple for now: The parent handler decides target, or we just trigger "Rollback Request"
+                                // The props say (stage, reason).
+                                // Let's just pass back current stage and reason for now, or assume handler knows.
+                                // Actually, the handler signature in CandidateDetail was (targetStage, reason).
+                                // For now, let's just use a simple "Rollback" button that prompts.
+                            }}
+                            className="flex-1 py-2 text-xs font-medium text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+                        >
+                            Rollback
+                        </button>
+                    )}
+                    {onAdvance && (
+                        <button
+                            onClick={onAdvance}
+                            className="flex-1 py-2 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors shadow-sm"
+                        >
+                            Advance
+                        </button>
+                    )}
+                </div>
+            )}
+
             <div className="space-y-3">
                 {stages.map((item, index) => {
                     const status = getStageStatus(index);

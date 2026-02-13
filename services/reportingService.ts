@@ -1,6 +1,6 @@
 import { MOCK_CANDIDATES } from './mockData';
 import { Candidate, WorkflowStage, SystemSnapshot, BottleneckMetric, StaffPerformanceMetric } from '../types';
-import { SLA_CONFIG, STAGE_ORDER, getSLAStatus } from './workflowEngine';
+import { SLA_CONFIG, STAGE_ORDER, WorkflowEngine } from './workflowEngine';
 
 export class ReportingService {
 
@@ -25,11 +25,11 @@ export class ReportingService {
    */
   private static calculateKPIs(candidates: Candidate[]) {
     const total = candidates.length;
-    const completed = candidates.filter(c => c.stage === WorkflowStage.DEPARTURE).length;
+    const completed = candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length;
     const active = total - completed;
 
     // Critical Delays
-    const delays = candidates.filter(c => getSLAStatus(c).overdue).length;
+    const delays = candidates.filter(c => WorkflowEngine.calculateSLAStatus(c).status === 'OVERDUE').length;
 
     // Revenue Estimation (Sum of payment history + estimates)
     const revenue = candidates.reduce((sum, c) => {
@@ -56,7 +56,7 @@ export class ReportingService {
       const count = inStage.length;
 
       // Calculate Average Days in this stage for current candidates
-      const totalDays = inStage.reduce((sum, c) => sum + getSLAStatus(c).daysInStage, 0);
+      const totalDays = inStage.reduce((sum, c) => sum + WorkflowEngine.calculateSLAStatus(c).daysElapsed, 0);
       const avgDays = count > 0 ? Math.round(totalDays / count) : 0;
       const sla = SLA_CONFIG[stage];
 
@@ -192,7 +192,7 @@ export class ReportingService {
     ].join(",");
 
     const rows = candidates.map(c => {
-      const sla = getSLAStatus(c);
+      const sla = WorkflowEngine.calculateSLAStatus(c);
       const totalPaid = c.stageData.paymentHistory?.reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0;
       const lastEvent = c.timelineEvents[0]?.timestamp || c.stageEnteredAt;
 
@@ -208,8 +208,8 @@ export class ReportingService {
         safeLoc,
         c.stage,
         c.stageStatus,
-        sla.daysInStage,
-        sla.overdue ? "OVERDUE" : "On Track",
+        sla.daysElapsed,
+        sla.status === 'OVERDUE' ? "OVERDUE" : "On Track",
         c.stageData.employerStatus || "-",
         c.stageData.medicalStatus || "-",
         c.stageData.policeStatus || "-",

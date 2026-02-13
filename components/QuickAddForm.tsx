@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Country, JobRole } from '../types';
 import { CandidateService } from '../services/candidateService';
 import { DuplicateDetectionService } from '../services/duplicateDetectionService';
-import { Save, X, AlertCircle, UserPlus, Phone, MapPin, Briefcase, Globe, Plus, Trash2 } from 'lucide-react';
-import MultiSelect from './ui/MultiSelect';
+import { ProfileCompletionService } from '../services/profileCompletionService';
+import { NICService } from '../services/nicService';
+import { Save, X, AlertCircle, UserPlus, Phone, Briefcase, TrendingUp } from 'lucide-react';
+import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
+import MultiPhoneInput from './ui/MultiPhoneInput';
+
 
 const QuickAddForm: React.FC = () => {
     const navigate = useNavigate();
@@ -13,8 +16,12 @@ const QuickAddForm: React.FC = () => {
     const [duplicateFields, setDuplicateFields] = useState<string[]>([]);
 
     const [formData, setFormData] = useState({
+        firstName: '',
+        middleName: '',
         name: '',
         nic: '',
+        dob: '',
+        gender: '' as 'Male' | 'Female' | '',
         phone: '',
         whatsapp: '',
         email: '',
@@ -30,7 +37,21 @@ const QuickAddForm: React.FC = () => {
     // Handle input changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        setFormData(prev => {
+            const updated = { ...prev, [name]: value };
+
+            // Smart NIC Parsing
+            if (name === 'nic') {
+                const parsed = NICService.parseNIC(value);
+                if (parsed) {
+                    updated.dob = parsed.dob;
+                    updated.gender = parsed.gender;
+                }
+            }
+
+            return updated;
+        });
 
         // Clear error when user starts typing
         if (errors[name]) {
@@ -57,40 +78,16 @@ const QuickAddForm: React.FC = () => {
         }
     };
 
-    // Add additional contact number
-    const addContactNumber = () => {
-        setFormData(prev => ({
-            ...prev,
-            additionalContactNumbers: [...prev.additionalContactNumbers, '']
-        }));
-    };
-
-    // Remove additional contact number
-    const removeContactNumber = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            additionalContactNumbers: prev.additionalContactNumbers.filter((_, i) => i !== index)
-        }));
-    };
-
-    // Update additional contact number
-    const updateContactNumber = (index: number, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            additionalContactNumbers: prev.additionalContactNumbers.map((num, i) =>
-                i === index ? value : num
-            )
-        }));
-    };
-
     // Validate form
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
 
+        if (!formData.firstName.trim()) {
+            newErrors.firstName = 'First Name is required';
+        }
+
         if (!formData.name.trim()) {
             newErrors.name = 'Full name is required';
-        } else if (formData.name.trim().length < 3) {
-            newErrors.name = 'Name must be at least 3 characters';
         }
 
         if (!formData.nic.trim()) {
@@ -143,6 +140,8 @@ const QuickAddForm: React.FC = () => {
         try {
             const candidate = CandidateService.createQuickCandidate({
                 name: formData.name.trim(),
+                firstName: formData.firstName.trim(),
+                middleName: formData.middleName.trim(),
                 nic: formData.nic.trim().toUpperCase(),
                 phone: formData.phone.trim(),
                 whatsapp: formData.whatsapp.trim() || formData.phone.trim(),
@@ -175,6 +174,8 @@ const QuickAddForm: React.FC = () => {
         try {
             const candidate = CandidateService.createQuickCandidate({
                 name: formData.name.trim(),
+                firstName: formData.firstName.trim(),
+                middleName: formData.middleName.trim(),
                 nic: formData.nic.trim().toUpperCase(),
                 phone: formData.phone.trim(),
                 whatsapp: formData.whatsapp.trim() || formData.phone.trim(),
@@ -182,7 +183,9 @@ const QuickAddForm: React.FC = () => {
                 address: formData.address.trim(),
                 role: formData.role.trim(),
                 preferredCountries: formData.preferredCountries,
-                additionalContactNumbers: formData.additionalContactNumbers.filter(n => n.trim())
+                additionalContactNumbers: formData.additionalContactNumbers.filter(n => n.trim()),
+                dob: formData.dob,
+                gender: formData.gender
             });
 
             navigate(`/candidates/${candidate.id}`);
@@ -191,8 +194,6 @@ const QuickAddForm: React.FC = () => {
             alert('Failed to create candidate. Please try again.');
         }
     };
-
-    const countryOptions = Object.values(Country);
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -224,6 +225,36 @@ const QuickAddForm: React.FC = () => {
                 </div>
             </div>
 
+            {/* Profile Completion Gauge */}
+            {(() => {
+                const completionPercentage = ProfileCompletionService.calculateCompletionPercentage({
+                    ...formData,
+                    name: formData.name || `${formData.firstName} ${formData.middleName}`.trim()
+                });
+                return (
+                    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 mb-6">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <TrendingUp size={18} className="text-blue-600" />
+                                <span className="text-sm font-semibold text-slate-700">Profile Completion</span>
+                            </div>
+                            <span className="text-sm font-bold text-blue-600">{completionPercentage}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-blue-600 transition-all duration-500"
+                                style={{ width: `${completionPercentage}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2 italic">
+                            {completionPercentage < 100
+                                ? `Add more details to reach 100% completion.`
+                                : `Excellent! Profile is complete.`}
+                        </p>
+                    </div>
+                );
+            })()}
+
             {/* Form */}
             <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                 <div className="space-y-6">
@@ -234,20 +265,50 @@ const QuickAddForm: React.FC = () => {
                             Personal Information
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Full Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.name ? 'border-red-500' : 'border-slate-300'
-                                        }`}
-                                    placeholder="Enter full name"
-                                />
-                                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                            <div className="md:col-span-2 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                                            First Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="firstName"
+                                            value={formData.firstName}
+                                            onChange={handleChange}
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.firstName ? 'border-red-500' : 'border-slate-300'}`}
+                                            placeholder="First Name"
+                                        />
+                                        {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                                            Middle Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="middleName"
+                                            value={formData.middleName}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="Middle Name"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Full Name <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.name ? 'border-red-500' : 'border-slate-300'}`}
+                                        placeholder="Full Name"
+                                    />
+                                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                                </div>
                             </div>
 
                             <div>
@@ -264,6 +325,11 @@ const QuickAddForm: React.FC = () => {
                                         }`}
                                     placeholder="123456789V or 200012345678"
                                 />
+                                {formData.dob && (
+                                    <p className="text-green-600 text-[10px] font-bold mt-1 uppercase">
+                                        DOB: {formData.dob} • Gender: {formData.gender}
+                                    </p>
+                                )}
                                 {errors.nic && <p className="text-red-500 text-xs mt-1">{errors.nic}</p>}
                             </div>
 
@@ -297,80 +363,34 @@ const QuickAddForm: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Contact Information */}
+                    {/* Contact Information - Integrated Multi-Phone Input */}
                     <div>
                         <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                             <Phone size={20} className="text-slate-600" />
                             Contact Information
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Primary Phone <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    onBlur={() => handleBlur('phone')}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.phone ? 'border-red-500' : 'border-slate-300'
-                                        }`}
-                                    placeholder="+94771234567"
-                                />
-                                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    WhatsApp Number
-                                </label>
-                                <input
-                                    type="tel"
-                                    name="whatsapp"
-                                    value={formData.whatsapp}
-                                    onChange={handleChange}
-                                    onBlur={() => handleBlur('whatsapp')}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="+94771234567"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Additional Contact Numbers */}
-                        <div className="mt-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-sm font-medium text-slate-700">
-                                    Additional Contact Numbers
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={addContactNumber}
-                                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                                >
-                                    <Plus size={16} />
-                                    Add Number
-                                </button>
-                            </div>
-                            {formData.additionalContactNumbers.map((number, index) => (
-                                <div key={index} className="flex gap-2 mb-2">
-                                    <input
-                                        type="tel"
-                                        value={number}
-                                        onChange={(e) => updateContactNumber(index, e.target.value)}
-                                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="+94771234567"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeContactNumber(index)}
-                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                        <MultiPhoneInput
+                            primaryPhone={formData.phone}
+                            whatsappPhone={formData.whatsapp}
+                            additionalPhones={formData.additionalContactNumbers}
+                            onPrimaryPhoneChange={(value) => {
+                                setFormData(prev => ({ ...prev, phone: value }));
+                                if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                                handleBlur('phone');
+                            }}
+                            onWhatsappPhoneChange={(value) => {
+                                setFormData(prev => ({ ...prev, whatsapp: value }));
+                                handleBlur('whatsapp');
+                            }}
+                            onAdditionalPhonesChange={(phones) => setFormData(prev => ({ ...prev, additionalContactNumbers: phones }))}
+                            onDuplicateDetected={(phone, type) => {
+                                // The handleBlur logic already covers this if we trigger it, 
+                                // but we can also manually trigger the duplicate modal here if needed.
+                                console.log(`Duplicate detected: ${phone} (${type})`);
+                            }}
+                        />
+                        {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                     </div>
 
                     {/* Job Preferences */}
@@ -396,25 +416,23 @@ const QuickAddForm: React.FC = () => {
                                 {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Preferred Countries <span className="text-red-500">*</span>
-                                </label>
-                                <MultiSelect
-                                    options={countryOptions}
-                                    selected={formData.preferredCountries}
+                            <div className="md:col-span-2">
+                                <PreferredCountriesSelector
+                                    label="Preferred Countries"
+                                    selectedCountries={formData.preferredCountries}
                                     onChange={(countries) => {
                                         setFormData(prev => ({ ...prev, preferredCountries: countries }));
                                         if (errors.preferredCountries) {
                                             setErrors(prev => ({ ...prev, preferredCountries: '' }));
                                         }
                                     }}
-                                    placeholder="Select countries"
+                                    required={true}
                                 />
                                 {errors.preferredCountries && <p className="text-red-500 text-xs mt-1">{errors.preferredCountries}</p>}
                             </div>
                         </div>
                     </div>
+
 
                     {/* Notes */}
                     <div>

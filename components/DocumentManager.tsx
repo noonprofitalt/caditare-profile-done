@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Candidate, CandidateDocument, DocumentStatus, DocumentCategory, DocumentLog } from '../types';
+import { Candidate, CandidateDocument, DocumentStatus, DocumentCategory, DocumentLog, DocumentType as DocType } from '../types';
 import { NotificationService } from '../services/notificationService';
-import { UploadCloud, CheckCircle, AlertCircle, FileText, Clock, XCircle, Eye, Download, History, Lock, ShieldCheck } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, FileText, Clock, XCircle, Eye, Download, History, Lock, ShieldCheck, Maximize2 } from 'lucide-react';
+import DocumentPreviewer from './ui/DocumentPreviewer';
 
 interface DocumentManagerProps {
   candidate: Candidate;
@@ -33,45 +34,50 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(doc, e.dataTransfer.files[0]);
+      handleFileUpload(doc.type, doc.category, e.dataTransfer.files[0]);
     }
   };
 
-  const handleFileUpload = (doc: CandidateDocument, file: File) => {
-    // Mock upload process
+  const handleFileUpload = (type: DocType, category: DocumentCategory, file: File) => {
+    const existingDoc = candidate.documents?.find(d => d.type === type);
+
     const newLog: DocumentLog = {
-      // eslint-disable-next-line react-hooks/purity
       id: `log-${Date.now()}`,
       action: 'UPLOAD',
-      user: 'Admin User', // In real app, current user
-      timestamp: new Date().toLocaleString(),
-      details: `Uploaded v${doc.version + 1} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
+      user: 'Current User', // TODO: Use real user
+      timestamp: new Date().toISOString(),
+      details: `Uploaded v${(existingDoc?.version || 0) + 1} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
     };
 
     const updatedDoc: CandidateDocument = {
-      ...doc,
+      id: existingDoc?.id || `doc-${Date.now()}`,
+      type,
+      category,
       status: DocumentStatus.PENDING,
       url: URL.createObjectURL(file),
-      uploadedAt: new Date().toLocaleString(),
-      uploadedBy: 'Admin User',
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: 'Current User',
       fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
       fileType: file.type,
-      version: doc.version + 1,
-      logs: [newLog, ...doc.logs],
+      version: (existingDoc?.version || 0) + 1,
+      logs: [newLog, ...(existingDoc?.logs || [])],
       rejectionReason: undefined
     };
 
     updateDocumentInList(updatedDoc);
     setViewMode('list');
+    setSelectedDoc(null);
   };
 
   const handleVerification = (doc: CandidateDocument, status: DocumentStatus, reason?: string) => {
+    const action: DocumentLog['action'] = status === DocumentStatus.APPROVED ? 'APPROVE' :
+      status === DocumentStatus.REJECTED ? 'REJECT' : 'REQUEST_CORRECTION';
+
     const newLog: DocumentLog = {
-      // eslint-disable-next-line react-hooks/purity
       id: `log-${Date.now()}`,
-      action: status === DocumentStatus.APPROVED ? 'APPROVE' : status === DocumentStatus.REJECTED ? 'REJECT' : 'REQUEST_CORRECTION',
-      user: 'Admin User',
-      timestamp: new Date().toLocaleString(),
+      action,
+      user: 'Current User',
+      timestamp: new Date().toISOString(),
       details: reason ? `Reason: ${reason}` : undefined
     };
 
@@ -79,7 +85,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       ...doc,
       status,
       rejectionReason: reason,
-      logs: [newLog, ...doc.logs]
+      logs: [newLog, ...(doc.logs || [])]
     };
 
     if (status === DocumentStatus.REJECTED || status === DocumentStatus.CORRECTION_REQUIRED) {
@@ -97,7 +103,17 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   };
 
   const updateDocumentInList = (updatedDoc: CandidateDocument) => {
-    const newDocs = candidate.documents?.map(d => d.id === updatedDoc.id ? updatedDoc : d) || [];
+    const currentDocuments = candidate.documents || [];
+    const index = currentDocuments.findIndex(d => d.id === updatedDoc.id);
+
+    let newDocs: CandidateDocument[];
+    if (index !== -1) {
+      newDocs = [...currentDocuments];
+      newDocs[index] = updatedDoc;
+    } else {
+      newDocs = [...currentDocuments, updatedDoc];
+    }
+
     onUpdate(newDocs);
   };
 
@@ -145,7 +161,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
                 type="file"
                 id="file-upload"
                 className="hidden"
-                onChange={(e) => e.target.files && e.target.files[0] && handleFileUpload(selectedDoc, e.target.files[0])}
+                onChange={(e) => e.target.files && e.target.files[0] && handleFileUpload(selectedDoc.type, selectedDoc.category, e.target.files[0])}
                 accept=".pdf,.jpg,.png,.jpeg"
               />
               <label htmlFor="file-upload" className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 font-medium">
@@ -169,6 +185,20 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
         selectedDoc={selectedDoc}
         onClose={() => setSelectedDoc(null)}
         onVerify={handleVerification}
+      />
+    );
+  };
+
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; title: string; fileType?: string } | null>(null);
+
+  const renderPreviewer = () => {
+    if (!previewDoc) return null;
+    return (
+      <DocumentPreviewer
+        url={previewDoc.url}
+        title={previewDoc.title}
+        fileType={previewDoc.fileType}
+        onClose={() => setPreviewDoc(null)}
       />
     );
   };
@@ -247,8 +277,11 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
                           <p className="text-xs text-red-600 font-medium bg-red-50 p-1 rounded">Reason: {doc.rejectionReason}</p>
                         )}
                         <div className="flex items-center gap-3 mt-2">
+                          <button onClick={() => setPreviewDoc({ url: doc.url!, title: doc.type, fileType: doc.fileType })} className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                            <Maximize2 size={12} /> Preview
+                          </button>
                           <button onClick={() => { setSelectedDoc(doc); setViewMode('verify'); }} className="text-xs font-semibold text-slate-700 hover:text-blue-600 flex items-center gap-1">
-                            <Eye size={12} /> View
+                            <Eye size={12} /> Verify
                           </button>
                           <button onClick={() => { setSelectedDoc(doc); setViewMode('upload'); }} className="text-xs font-semibold text-slate-700 hover:text-blue-600 flex items-center gap-1">
                             <UploadCloud size={12} /> New Version
@@ -266,6 +299,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
 
       {viewMode === 'upload' && renderUploadModal()}
       {viewMode === 'verify' && renderVerifyModal()}
+      {renderPreviewer()}
     </div>
   );
 };
@@ -291,16 +325,31 @@ const VerifyModal: React.FC<VerifyModalProps> = ({ selectedDoc, onClose, onVerif
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* File Preview Mock */}
-          <div className="flex-1 bg-slate-800 flex items-center justify-center p-8">
-            <div className="bg-white p-8 rounded shadow-lg max-w-lg w-full text-center aspect-[3/4] flex flex-col items-center justify-center">
-              <FileText size={64} className="text-slate-300 mb-4" />
-              <p className="text-slate-500">Document Preview</p>
-              <p className="font-mono text-xs text-slate-400 mt-2">{selectedDoc.type}_v{selectedDoc.version}.pdf</p>
-              <button className="mt-6 text-blue-600 text-sm hover:underline flex items-center gap-1">
-                <Download size={14} /> Download Securely
-              </button>
-            </div>
+          <div className="flex-1 bg-slate-100 flex items-center justify-center p-8 overflow-auto">
+            {selectedDoc.url ? (
+              <div className="w-full h-full flex items-center justify-center">
+                {(selectedDoc.url.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) || selectedDoc.fileType?.startsWith('image/')) ? (
+                  <img
+                    src={selectedDoc.url}
+                    alt={selectedDoc.type}
+                    className="max-w-full max-h-full object-contain shadow-2xl rounded border border-slate-200"
+                  />
+                ) : (
+                  <iframe
+                    src={selectedDoc.url}
+                    title={selectedDoc.type}
+                    className="w-full h-full bg-white rounded shadow-2xl border border-slate-200"
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="bg-white p-8 rounded shadow-lg max-w-lg w-full text-center aspect-[3/4] flex flex-col items-center justify-center">
+                <FileText size={64} className="text-slate-300 mb-4" />
+                <p className="text-slate-500 font-medium">Digital Version Not Available</p>
+                <p className="text-slate-400 text-xs mt-2 max-w-[200px]">This document has been logged but the physical file hasn't been uploaded yet.</p>
+                <p className="font-mono text-[10px] text-slate-300 mt-4 uppercase tracking-wider">{selectedDoc.type}_v{selectedDoc.version}</p>
+              </div>
+            )}
           </div>
 
           {/* Actions Panel */}

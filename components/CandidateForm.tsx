@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Candidate, StageData, DocumentType, DocumentStatus, PaymentRecord, JobRole, Country } from '../types';
+import { Candidate, StageData, DocumentType, DocumentStatus, PaymentRecord, JobRole, Country, SLBFEData, BiometricStatus, PassportData, PassportStatus } from '../types';
 import { TemplateService } from '../services/templateService';
-import { X, Save, User, Briefcase, Globe, Activity, FileText, CreditCard, Plus, Trash2, ChevronDown, Check } from 'lucide-react';
+import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
+import { X, Save, User, Briefcase, Globe, Activity, FileText, CreditCard, Plus, Trash2, ChevronDown, Check, ShieldCheck } from 'lucide-react';
 
 interface CandidateFormProps {
   initialData?: Partial<Candidate>;
@@ -12,9 +13,9 @@ interface CandidateFormProps {
 
 const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, onClose, title }) => {
   // Safe defaults for controlled inputs
-  const splitName = initialData?.name ? initialData.name.split(' ') : ['', ''];
+  const splitName = initialData?.name ? initialData.name.split(' ') : ['', '', ''];
   const defaultFirstName = initialData?.firstName || splitName[0];
-  const defaultLastName = initialData?.lastName || splitName.slice(1).join(' ');
+  const defaultMiddleName = initialData?.middleName || (splitName.length > 1 ? splitName.slice(1).join(' ') : '');
 
   // Document Status Defaults
   const passportPhotosDoc = initialData?.documents?.find(d => d.type === DocumentType.PASSPORT_PHOTOS);
@@ -23,7 +24,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
   // Form State
   const [formData, setFormData] = useState({
     firstName: defaultFirstName,
-    lastName: defaultLastName,
+    middleName: defaultMiddleName,
     nic: initialData?.nic || '',
     dob: initialData?.dob || '',
     gender: initialData?.gender || '',
@@ -56,13 +57,27 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     passportPhotosStatus: passportPhotosDoc?.status || DocumentStatus.PENDING,
     fullPhotoStatus: fullPhotoDoc?.status || DocumentStatus.PENDING,
     targetCountry: initialData?.targetCountry || Country.SAUDI_ARABIA,
+
+    // SLBFE Data (Flattened for form, will reconstruct)
+    slbfeRegNo: initialData?.slbfeData?.registrationNumber || '',
+    slbfeRegDate: initialData?.slbfeData?.registrationDate || '',
+    trainingDate: initialData?.slbfeData?.trainingDate || '',
+    insurancePolicyNo: initialData?.slbfeData?.insurancePolicyNumber || '',
+    insuranceExpiryDate: initialData?.slbfeData?.insuranceExpiryDate || '',
+    biometricStatus: initialData?.slbfeData?.biometricStatus || BiometricStatus.PENDING,
+    familyConsentGiven: initialData?.slbfeData?.familyConsent?.isGiven || false,
+    agreementStatus: initialData?.slbfeData?.agreementStatus || 'Pending',
+    spouseName: initialData?.spouseName || '',
+    passports: initialData?.passports || [],
   });
 
   // Re-added missing states for JSX compatibility
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>(initialData?.stageData?.paymentHistory || []);
   const [newPayment, setNewPayment] = useState({ date: '', amount: '', notes: '' });
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(!!initialData?.secondaryPhone);
-  const [jobRoles, setJobRoles] = useState<JobRole[]>(initialData?.jobRoles || []);
+  const [jobRoles, setJobRoles] = useState<JobRole[]>(
+    (initialData?.jobRoles || []).map(r => typeof r === 'string' ? { title: r, experienceYears: 0, skillLevel: 'Skilled' } : r)
+  );
   const [newJobRole, setNewJobRole] = useState<JobRole>({ title: '', experienceYears: 0, skillLevel: 'Skilled', notes: '' });
   const [countrySearch, setCountrySearch] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
@@ -96,6 +111,38 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     setPaymentHistory(paymentHistory.filter(p => p.id !== id));
   };
 
+  const handleAddPassport = () => {
+    setFormData(prev => ({
+      ...prev,
+      passports: [
+        ...prev.passports,
+        {
+          passportNumber: '',
+          country: Country.SAUDI_ARABIA, // Default
+          issuedDate: '',
+          expiryDate: '',
+          status: PassportStatus.VALID,
+          validityDays: 0
+        }
+      ]
+    }));
+  };
+
+  const handleRemovePassport = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      passports: prev.passports.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handlePassportChange = (index: number, field: keyof PassportData, value: any) => {
+    setFormData(prev => {
+      const updatedPassports = [...prev.passports];
+      updatedPassports[index] = { ...updatedPassports[index], [field]: value };
+      return { ...prev, passports: updatedPassports };
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -125,16 +172,33 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
       });
     }
 
+    const slbfeDataUpdate: SLBFEData = {
+      ...initialData?.slbfeData,
+      registrationNumber: formData.slbfeRegNo,
+      registrationDate: formData.slbfeRegDate,
+      trainingDate: formData.trainingDate,
+      insurancePolicyNumber: formData.insurancePolicyNo,
+      insuranceExpiryDate: formData.insuranceExpiryDate,
+      biometricStatus: formData.biometricStatus as BiometricStatus,
+      familyConsent: {
+        ...initialData?.slbfeData?.familyConsent,
+        isGiven: formData.familyConsentGiven
+      },
+      agreementStatus: formData.agreementStatus as any
+    };
+
     const processedData = {
       ...formData,
       // Reconstruct main name and location for compatibility
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
+      name: `${formData.firstName} ${formData.middleName || ''}`.trim(),
       location: formData.city ? `${formData.city}, ${formData.address}` : formData.address,
 
       skills: formData.skills.split(',').map(s => s.trim()).filter(s => s),
       preferredCountries: formData.preferredCountries,
       jobRoles: jobRoles,
       stageData: stageDataUpdate,
+      slbfeData: slbfeDataUpdate,
+      passports: formData.passports, // Include passports in submission
       documents: updatedDocuments, // Pass updated docs back
     };
 
@@ -167,7 +231,8 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
             </h4>
 
             {/* Row 1: Name */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Row 1: Name */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700">First Name <span className="text-red-500">*</span></label>
                 <input
@@ -179,12 +244,11 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Last Name <span className="text-red-500">*</span></label>
+                <label className="text-sm font-semibold text-slate-700">Middle Name</label>
                 <input
-                  name="lastName"
-                  value={formData.lastName}
+                  name="middleName"
+                  value={formData.middleName}
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 />
               </div>
@@ -427,61 +491,34 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
               />
             </div>
-            <div className="space-y-1 relative">
-              <label className="text-sm font-semibold text-slate-700">Preferred Countries ({formData.preferredCountries.length})</label>
+            <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4">
+              Job & Preferences
+            </h4>
 
-              <div className="flex flex-wrap gap-2 mb-2">
-                {formData.preferredCountries.map(country => (
-                  <span key={country} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
-                    {country}
-                    <button type="button" onClick={() => setFormData(p => ({ ...p, preferredCountries: p.preferredCountries.filter(c => c !== country) }))}>
-                      <X size={12} className="hover:text-red-600" />
-                    </button>
-                  </span>
-                ))}
+            {/* Preferred Countries - Split Region */}
+            <div className="space-y-4 mb-6">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <h5 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                  <Globe size={14} className="text-purple-600" /> Europe Preferences
+                </h5>
+                <PreferredCountriesSelector
+                  label=""
+                  allowedRegions={['Europe']}
+                  selectedCountries={formData.preferredCountries}
+                  onChange={(countries) => setFormData(p => ({ ...p, preferredCountries: countries }))}
+                />
               </div>
 
-              <div className="relative">
-                <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                  <input
-                    type="text"
-                    placeholder="Select countries..."
-                    value={countrySearch}
-                    onChange={(e) => {
-                      setCountrySearch(e.target.value);
-                      setShowCountryDropdown(true);
-                    }}
-                    onFocus={() => setShowCountryDropdown(true)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none"
-                  />
-                </div>
-
-                {showCountryDropdown && (
-                  <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                    {TemplateService.getCountries()
-                      .filter(c => c.toLowerCase().includes(countrySearch.toLowerCase()) && !formData.preferredCountries.includes(c))
-                      .map(country => (
-                        <div
-                          key={country}
-                          onClick={() => {
-                            setFormData(p => ({ ...p, preferredCountries: [...p.preferredCountries, country] }));
-                            setCountrySearch('');
-                          }}
-                          className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-slate-700"
-                        >
-                          {country}
-                        </div>
-                      ))}
-                    {/* Click outside closer would be ideal, for now rely on selection or blur logic if refined */}
-                    <div
-                      className="px-4 py-2 text-xs text-slate-400 text-center border-t border-slate-100 cursor-pointer hover:bg-slate-50"
-                      onClick={() => setShowCountryDropdown(false)}
-                    >
-                      Close Dropdown
-                    </div>
-                  </div>
-                )}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <h5 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                  <Globe size={14} className="text-amber-600" /> Middle East (GCC) Preferences
+                </h5>
+                <PreferredCountriesSelector
+                  label=""
+                  allowedRegions={['Middle East (GCC)']}
+                  selectedCountries={formData.preferredCountries}
+                  onChange={(countries) => setFormData(p => ({ ...p, preferredCountries: countries }))}
+                />
               </div>
             </div>
 
@@ -492,7 +529,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
               </h5>
 
               {jobRoles.map((role, idx) => (
-                <div key={idx} className="flex gap-2 items-start bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div key={`role-${role.title}-${role.experienceYears}-${idx}`} className="flex gap-2 items-start bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <div className="grid grid-cols-12 gap-2 flex-1">
                     <div className="col-span-4">
                       <span className="text-xs font-semibold text-slate-500 block">Title</span>
@@ -622,6 +659,88 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                     <option key={status} value={status}>{status}</option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            {/* Passports Section */}
+            <div className="mt-6 pt-4 border-t border-slate-100">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                  Valid Passports <ShieldCheck size={14} className="text-emerald-600" />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddPassport}
+                  className="text-white bg-blue-600 hover:bg-blue-700 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 font-bold transition-colors"
+                >
+                  <Plus size={14} /> Add Passport
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {formData.passports && formData.passports.length > 0 ? (
+                  formData.passports.map((passport, idx) => (
+                    <div key={idx} className="bg-slate-50 p-3 rounded-lg border border-slate-200 relative group">
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePassport(idx)}
+                        className="absolute top-2 right-2 text-slate-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div className="md:col-span-3">
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Passport No</label>
+                          <input
+                            value={passport.passportNumber}
+                            onChange={(e) => handlePassportChange(idx, 'passportNumber', e.target.value)}
+                            placeholder="N/A"
+                            className="w-full px-2 py-1.5 text-sm bg-white border border-slate-200 rounded outline-none focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="md:col-span-3">
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Country</label>
+                          <select
+                            value={passport.country}
+                            onChange={(e) => handlePassportChange(idx, 'country', e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm bg-white border border-slate-200 rounded outline-none focus:border-blue-500"
+                          >
+                            {TemplateService.getCountries().map(c => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="md:col-span-3">
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Issued Date</label>
+                          <input
+                            type="date"
+                            value={passport.issuedDate ? new Date(passport.issuedDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => handlePassportChange(idx, 'issuedDate', e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm bg-white border border-slate-200 rounded outline-none focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="md:col-span-3">
+                          <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Expiry Date</label>
+                          <input
+                            type="date"
+                            value={passport.expiryDate ? new Date(passport.expiryDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => handlePassportChange(idx, 'expiryDate', e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm bg-white border border-slate-200 rounded outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center p-6 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                    <Globe size={24} className="mx-auto text-slate-300 mb-2" />
+                    <p className="text-xs text-slate-500 mb-3">No passport details added.</p>
+                    <button type="button" onClick={handleAddPassport} className="text-blue-600 font-semibold text-xs hover:underline">
+                      Add Primary Passport
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -822,6 +941,214 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* SLBFE COMPLIANCE SECTION */}
+          <div className="pt-2">
+            <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
+              SLBFE Compliance <ShieldCheck size={12} />
+            </h4>
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Registration */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">SLBFE Registration No</label>
+                <input
+                  name="slbfeRegNo"
+                  value={formData.slbfeRegNo}
+                  onChange={handleChange}
+                  placeholder="e.g. SLBFE/2026/XXXX"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Registration Date</label>
+                <input
+                  type="date"
+                  name="slbfeRegDate"
+                  value={formData.slbfeRegDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              {/* Training & Insurance */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Training Completion Date</label>
+                <input
+                  type="date"
+                  name="trainingDate"
+                  value={formData.trainingDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Insurance Policy No</label>
+                <input
+                  name="insurancePolicyNo"
+                  value={formData.insurancePolicyNo}
+                  onChange={handleChange}
+                  placeholder="Policy Number"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Insurance Expiry Date</label>
+                <input
+                  type="date"
+                  name="insuranceExpiryDate"
+                  value={formData.insuranceExpiryDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              {/* Biometrics */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Biometric Status</label>
+                <select
+                  name="biometricStatus"
+                  value={formData.biometricStatus}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                >
+                  {Object.values(BiometricStatus).map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Family Consent (Checkbox style) */}
+              <div className="col-span-2 pt-2 border-t border-slate-200 mt-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="familyConsentGiven"
+                    checked={formData.familyConsentGiven}
+                    onChange={e => setFormData(p => ({ ...p, familyConsentGiven: e.target.checked }))}
+                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                  />
+                  <div>
+                    <label htmlFor="familyConsentGiven" className="text-sm font-bold text-slate-700 block cursor-pointer">Family Consent Verified</label>
+                    <p className="text-xs text-slate-500">Required for female candidates in domestic sector roles.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+
+          {/* SLBFE COMPLIANCE SECTION */}
+          <div className="pt-2">
+            <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
+              SLBFE Compliance <ShieldCheck size={12} />
+            </h4>
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Registration */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">SLBFE Registration No</label>
+                <input
+                  name="slbfeRegNo"
+                  value={formData.slbfeRegNo}
+                  onChange={handleChange}
+                  placeholder="e.g. SLBFE/2026/XXXX"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Registration Date</label>
+                <input
+                  type="date"
+                  name="slbfeRegDate"
+                  value={formData.slbfeRegDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              {/* Training & Insurance */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Training Completion Date</label>
+                <input
+                  type="date"
+                  name="trainingDate"
+                  value={formData.trainingDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Insurance Policy No</label>
+                <input
+                  name="insurancePolicyNo"
+                  value={formData.insurancePolicyNo}
+                  onChange={handleChange}
+                  placeholder="Policy Number"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Insurance Expiry Date</label>
+                <input
+                  type="date"
+                  name="insuranceExpiryDate"
+                  value={formData.insuranceExpiryDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              {/* Biometrics */}
+              {/* Biometrics & Agreement */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Biometric Status</label>
+                <select
+                  name="biometricStatus"
+                  value={formData.biometricStatus}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                >
+                  {Object.values(BiometricStatus).map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Agreement Status</label>
+                <select
+                  name="agreementStatus"
+                  value={formData.agreementStatus}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                >
+                  {['Pending', 'Submitted', 'Approved', 'Rejected'].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Family Consent (Checkbox style) */}
+              <div className="col-span-2 pt-2 border-t border-slate-200 mt-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="familyConsentGiven"
+                    checked={formData.familyConsentGiven}
+                    onChange={e => setFormData(p => ({ ...p, familyConsentGiven: e.target.checked }))}
+                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                  />
+                  <div>
+                    <label htmlFor="familyConsentGiven" className="text-sm font-bold text-slate-700 block cursor-pointer">Family Consent Verified</label>
+                    <p className="text-xs text-slate-500">Required for female candidates in domestic sector roles.</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 

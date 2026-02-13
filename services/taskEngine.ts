@@ -1,5 +1,5 @@
 import { Candidate, WorkTask, SystemAlert, WorkflowStage, StageStatus, DocumentStatus, PassportStatus, PCCStatus } from '../types';
-import { getSLAStatus } from './workflowEngine';
+import { WorkflowEngine } from './workflowEngine';
 
 export class TaskEngine {
 
@@ -10,14 +10,47 @@ export class TaskEngine {
     const tasks: WorkTask[] = [];
 
     candidates.forEach(c => {
-      const sla = getSLAStatus(c);
+      const sla = WorkflowEngine.calculateSLAStatus(c);
+      // 0. CRITICAL: Compliance Flags (New)
+      const criticalFlags = c.complianceFlags?.filter(f => !f.isResolved && f.severity === 'CRITICAL') || [];
+      if (criticalFlags.length > 0) {
+        tasks.push({
+          id: `task-flag-crit-${c.id}`,
+          title: 'Critical Compliance Issue',
+          description: `Blocking Issue: ${criticalFlags[0].reason}`,
+          priority: 'Critical',
+          candidateId: c.id,
+          candidateName: c.name,
+          stage: c.stage,
+          dueDate: 'Immediate',
+          actionLabel: 'Resolve Flag',
+          type: 'ISSUE'
+        });
+      }
+
+      // 0.5. MEDIUM: Compliance Warnings (New)
+      const warningFlags = c.complianceFlags?.filter(f => !f.isResolved && f.severity === 'WARNING') || [];
+      if (warningFlags.length > 0) {
+        tasks.push({
+          id: `task-flag-warn-${c.id}`,
+          title: 'Compliance Warning',
+          description: `Warning: ${warningFlags[0].reason}`,
+          priority: 'Medium',
+          candidateId: c.id,
+          candidateName: c.name,
+          stage: c.stage,
+          dueDate: 'This Week',
+          actionLabel: 'Review',
+          type: 'ISSUE'
+        });
+      }
 
       // 1. CRITICAL: SLA Breaches
-      if (sla.overdue) {
+      if (sla.status === 'OVERDUE') {
         tasks.push({
           id: `task-sla-${c.id}`,
           title: `SLA Breach: ${c.stage}`,
-          description: `Candidate stuck in ${c.stage} for ${sla.daysInStage} days. Immediate action required.`,
+          description: `Candidate stuck in ${c.stage} for ${sla.daysElapsed} days. Immediate action required.`,
           priority: 'Critical',
           candidateId: c.id,
           candidateName: c.name,
@@ -29,7 +62,7 @@ export class TaskEngine {
       }
 
       // 2. HIGH: Pending Verifications
-      if (c.stage === WorkflowStage.VERIFICATION && c.stageStatus === StageStatus.PENDING) {
+      if (c.stage === WorkflowStage.VERIFIED && c.stageStatus === StageStatus.PENDING) {
         tasks.push({
           id: `task-verify-${c.id}`,
           title: 'Verify Documents',
@@ -45,7 +78,7 @@ export class TaskEngine {
       }
 
       // 3. HIGH: Payment Due (Mock logic for Ticket stage)
-      if (c.stage === WorkflowStage.TICKET && c.stageData.paymentStatus !== 'Completed') {
+      if (c.stage === WorkflowStage.TICKET_ISSUED && c.stageData.paymentStatus !== 'Completed') {
         tasks.push({
           id: `task-pay-${c.id}`,
           title: 'Collect Final Payment',
@@ -106,7 +139,7 @@ export class TaskEngine {
     const alerts: SystemAlert[] = [];
 
     // SLA Alert
-    const overdueCount = candidates.filter(c => getSLAStatus(c).overdue).length;
+    const overdueCount = candidates.filter(c => WorkflowEngine.calculateSLAStatus(c).status === 'OVERDUE').length;
     if (overdueCount > 0) {
       alerts.push({
         id: 'alert-sla',
@@ -118,7 +151,7 @@ export class TaskEngine {
     }
 
     // Pending Reg
-    const newReg = candidates.filter(c => c.stage === WorkflowStage.REGISTRATION && c.stageStatus === StageStatus.PENDING).length;
+    const newReg = candidates.filter(c => c.stage === WorkflowStage.REGISTERED && c.stageStatus === StageStatus.PENDING).length;
     if (newReg > 0) {
       alerts.push({
         id: 'alert-new',
@@ -128,8 +161,6 @@ export class TaskEngine {
         count: newReg
       });
     }
-
-    return alerts;
 
     // Compliance Alerts
     const expiringPassports = candidates.filter(c => c.passportData?.status === PassportStatus.EXPIRING).length;
@@ -165,5 +196,7 @@ export class TaskEngine {
         count: expiredPCCs
       });
     }
+
+    return alerts;
   }
 }

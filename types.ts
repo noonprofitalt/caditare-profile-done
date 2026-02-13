@@ -6,16 +6,16 @@ export enum JobStatus {
 
 // Replaced old CandidateStatus with WorkflowStage
 export enum WorkflowStage {
-  REGISTRATION = 'Registered',
-  VERIFICATION = 'Verified',
+  REGISTERED = 'Registered',
+  VERIFIED = 'Verified',
   APPLIED = 'Applied',
   OFFER_RECEIVED = 'Offer Received',
   WP_RECEIVED = 'WP Received',
   EMBASSY_APPLIED = 'Embassy Applied',
   VISA_RECEIVED = 'Visa Received',
   SLBFE_REGISTRATION = 'SLBFE Registration',
-  TICKET = 'Ticket Issued',
-  DEPARTURE = 'Departed',
+  TICKET_ISSUED = 'Ticket Issued',
+  DEPARTED = 'Departed',
 }
 
 export enum Country {
@@ -140,16 +140,13 @@ export interface TimelineEvent {
   id: string;
   type: TimelineEventType;
   title: string;
-  description?: string;
+  description: string;
   timestamp: string; // ISO String 
   actor: string; // Name of staff or 'System'
-  stage: WorkflowStage; // Stage context when event happened
-  metadata?: {
-    oldStatus?: string;
-    newStatus?: string;
-    fileUrl?: string;
-    isCritical?: boolean; // For delays/alerts
-  };
+  isCritical?: boolean; // For delays/alerts
+  stage?: WorkflowStage; // Stage context when event happened
+  // Metadata for advanced tracking (e.g. rollback reason, error details)
+  metadata?: Record<string, any>;
 }
 
 export interface WorkflowLog {
@@ -197,68 +194,112 @@ export interface JobRole {
   notes?: string;
 }
 
-export interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  secondaryPhone?: string;
-  additionalContactNumbers?: string[]; // Dynamic contact numbers from Quick Add/Full Form
-  role: string;
-  experienceYears: number;
-  skills: string[];
+// Enhanced SLBFE Data Model
+export enum BiometricStatus {
+  PENDING = 'Pending',
+  SCHEDULED = 'Scheduled',
+  COMPLETED = 'Completed',
+  FAILED = 'Failed'
+}
 
-  // Profile Completion Tracking (Dual-Form System)
-  profileCompletionStatus: ProfileCompletionStatus;
-  registrationSource: RegistrationSource;
-  profileCompletionPercentage: number; // 0-100
+export interface FamilyConsent {
+  isGiven: boolean;
+  signatoryName?: string; // Spouse/Parent
+  signatoryRelation?: string;
+  verifiedBy?: string; // GN officer or DS officer name
+  verificationDate?: string;
+  documentUrl?: string; // Uploaded consent form
+}
 
-  // Extended Personal Profile
+export interface SLBFEData {
+  registrationNumber?: string;
+  registrationDate?: string;
+
+  // Training
+  trainingDate?: string;
+  trainingInstitute?: string;
+  trainingCertificateNo?: string;
+
+  // Insurance
+  insuranceProvider?: string;
+  insurancePolicyNumber?: string;
+  insuranceExpiryDate?: string;
+  insurancePremium?: number;
+
+  // New Mandatory Requirements
+  biometricStatus: BiometricStatus;
+  familyConsent: FamilyConsent;
+
+  // Agreement & Workflow
+  jobOrderId?: string; // Linked Job Order at SLBFE
+  agreementId?: string; // Linked Agreement ID
+  agreementStatus: 'Pending' | 'Submitted' | 'Approved' | 'Rejected';
+
+  // Final Authorization
+  deploymentApprovalDate?: string;
+}
+
+export interface StageHistoryEntry {
+  stage: WorkflowStage;
+  timestamp: string | Date;
+  userId?: string;
+  notes?: string;
+}
+
+export interface PersonalInfo {
+  fullName: string;
   firstName?: string;
-  lastName?: string;
+  middleName?: string;
   nic?: string;
   dob?: string;
+  age?: number;
   gender?: string;
-  whatsapp?: string;
-  address?: string;
-  city?: string;
-  education?: string[];
-
-  // Application Form Specific Fields
-  refNo?: string; // Application Reference Number
-  country?: string; // Target country
-  targetCountry?: Country;
-  position?: string; // Desired position
-  religion?: string;
   maritalStatus?: 'Single' | 'Married' | 'Divorced' | 'Widowed';
-  drivingLicenseNo?: string;
-  height?: { feet: number; inches: number };
-  weight?: number; // in KG
-  school?: string;
-
-  // Administrative Divisions
+  religion?: string;
   gsDivision?: string;
   divisionalSecretariat?: string;
+  address?: string;
+  city?: string;
   district?: string;
   province?: string;
-
-  // Family Information
-  spouseName?: string;
+  nationality?: string;
+  drivingLicenseNo?: string;
+  height?: { feet: number; inches: number };
+  weight?: number;
+  children?: any[];
   fatherName?: string;
   motherName?: string;
-  guardianName?: string;
-  guardianRelation?: string;
-  guardianContact?: string;
-  guardianIdNo?: string;
-  guardianBirthday?: string;
-  numberOfChildren?: number;
-  children?: Array<{
-    name: string;
-    gender: 'M' | 'F';
-    age: number;
-  }>;
+  spouseName?: string;
+  school?: string;
+  civilStatus?: string;
+}
 
-  // Employment History
+export interface EmergencyContact {
+  name: string;
+  relation: string;
+  phone: string;
+  address?: string;
+}
+
+export interface ContactInfo {
+  primaryPhone: string;
+  whatsappPhone?: string;
+  additionalPhones?: string[];
+  email: string;
+  emergencyContact?: EmergencyContact;
+}
+
+export interface ProfessionalProfile {
+  jobRoles: (string | JobRole)[];
+  experienceYears: number;
+  skills: string[];
+  education: string[];
+  educationalQualifications?: Array<{
+    courseName: string;
+    level: string;
+    institute: string;
+    year: string;
+  }>;
   employmentHistory?: Array<{
     type: 'Local' | 'Foreign';
     position: string;
@@ -266,52 +307,139 @@ export interface Candidate {
     country?: string;
     years: number;
   }>;
-
-  // Educational Qualifications (detailed)
-  educationalQualifications?: Array<{
-    courseName: string;
-    level: string; // NVQ/SLQF level
-    institute: string;
-    year: string;
-  }>;
-  gceOL?: { year: string };
-  gceAL?: { year: string };
-
-  // Training & Achievements
   trainingDetails?: string;
   specialAchievements?: string;
+  gceOL?: { year: string };
+  gceAL?: { year: string };
+  school?: string;
+}
 
-  // Office Use Only
-  officeSelection?: 'Select' | 'Reject';
-  officeRemark?: string;
-  customerCareOfficer?: string;
-  fileHandlingOfficer?: string;
-  charges?: string;
+export interface MedicalRecord {
+  date: string;
+  type: string;
+  result: string;
+  notes?: string;
+  clinic?: string;
+  reportUrl?: string;
+}
 
-  // Application Metadata
-  applicationDate?: string;
-  signature?: string; // Could be a data URL for signature image
+export interface MedicalData {
+  status: MedicalStatus;
+  bloodGroup?: string;
+  allergies?: string;
+  scheduledDate?: string;
+  completedDate?: string;
+  notes?: string;
+  medicalRecords?: MedicalRecord[];
+}
 
-  // Workflow Core
+export interface AuditInfo {
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+  deletedAt?: string;
+  version: number;
+}
+
+export interface Candidate {
+  id: string;
+  candidateCode: string; // New: Format GW-YYYY-XXXX
+
+  // Legacy fields for backward compatibility
+  name: string;
+  email: string;
+  phone: string;
+  whatsapp?: string; // Legacy
+  additionalContactNumbers?: string[]; // Legacy
+  nic?: string;
   stage: WorkflowStage;
+
+  // Additional Legacy fields for forms
+  firstName?: string;
+  middleName?: string;
+  dob?: string;
+  gender?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  divisionalSecretariat?: string;
+  gsDivision?: string;
+  district?: string;
+  nationality?: string;
+  drivingLicenseNo?: string;
+  height?: { feet: number; inches: number };
+  weight?: number;
+  religion?: string;
+  maritalStatus?: string;
+  numberOfChildren?: number;
+  school?: string;
+  gceOL?: { year: string };
+  gceAL?: { year: string };
+  educationalQualifications?: any[];
+  employmentHistory?: any[];
+  trainingDetails?: string;
+  specialAchievements?: string;
+  fatherName?: string;
+  motherName?: string;
+  spouseName?: string;
+  guardianName?: string;
+  guardianIdNo?: string;
+  guardianBirthday?: string;
+  guardianContact?: string;
+  children?: any[];
+  education?: string[];
+  jobRoles?: any[];
+  experienceYears?: number;
+  role?: string;
+  location?: string;
+  position?: string;
+  country?: string;
+  applicationDate?: string;
+  officeSelection?: string;
+  officeRemark?: string;
+  refNo?: string;
+  targetCountry?: string;
+
+  // Normalized Structure
+  personalInfo: PersonalInfo;
+  contactInfo: ContactInfo;
+  professionalProfile: ProfessionalProfile;
+  medicalData: MedicalData;
+  passportData?: PassportData; // Kept for backward compatibility
+  passports?: PassportData[];
+  pccData?: PCCData;
+  slbfeData?: SLBFEData;
+
+  // Workflow & Status
+  profileType: 'QUICK' | 'FULL';
+  profileCompletionStatus: ProfileCompletionStatus;
+  registrationSource: RegistrationSource;
+  profileCompletionPercentage: number;
+
   stageStatus: StageStatus;
   stageEnteredAt: string;
   stageData: StageData;
+  stageHistory?: StageHistoryEntry[];
   workflowLogs: WorkflowLog[];
   timelineEvents: TimelineEvent[];
-  comments: CandidateComment[]; // New: For team collaboration
+  complianceFlags?: ComplianceFlag[]; // New field for Phase 13
+  comments: CandidateComment[];
 
-  // Compliance Module
-  passportData?: PassportData;
-  pccData?: PCCData;
-
-  location: string;
+  // Other context
   preferredCountries: string[];
-  jobRoles?: JobRole[];
   avatarUrl: string;
   documents: CandidateDocument[];
-  jobId?: string; // ID of the job this candidate is matched to
+  jobId?: string;
+  employerId?: string;
+  jobOrderId?: string;
+
+  signature?: string;
+
+  // Audit
+  audit: AuditInfo;
 }
+
 
 // --- COMPLIANCE MODULE TYPES ---
 
@@ -576,4 +704,55 @@ export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+}
+// ... existing code ...
+
+// ============================================================================
+// WORKFLOW ENGINE V2 TYPES
+// ============================================================================
+
+export interface TransitionValidationResult {
+  allowed: boolean;
+  blockers: string[];
+  warnings: string[];
+  missingDocuments: string[];
+  complianceIssues: string[];
+}
+
+export interface WorkflowTransitionEvent {
+  id: string;
+  candidateId: string;
+  fromStage: WorkflowStage;
+  toStage: WorkflowStage;
+  transitionType: 'FORWARD' | 'ROLLBACK';
+  timestamp: Date;
+  userId: string;
+  reason?: string;
+  validationResult: TransitionValidationResult;
+  slaStatus: 'ON_TIME' | 'OVERDUE';
+  daysInPreviousStage: number;
+}
+
+export interface SLAStatus {
+  stage: WorkflowStage;
+  enteredAt: Date;
+  slaDeadline: Date;
+  daysElapsed: number;
+  daysRemaining: number;
+  slaDays: number;
+  status: 'ON_TIME' | 'WARNING' | 'OVERDUE';
+  percentageElapsed: number;
+}
+
+export interface ComplianceFlag {
+  id: string;
+  type: 'LEGAL' | 'MEDICAL' | 'DOCUMENT' | 'BEHAVIORAL' | 'OTHER';
+  severity: 'WARNING' | 'CRITICAL'; // CRITICAL blocks workflow
+  reason: string;
+  createdBy: string;
+  createdAt: string;
+  isResolved: boolean;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
 }
