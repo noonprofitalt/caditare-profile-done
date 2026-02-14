@@ -70,7 +70,7 @@ export class GeminiService {
       Name: ${c.name}
       Role: ${c.role}
       Experience: ${c.experienceYears} years
-      Skills: ${c.skills?.join(", ") || 'None listed'}
+      Skills: ${c.professionalProfile?.skills?.join(", ") || 'None listed'}
       Location: ${c.location}
       Current Stage: ${c.stage}
       
@@ -83,7 +83,7 @@ export class GeminiService {
       CANDIDATE:
       Name: ${c.name}
       Role: ${c.role}
-      Skills: ${c.skills?.join(", ") || 'None listed'}
+      Skills: ${c.professionalProfile?.skills?.join(", ") || 'None listed'}
       Experience: ${c.experienceYears} years
       
       JOB:
@@ -93,10 +93,82 @@ export class GeminiService {
       
       Provide a match score between 0 and 100 and a brief reason (1-2 sentences).
       Output ONLY a JSON object like this: {"score": 85, "reason": "Excellent match..."}
+    `,
+        REPORT_INSIGHTS: (c: Candidate, riskScore: string) => `
+      Generate executive recruitment insights for this candidate:
+      Name: ${c.name}
+      Current Stage: ${c.stage}
+      Calculated Risk Score: ${riskScore}
+      Skills: ${c.professionalProfile?.skills?.join(", ") || 'None listed'}
+      Experience: ${c.experienceYears} years
+      Target Job Roles: ${c.professionalProfile?.jobRoles?.map(r => typeof r === 'string' ? r : r.title).join(", ") || 'General Recruitment'}
+      
+      Provide the following in JSON format:
+      1. strengths: Array of 3 key professional strengths.
+      2. risks: Array of 2-3 potential recruitment or performance risks.
+      3. placementProbability: A number (0-100) representing the likelihood of successful deployment.
+      4. recommendedRoles: Array of 2 alternate or specific job roles they are qualified for.
+      
+      Return ONLY the JSON object.
+    `,
+        ANALYZE_SYSTEM: (snapshot: any) => `
+      Analyze this recruitment agency system snapshot and provide an executive summary:
+      KPIs: ${JSON.stringify(snapshot.kpi)}
+      Bottlenecks: ${JSON.stringify(snapshot.bottlenecks)}
+      Financials: ${JSON.stringify(snapshot.financials)}
+      
+      Provide a concise 3-4 sentence professional assessment of the system's operational health, identifying the most critical focus area for the management team.
     `
     };
 
     // --- Public Methods ---
+
+    static async getSystemAnalysis(snapshot: any): Promise<string> {
+        try {
+            const result = await this.withRetry(async () => {
+                const model = await this.getModel();
+                const response = await model.generateContent(this.PROMPTS.ANALYZE_SYSTEM(snapshot));
+                return await response.response.text();
+            });
+            return result;
+        } catch (error) {
+            console.error("Gemini System Analysis Error:", error);
+            return "Unable to generate AI System Analysis at this time. Please check your process configuration.";
+        }
+    }
+
+    static async getReportInsights(candidate: Candidate, riskScore: string): Promise<any> {
+        const cacheKey = this.getCacheKey('report_insights', candidate.id);
+        const cached = this.getFromCache<any>(cacheKey);
+        if (cached) {
+            console.log('Gemini: Serving report insights from cache');
+            return cached;
+        }
+
+        try {
+            const result = await this.withRetry(async () => {
+                const model = await this.getModel();
+                const response = await model.generateContent(this.PROMPTS.REPORT_INSIGHTS(candidate, riskScore));
+                const text = await response.response.text();
+
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("No JSON found in response");
+
+                return JSON.parse(jsonMatch[0]);
+            });
+
+            this.setCache(cacheKey, result);
+            return result;
+        } catch (error: unknown) {
+            console.error("Gemini Report Insights Error:", error);
+            return {
+                strengths: candidate.professionalProfile?.skills?.slice(0, 3) || ['Candidate', 'Profile', 'Ready'],
+                risks: riskScore === 'HIGH' ? ['High Risk Assessment', 'Documentation Gaps'] : ['None obvious'],
+                placementProbability: riskScore === 'HIGH' ? 50 : 80,
+                recommendedRoles: candidate.professionalProfile?.jobRoles?.map(r => typeof r === 'string' ? r : r.title).slice(0, 2) || ['General Helper']
+            };
+        }
+    }
 
     static async analyzeCandidate(candidate: Candidate): Promise<string> {
         const cacheKey = this.getCacheKey('analysis', candidate.id);
@@ -127,8 +199,26 @@ export class GeminiService {
         try {
             return await this.withRetry(async () => {
                 const model = await this.getModel();
-                const prompt = context
-                    ? `Context: ${context}\n\nUser Question: ${message}`
+
+                // If context isn't provided, try to generate a brief system context if it's the first message or data is requested
+                let activeContext = context || "";
+                if (!context && (message.toLowerCase().includes('data') || message.toLowerCase().includes('stat') || message.toLowerCase().includes('candidate') || message.toLowerCase().includes('who'))) {
+                    const { ReportingService } = await import('./reportingService');
+                    const { CandidateService } = await import('./candidateService');
+                    const snapshot = ReportingService.getSystemSnapshot();
+                    const candidates = CandidateService.getCandidates();
+
+                    activeContext = `SYSTEM SNAPSHOT: ${JSON.stringify({
+                        totalCandidates: snapshot.kpi.totalCandidates,
+                        activeProcessing: snapshot.kpi.activeProcessing,
+                        revenue: snapshot.financials.totalCollected,
+                        bottlenecks: snapshot.bottlenecks.filter(b => b.status !== 'Good').map(b => `${b.stage}: ${b.count} cases`),
+                        recentCandidates: candidates.slice(0, 5).map(c => ({ name: c.name, stage: c.stage, role: c.role, location: c.location }))
+                    })}`;
+                }
+
+                const prompt = activeContext
+                    ? `Context: ${activeContext}\n\nUser Question: ${message}\n\nRespond as a helpful recruitment data analyst.`
                     : message;
 
                 const result = await model.generateContent(prompt);

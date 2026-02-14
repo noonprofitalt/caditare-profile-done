@@ -483,6 +483,7 @@ export interface KPIMetrics {
   criticalDelays: number;
   revenueEst: number;
   avgProcessDays: number;
+  projectedDepartures?: number;
 }
 
 export interface StaffPerformanceMetric {
@@ -490,6 +491,7 @@ export interface StaffPerformanceMetric {
   actionsPerformed: number;
   lastActive: string;
   mostActiveStage: string;
+  efficiencyScore?: number; // 0-100 based on activity vs avg
 }
 
 export interface BottleneckMetric {
@@ -508,8 +510,12 @@ export interface SystemSnapshot {
   staffMetrics: StaffPerformanceMetric[];
   financials: {
     totalCollected: number;
-    pendingCollection: number; // Mock logic based on stage
+    pendingCollection: number;
+    projectedRevenue: number;   // Expected in 30 days
+    pipelineValue: number;      // Total potential if all close
+    revenueByStage: Array<{ name: string; value: number }>;
   };
+  aiSummary?: string;            // AI-generated executive health check
 }
 
 // --- NEW OPERATIONAL DASHBOARD TYPES ---

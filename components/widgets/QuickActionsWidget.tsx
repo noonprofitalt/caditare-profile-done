@@ -7,9 +7,10 @@ import WorkflowEngine from '../../services/workflowEngine';
 interface QuickActionsWidgetProps {
     candidate: Candidate;
     onDelete?: () => void;
+    onGenerateReport?: () => void;
 }
 
-const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({ candidate, onDelete }) => {
+const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({ candidate, onDelete, onGenerateReport }) => {
     const actions = [];
 
     // Check policies for common actions
@@ -71,7 +72,7 @@ const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({ candidate, onDe
         description: 'Create PDF summary',
         color: 'indigo',
         allowed: true,
-        onClick: () => alert('Report generation coming soon!')
+        onClick: onGenerateReport || (() => alert('Report generation coming soon!'))
     });
 
     const getColorClasses = (color: string, allowed: boolean) => {

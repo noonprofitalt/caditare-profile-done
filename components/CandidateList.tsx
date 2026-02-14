@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { CandidateService } from '../services/candidateService';
 import { Candidate, ProfileCompletionStatus, WorkflowStage } from '../types';
-import { Plus, Download, Users } from 'lucide-react';
+import { Plus, Download, Users, X, FileJson, FileSpreadsheet, Send, CheckSquare } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import CandidateCard from './CandidateCard';
 import FilterBar from './FilterBar';
 import Skeleton from './ui/Skeleton';
+import { convertToCSV } from '../services/csvExportService';
 
 const CandidateList: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -131,17 +132,40 @@ const CandidateList: React.FC = () => {
     }
   };
 
+  const [isIntegrityScanActive, setIsIntegrityScanActive] = useState(false);
+
   // Handle bulk export
-  const handleBulkExport = () => {
+  const handleBulkExport = (format: 'json' | 'csv' = 'csv') => {
     const selectedCandidates = candidates.filter(c => selectedCandidateIds.includes(c.id));
-    const dataStr = JSON.stringify(selectedCandidates, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+    let dataBlob: Blob;
+    let extension: string;
+
+    if (format === 'csv') {
+      const csvStr = convertToCSV(selectedCandidates);
+      dataBlob = new Blob([csvStr], { type: 'text/csv' });
+      extension = 'csv';
+    } else {
+      const dataStr = JSON.stringify(selectedCandidates, null, 2);
+      dataBlob = new Blob([dataStr], { type: 'application/json' });
+      extension = 'json';
+    }
+
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `candidates-export-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `candidates-report-bulk-${new Date().toISOString().split('T')[0]}.${extension}`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const toggleIntegrityScan = () => {
+    setIsLoading(true);
+    // Simulate scan delay
+    setTimeout(() => {
+      setIsIntegrityScanActive(!isIntegrityScanActive);
+      setIsLoading(false);
+    }, 800);
   };
 
   return (
@@ -157,6 +181,16 @@ const CandidateList: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={toggleIntegrityScan}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all font-medium ${isIntegrityScanActive
+                  ? 'bg-red-50 border-red-200 text-red-600 shadow-inner'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${isIntegrityScanActive ? 'bg-red-500 animate-ping' : 'bg-slate-300'}`} />
+                {isIntegrityScanActive ? 'Stop Integrity Scan' : 'System Integrity Scan'}
+              </button>
               <Link
                 to="/candidates/quick-add"
                 className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
@@ -189,34 +223,46 @@ const CandidateList: React.FC = () => {
         hasActiveFilters={hasActiveFilters}
       />
 
-      {/* Bulk Actions Bar */}
+      {/* Bulk Actions Bar - Minimalist Staff-Friendly Design */}
       {selectedCandidateIds.length > 0 && (
-        <div className="bg-blue-50 border-b border-blue-200 px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={selectedCandidateIds.length === filteredCandidates.length}
-                onChange={handleSelectAll}
-                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-              />
-              <span className="text-sm font-medium text-blue-900">
-                {selectedCandidateIds.length} candidate{selectedCandidateIds.length > 1 ? 's' : ''} selected
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5">
+          <div className="bg-white border border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-full px-5 py-3 flex items-center gap-5">
+            {/* Selection Count */}
+            <div className="flex items-center gap-3 pr-5 border-r border-slate-100">
+              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                {selectedCandidateIds.length}
+              </div>
+              <span className="text-sm font-semibold text-slate-700">
+                {selectedCandidateIds.length === 1 ? 'Candidate' : 'Candidates'} Selected
               </span>
             </div>
+
+            {/* Practical Actions */}
             <div className="flex items-center gap-2">
               <button
-                onClick={handleBulkExport}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium border border-blue-200"
+                onClick={() => handleBulkExport('csv')}
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-all text-sm font-bold shadow-lg shadow-blue-600/20 active:scale-95"
               >
-                <Download size={16} />
-                Export
+                <Download size={18} />
+                Download Bulk CSV Report
               </button>
+            </div>
+
+            {/* Simple Controls */}
+            <div className="flex items-center gap-3 pl-5 border-l border-slate-100">
+              <button
+                onClick={handleSelectAll}
+                className="text-xs font-bold text-slate-500 hover:text-blue-600 uppercase tracking-widest transition-colors"
+              >
+                {selectedCandidateIds.length === filteredCandidates.length ? 'Clear All' : 'Select All'}
+              </button>
+
               <button
                 onClick={() => setSelectedCandidateIds([])}
-                className="px-3 py-1.5 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors text-sm font-medium"
+                className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+                title="Cancel"
               >
-                Clear Selection
+                <X size={20} />
               </button>
             </div>
           </div>
@@ -305,6 +351,7 @@ const CandidateList: React.FC = () => {
                 candidate={candidate}
                 onSelect={handleSelectCandidate}
                 isSelected={selectedCandidateIds.includes(candidate.id)}
+                showAudit={isIntegrityScanActive}
               />
             ))}
           </div>

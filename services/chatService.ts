@@ -154,7 +154,10 @@ export const ChatService = {
             const user = users.find(u => u.id === userId);
             return { name: user?.name || 'Unknown User', avatar: user?.avatar, isUser: true, status: user?.status };
         }
-        const channel = INITIAL_CHANNELS.find(c => c.id === channelId);
+
+        // Use getChannels which already handles storage
+        const channels = ChatService.getChannels();
+        const channel = channels.find(c => c.id === channelId);
         return { name: channel ? `# ${channel.name}` : 'Unknown Channel', isUser: false };
     }
 };

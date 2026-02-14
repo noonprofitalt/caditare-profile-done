@@ -1,7 +1,7 @@
 import React from 'react';
 import { Candidate, WorkflowStage } from '../../types';
 import { Check, Circle, AlertCircle } from 'lucide-react';
-import { WORKFLOW_STAGES } from '../../services/workflowEngine.v2';
+import WorkflowEngine, { WORKFLOW_STAGES } from '../../services/workflowEngine.v2';
 
 interface WorkflowProgressWidgetProps {
     candidate: Candidate;
@@ -30,6 +30,11 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
     }));
 
     const currentStageIndex = stages.findIndex(s => s.stage === candidate.stage);
+    const nextStage = currentStageIndex < stages.length - 1 ? stages[currentStageIndex + 1].stage : null;
+
+    // Live validation for the next stage
+    const validation = nextStage ? WorkflowEngine.validateTransition(candidate, nextStage) : null;
+    const hasBlockers = !!(validation && !validation.allowed);
 
     const getStageStatus = (index: number) => {
         if (index < currentStageIndex) return 'completed';
@@ -46,6 +51,24 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
                 </span>
             </h3>
 
+            {/* Compliance Alert - New Segment */}
+            {hasBlockers && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg animate-in slide-in-from-top-1">
+                    <div className="flex items-start gap-2 mb-2">
+                        <AlertCircle size={16} className="text-amber-600 mt-0.5" />
+                        <div className="text-xs font-bold text-amber-800 uppercase tracking-tight">Stage Blockers detected</div>
+                    </div>
+                    <ul className="space-y-1">
+                        {validation.blockers.map((blocker, idx) => (
+                            <li key={idx} className="text-[10px] text-amber-700 flex items-center gap-1.5 ml-1">
+                                <span className="w-1 h-1 bg-amber-400 rounded-full" />
+                                {blocker}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
             {/* Quick Actions for Strict Workflow */}
             {(onAdvance || onRollback) && (
                 <div className="mb-4 flex gap-2">
@@ -53,13 +76,8 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
                         <button
                             onClick={() => {
                                 const reason = prompt("Reason for rollback:");
-                                if (reason) onRollback(candidate.stage, reason); // Logic to determine prev stage should be in handler or here?
-                                // Actually, rollback usually goes to *previous* stage.
-                                // But keeping it simple for now: The parent handler decides target, or we just trigger "Rollback Request"
-                                // The props say (stage, reason).
-                                // Let's just pass back current stage and reason for now, or assume handler knows.
-                                // Actually, the handler signature in CandidateDetail was (targetStage, reason).
-                                // For now, let's just use a simple "Rollback" button that prompts.
+                                const prevStage = WorkflowEngine.getPreviousStage(candidate.stage);
+                                if (reason && prevStage) onRollback(prevStage, reason);
                             }}
                             className="flex-1 py-2 text-xs font-medium text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
                         >
@@ -69,9 +87,13 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
                     {onAdvance && (
                         <button
                             onClick={onAdvance}
-                            className="flex-1 py-2 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors shadow-sm"
+                            disabled={hasBlockers}
+                            className={`flex-1 py-2 text-xs font-medium text-white rounded transition-all shadow-sm ${hasBlockers
+                                ? 'bg-slate-300 cursor-not-allowed grayscale'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                                }`}
                         >
-                            Advance
+                            {hasBlockers ? 'Path Blocked' : 'Advance Stage'}
                         </button>
                     )}
                 </div>

@@ -1,6 +1,6 @@
-import { MOCK_CANDIDATES } from './mockData';
 import { Candidate, WorkflowStage, SystemSnapshot, BottleneckMetric, StaffPerformanceMetric } from '../types';
-import { SLA_CONFIG, STAGE_ORDER, WorkflowEngine } from './workflowEngine';
+import { SLA_CONFIG, WORKFLOW_STAGES, WorkflowEngine } from './workflowEngine.v2';
+import { CandidateService } from './candidateService';
 
 export class ReportingService {
 
@@ -8,7 +8,7 @@ export class ReportingService {
    * Generates a complete 360 system snapshot
    */
   static getSystemSnapshot(): SystemSnapshot {
-    const candidates = MOCK_CANDIDATES;
+    const candidates = CandidateService.getCandidates();
 
     return {
       timestamp: new Date().toISOString(),
@@ -33,9 +33,20 @@ export class ReportingService {
 
     // Revenue Estimation (Sum of payment history + estimates)
     const revenue = candidates.reduce((sum, c) => {
-      const paid = c.stageData.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
+      const paid = c.stageData?.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
       return sum + paid;
     }, 0);
+
+    // Average processing time for completed candidates (Registration to Arrival)
+    const completedCandidates = candidates.filter(c => c.stage === WorkflowStage.DEPARTED);
+    const avgDays = completedCandidates.length > 0
+      ? Math.round(completedCandidates.reduce((sum, c) => {
+        const start = new Date(c.applicationDate || c.audit?.createdAt || new Date());
+        const lastEvent = c.timelineEvents[c.timelineEvents.length - 1]?.timestamp || new Date().toISOString();
+        const end = new Date(lastEvent);
+        return sum + Math.max(1, (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      }, 0) / completedCandidates.length)
+      : 0;
 
     return {
       totalCandidates: total,
@@ -43,7 +54,8 @@ export class ReportingService {
       completedDepartures: completed,
       criticalDelays: delays,
       revenueEst: revenue,
-      avgProcessDays: 24, // Mock average
+      avgProcessDays: avgDays || 22,
+      projectedDepartures: Math.floor(active * 0.15) // Mock prediction: 15% of active pool
     };
   }
 
@@ -51,7 +63,7 @@ export class ReportingService {
    * Bottleneck Analysis (Process Mining)
    */
   private static calculateBottlenecks(candidates: Candidate[]): BottleneckMetric[] {
-    return STAGE_ORDER.map(stage => {
+    return WORKFLOW_STAGES.map((stage: WorkflowStage) => {
       const inStage = candidates.filter(c => c.stage === stage);
       const count = inStage.length;
 
@@ -101,22 +113,26 @@ export class ReportingService {
       });
     });
 
+    const maxActions = Math.max(...Object.values(staffMap).map(d => d.actions), 1);
+
     return Object.entries(staffMap).map(([name, data]) => {
       // Find most active stage
       const sortedStages = Object.entries(data.stages).sort((a, b) => b[1] - a[1]);
+      const efficiencyScore = Math.round((data.actions / maxActions) * 100);
 
       return {
         name,
         actionsPerformed: data.actions,
         lastActive: data.lastActive,
-        mostActiveStage: sortedStages[0] ? sortedStages[0][0] : 'General'
+        mostActiveStage: sortedStages[0] ? sortedStages[0][0] : 'General',
+        efficiencyScore
       };
     }).sort((a, b) => b.actionsPerformed - a.actionsPerformed);
   }
 
   private static calculateStageDistribution(candidates: Candidate[]) {
     const dist: Record<string, number> = {};
-    STAGE_ORDER.forEach(s => dist[s] = 0); // Init 0
+    WORKFLOW_STAGES.forEach((s: WorkflowStage) => dist[s] = 0); // Init 0
     candidates.forEach(c => {
       dist[c.stage] = (dist[c.stage] || 0) + 1;
     });
@@ -126,23 +142,54 @@ export class ReportingService {
   private static calculateFinancials(candidates: Candidate[]) {
     let collected = 0;
     let pending = 0;
+    let projected = 0;
+    let totalPipeline = 0;
+
+    const REVENUE_PER_PLACEMENT = 2500; // Mock avg total revenue per candidate
 
     candidates.forEach(c => {
       // Collected
-      const paid = c.stageData.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
+      const paid = c.stageData?.paymentHistory?.reduce((pSum: number, rec: any) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
       collected += paid;
 
-      // Pending (Logic: If stage passed but no payment recorded, assume pending fee)
-      // This is a rough estimation logic for the dashboard
-      if (c.stageData.paymentStatus === 'Pending' || c.stageData.paymentStatus === 'Partial') {
-        pending += 500; // Mock average pending per candidate
+      // Pending (Invoiced but not paid)
+      if (c.stageData?.paymentStatus === 'Pending' || c.stageData?.paymentStatus === 'Partial') {
+        pending += 500;
+      }
+
+      // Projected (High probability - Visa Received or Ticket Issued)
+      if (c.stage === WorkflowStage.VISA_RECEIVED || c.stage === WorkflowStage.TICKET_ISSUED) {
+        projected += REVENUE_PER_PLACEMENT;
+      }
+
+      // Pipeline (Total potential)
+      if (c.stage !== WorkflowStage.DEPARTED) {
+        totalPipeline += REVENUE_PER_PLACEMENT;
       }
     });
 
     return {
       totalCollected: collected,
-      pendingCollection: pending
+      pendingCollection: pending,
+      projectedRevenue: projected,
+      pipelineValue: totalPipeline,
+      revenueByStage: this.calculateRevenueByStage(candidates)
     };
+  }
+
+  private static calculateRevenueByStage(candidates: Candidate[]) {
+    const revenueMap: Record<string, number> = {};
+    WORKFLOW_STAGES.forEach(s => revenueMap[s] = 0);
+
+    candidates.forEach(c => {
+      const paid = c.stageData?.paymentHistory?.reduce((pSum: number, rec: any) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
+      revenueMap[c.stage] += paid;
+    });
+
+    return Object.entries(revenueMap).map(([name, value]) => ({
+      name: name.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' '),
+      value
+    }));
   }
 
   /**
@@ -156,7 +203,7 @@ export class ReportingService {
       `Role,${candidate.role}`,
       `Current Stage,${candidate.stage}`,
       `Status,${candidate.stageStatus}`,
-      `Total Paid,${candidate.stageData.paymentHistory?.reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0}`,
+      `Total Paid,${candidate.stageData?.paymentHistory?.reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0) || 0}`,
       `Address,${candidate.location}`
     ].join('\n');
 
@@ -172,7 +219,7 @@ export class ReportingService {
    * Generates a full system report CSV for all candidates
    */
   static generateFullSystemCSV(): string {
-    const candidates = MOCK_CANDIDATES;
+    const candidates = CandidateService.getCandidates();
     const header = [
       "Candidate ID",
       "Name",
@@ -197,9 +244,9 @@ export class ReportingService {
       const lastEvent = c.timelineEvents[0]?.timestamp || c.stageEnteredAt;
 
       // Escape quotes in strings
-      const safeName = `"${c.name.replace(/"/g, '""')}"`;
-      const safeRole = `"${c.role.replace(/"/g, '""')}"`;
-      const safeLoc = `"${c.location.replace(/"/g, '""')}"`;
+      const safeName = `"${(c.name || 'Unknown').replace(/"/g, '""')}"`;
+      const safeRole = `"${(c.role || 'N/A').replace(/"/g, '""')}"`;
+      const safeLoc = `"${(c.location || 'N/A').replace(/"/g, '""')}"`;
 
       return [
         c.id,
@@ -210,11 +257,11 @@ export class ReportingService {
         c.stageStatus,
         sla.daysElapsed,
         sla.status === 'OVERDUE' ? "OVERDUE" : "On Track",
-        c.stageData.employerStatus || "-",
-        c.stageData.medicalStatus || "-",
-        c.stageData.policeStatus || "-",
-        c.stageData.visaStatus || "-",
-        c.stageData.paymentStatus || "-",
+        c.stageData?.employerStatus || "-",
+        c.stageData?.medicalStatus || "-",
+        c.stageData?.policeStatus || "-",
+        c.stageData?.visaStatus || "-",
+        c.stageData?.paymentStatus || "-",
         totalPaid,
         new Date(lastEvent).toLocaleDateString()
       ].join(",");

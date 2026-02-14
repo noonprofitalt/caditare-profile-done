@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
    LayoutDashboard, Activity, Users, AlertTriangle, TrendingUp, DollarSign,
-   Download, RefreshCw, Server, BrainCircuit, ShieldCheck, MessageSquare
+   Download, RefreshCw, Server, BrainCircuit, ShieldCheck, MessageSquare, ShieldAlert
 } from 'lucide-react';
 import AIPlayground from './AIPlayground';
 
@@ -15,13 +15,20 @@ const IntelligenceEngine: React.FC = () => {
    const [activeTab, setActiveTab] = useState<'dashboard' | 'workflow' | 'staff' | 'financial' | 'assistant'>('dashboard');
    const [isLoading, setIsLoading] = useState(false);
 
-   const refreshData = () => {
+   const refreshData = async () => {
       setIsLoading(true);
-      // Simulate calculation delay for "Heavy ETL" feel
-      setTimeout(() => {
-         setSnapshot(ReportingService.getSystemSnapshot());
-         setIsLoading(false);
-      }, 600);
+      const data = ReportingService.getSystemSnapshot();
+      setSnapshot(data);
+      setIsLoading(false);
+
+      // Trigger AI summary in background
+      try {
+         const { GeminiService } = await import('../services/geminiService');
+         const aiSummary = await GeminiService.getSystemAnalysis(data);
+         setSnapshot(prev => prev ? { ...prev, aiSummary } : null);
+      } catch (err) {
+         console.error("AI Refresh failed", err);
+      }
    };
 
    useEffect(() => {
@@ -45,6 +52,24 @@ const IntelligenceEngine: React.FC = () => {
 
    const renderDashboard = () => (
       <div className="space-y-6 animate-in fade-in duration-500">
+         {/* AI Executive Summary Block */}
+         {snapshot.aiSummary && (
+            <div className="bg-white border-l-4 border-blue-600 rounded-xl p-6 shadow-sm flex items-start gap-5 animate-in slide-in-from-left-4">
+               <div className="p-3 bg-blue-50 rounded-2xl text-blue-600 shrink-0">
+                  <BrainCircuit size={32} className="animate-pulse" />
+               </div>
+               <div>
+                  <h4 className="font-bold text-slate-800 text-sm mb-1 uppercase tracking-widest flex items-center gap-2">
+                     AI Executive Advisor
+                     <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] rounded animate-bounce">Live Insights</span>
+                  </h4>
+                  <p className="text-slate-600 leading-relaxed text-sm italic">
+                     "{snapshot.aiSummary}"
+                  </p>
+               </div>
+            </div>
+         )}
+
          {/* Top Level KPI Cards */}
          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-white shadow-lg">
@@ -91,6 +116,54 @@ const IntelligenceEngine: React.FC = () => {
                   <TrendingUp className="text-purple-500 bg-purple-50 p-1.5 rounded-lg" size={32} />
                </div>
                <p className="text-xs text-slate-500">Successful Departures</p>
+            </div>
+         </div>
+
+         {/* Safety & Integrity Summary */}
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+               <div className="flex items-center justify-between mb-6">
+                  <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                     <ShieldAlert className="text-red-500" size={18} /> System Integrity Alerts
+                  </h4>
+                  <span className="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase">
+                     {snapshot.bottlenecks.filter(b => b.status === 'Critical').length} Critical Issues
+                  </span>
+               </div>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {snapshot.bottlenecks.filter(b => b.status !== 'Good').slice(0, 4).map(b => (
+                     <div key={b.stage} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex items-start gap-4">
+                        <div className={`p-2 rounded-lg ${b.status === 'Critical' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>
+                           <AlertTriangle size={20} />
+                        </div>
+                        <div>
+                           <p className="font-bold text-slate-800 text-sm">{b.stage}</p>
+                           <p className="text-xs text-slate-500">{b.count} candidates delayed</p>
+                           <div className="mt-2 text-[10px] font-bold text-red-700 flex items-center gap-1">
+                              {b.avgDays}d Average ({b.avgDays - b.slaLimit}d over limit)
+                           </div>
+                        </div>
+                     </div>
+                  ))}
+               </div>
+            </div>
+
+            <div className="bg-slate-900 text-white p-6 rounded-xl shadow-xl flex flex-col justify-between">
+               <div>
+                  <h4 className="font-bold text-blue-400 mb-2 flex items-center gap-2">
+                     <TrendingUp size={18} /> Optimization Tip
+                  </h4>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                     Your <strong>{snapshot.bottlenecks.sort((a, b) => b.avgDays - a.avgDays)[0].stage}</strong> stage is currently slowing down the pipeline.
+                     Resolving this could improve turnaround time by <span className="text-blue-400 font-bold">~15%</span>.
+                  </p>
+               </div>
+               <button
+                  onClick={() => setActiveTab('workflow')}
+                  className="w-full mt-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all"
+               >
+                  Analyze Flow
+               </button>
             </div>
          </div>
 
@@ -242,6 +315,7 @@ const IntelligenceEngine: React.FC = () => {
                <div className="flex items-center gap-2 text-blue-600 mb-1">
                   <BrainCircuit size={20} />
                   <span className="text-xs font-bold uppercase tracking-wider">Enterprise Edition</span>
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse mx-1" />
                </div>
                <h2 className="text-3xl font-bold text-slate-900">Intelligence Engine</h2>
                <p className="text-slate-500">System-wide reporting, financial aggregation, and predictive analytics.</p>
@@ -291,11 +365,150 @@ const IntelligenceEngine: React.FC = () => {
             {activeTab === 'staff' && renderStaffMetrics()}
             {activeTab === 'assistant' && <AIPlayground />}
             {activeTab === 'financial' && (
-               <div className="bg-white p-12 text-center rounded-xl border border-slate-200">
-                  <DollarSign size={64} className="mx-auto text-green-200 mb-4" />
-                  <h3 className="text-2xl font-bold text-slate-800">Financial Intelligence Module</h3>
-                  <p className="text-slate-500 mb-6">Aggregate view of collected payments: <span className="font-bold text-green-600">${snapshot.financials.totalCollected.toLocaleString()}</span></p>
-                  <p className="text-sm text-slate-400">Detailed ledger integration required for full breakdown.</p>
+               <div className="space-y-6 animate-in fade-in duration-500">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex justify-between items-start mb-2">
+                           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Collected</p>
+                           <div className="p-1.5 bg-green-50 text-green-600 rounded-lg"><DollarSign size={16} /></div>
+                        </div>
+                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.totalCollected.toLocaleString()}</h3>
+                        <div className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
+                           <TrendingUp size={12} /> Cash on hand
+                        </div>
+                     </div>
+
+                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex justify-between items-start mb-2">
+                           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending (Invoiced)</p>
+                           <div className="p-1.5 bg-orange-50 text-orange-600 rounded-lg"><Activity size={16} /></div>
+                        </div>
+                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.pendingCollection.toLocaleString()}</h3>
+                        <div className="mt-2 text-xs text-orange-600 font-medium">Outstanding receivables</div>
+                     </div>
+
+                     <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm bg-blue-50/30">
+                        <div className="flex justify-between items-start mb-2">
+                           <p className="text-xs font-bold text-blue-500 uppercase tracking-wider">Projected (30 Days)</p>
+                           <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg"><TrendingUp size={16} /></div>
+                        </div>
+                        <h3 className="text-2xl font-bold text-blue-900">${snapshot.financials.projectedRevenue.toLocaleString()}</h3>
+                        <div className="mt-2 text-xs text-blue-600 font-medium">Estimated from high-prob leads</div>
+                     </div>
+
+                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex justify-between items-start mb-2">
+                           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pipeline Value</p>
+                           <div className="p-1.5 bg-slate-100 text-slate-600 rounded-lg"><LayoutDashboard size={16} /></div>
+                        </div>
+                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.pipelineValue.toLocaleString()}</h3>
+                        <div className="mt-2 text-xs text-slate-400 font-medium">Full potential of active funnel</div>
+                     </div>
+                  </div>
+
+                  <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                     <div className="flex justify-between items-center mb-6">
+                        <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                           <DollarSign size={18} className="text-green-500" /> Revenue Capture by Stage
+                        </h4>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">
+                           Cumulative Paid
+                        </div>
+                     </div>
+                     <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                           <AreaChart data={snapshot.financials.revenueByStage}>
+                              <defs>
+                                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                 </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                              <XAxis
+                                 dataKey="name"
+                                 axisLine={false}
+                                 tickLine={false}
+                                 fontSize={10}
+                                 tick={{ fill: '#64748b' }}
+                                 interval={0}
+                                 angle={-45}
+                                 textAnchor="end"
+                                 height={60}
+                              />
+                              <YAxis
+                                 axisLine={false}
+                                 tickLine={false}
+                                 fontSize={10}
+                                 tick={{ fill: '#64748b' }}
+                                 tickFormatter={(value) => `$${value}`}
+                              />
+                              <RechartsTooltip
+                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                 formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                              />
+                              <Area
+                                 type="monotone"
+                                 dataKey="value"
+                                 stroke="#10b981"
+                                 strokeWidth={3}
+                                 fillOpacity={1}
+                                 fill="url(#colorValue)"
+                              />
+                           </AreaChart>
+                        </ResponsiveContainer>
+                     </div>
+                  </div>
+
+                  <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                     <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <TrendingUp size={18} className="text-blue-500" /> Revenue Realization Funnel
+                     </h4>
+                     <div className="space-y-8">
+                        <div>
+                           <div className="flex justify-between items-end mb-2">
+                              <div>
+                                 <p className="text-sm font-bold text-slate-700">Realized Revenue</p>
+                                 <p className="text-xs text-slate-500">Payments already in the bank</p>
+                              </div>
+                              <span className="text-sm font-bold text-green-600">
+                                 {Math.round((snapshot.financials.totalCollected / snapshot.financials.pipelineValue) * 100)}%
+                              </span>
+                           </div>
+                           <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                 className="h-full bg-green-500 rounded-full transition-all duration-1000"
+                                 style={{ width: `${(snapshot.financials.totalCollected / snapshot.financials.pipelineValue) * 100}%` }}
+                              />
+                           </div>
+                        </div>
+
+                        <div>
+                           <div className="flex justify-between items-end mb-2">
+                              <div>
+                                 <p className="text-sm font-bold text-slate-700">Projected Growth (Short Term)</p>
+                                 <p className="text-xs text-slate-500">Expected revenue from candidates near departure</p>
+                              </div>
+                              <span className="text-sm font-bold text-blue-600">
+                                 +${snapshot.financials.projectedRevenue.toLocaleString()}
+                              </span>
+                           </div>
+                           <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                 className="h-full bg-blue-500 rounded-full transition-all duration-1000 delay-300"
+                                 style={{ width: `${((snapshot.financials.totalCollected + snapshot.financials.projectedRevenue) / snapshot.financials.pipelineValue) * 100}%` }}
+                              />
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="mt-12 p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-center">
+                        <p className="text-sm text-slate-500">
+                           <ShieldCheck size={14} className="inline mr-1 text-slate-400" />
+                           Forecast is based on a conservative <strong>$2,500 average revenue</strong> per successful placement.
+                        </p>
+                     </div>
+                  </div>
                </div>
             )}
          </div>

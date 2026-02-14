@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, FileSearch, User, MapPin, ShieldAlert, BrainCircuit, Bot, Upload, ArrowRight, ExternalLink } from 'lucide-react';
+import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, FileSearch, User, MapPin, ShieldAlert, BrainCircuit, Bot, Upload, ArrowRight, ExternalLink, TrendingUp } from 'lucide-react';
 import { Candidate } from '../types';
 import { ReportService, SystemReport } from '../services/reportService';
 import ReactMarkdown from 'react-markdown';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { CandidateReportPDF } from '../src/components/reports/CandidateReportPDF'; // Adjusted path if necessary
+import { useCandidateReport } from '../src/hooks/useCandidateReport';
 
 interface CandidateReportProps {
     candidate: Candidate;
@@ -12,6 +15,9 @@ interface CandidateReportProps {
 const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
     const [report, setReport] = useState<SystemReport | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    // PDF Hook
+    const { reportId, generatedBy } = useCandidateReport(candidate);
 
     const generate = React.useCallback(async () => {
         setIsLoading(true);
@@ -74,12 +80,19 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                     >
                         <RefreshCw size={14} /> Refresh Analysis
                     </button>
-                    <button
-                        onClick={() => window.print()}
-                        className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all font-bold text-xs"
+
+                    <PDFDownloadLink
+                        document={<CandidateReportPDF candidate={candidate} reportId={reportId} generatedBy={generatedBy} systemReport={report || undefined} />}
+                        fileName={`Candidate_Report_${candidate.name.replace(/\s+/g, '_')}_${reportId}.pdf`}
+                        className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all font-bold text-xs no-print"
                     >
-                        <Printer size={14} /> Export Formal PDF
-                    </button>
+                        {({ blob, url, loading, error }) => (
+                            <>
+                                <Printer size={14} />
+                                {loading ? 'Preparing PDF...' : 'Export Formal PDF'}
+                            </>
+                        )}
+                    </PDFDownloadLink>
                 </div>
             </div>
 
@@ -303,8 +316,65 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                                     <div className="absolute top-0 right-0 p-8 opacity-5">
                                         <Bot size={120} />
                                     </div>
-                                    <div className="prose prose-slate max-w-none prose-sm leading-relaxed text-slate-600 relative z-10">
-                                        <ReactMarkdown>{report.aiInsights}</ReactMarkdown>
+                                    <div className="relative z-10 space-y-8">
+                                        {/* Probability Gauge */}
+                                        <div>
+                                            <div className="flex justify-between items-end mb-2">
+                                                <h5 className="font-black text-xs text-slate-400 uppercase tracking-widest">Placement Probability</h5>
+                                                <span className="text-3xl font-black text-blue-600">{report.aiInsights.placementProbability}%</span>
+                                            </div>
+                                            <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-1000 ease-out"
+                                                    style={{ width: `${report.aiInsights.placementProbability}%` }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-sm">
+                                            <div>
+                                                <h5 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                                    <span className="w-1.5 h-4 bg-emerald-500 rounded-full" />
+                                                    Key Strengths
+                                                </h5>
+                                                <ul className="space-y-2">
+                                                    {report.aiInsights.strengths.map((str, i) => (
+                                                        <li key={i} className="flex items-start gap-2 text-slate-600">
+                                                            <div className="mt-1.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0" />
+                                                            {str}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <h5 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                                    <span className="w-1.5 h-4 bg-amber-500 rounded-full" />
+                                                    Potential Risks
+                                                </h5>
+                                                <ul className="space-y-2">
+                                                    {report.aiInsights.risks.map((risk, i) => (
+                                                        <li key={i} className="flex items-start gap-2 text-slate-600">
+                                                            <div className="mt-1.5 w-1.5 h-1.5 bg-amber-500 rounded-full shrink-0" />
+                                                            {risk}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-6 border-t border-slate-100">
+                                            <h5 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                                <TrendingUp size={16} className="text-blue-500" />
+                                                Recommended Deployment Strategy
+                                            </h5>
+                                            <div className="flex flex-wrap gap-2">
+                                                {report.aiInsights.recommendedRoles.map((role, i) => (
+                                                    <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-black uppercase tracking-wider border border-blue-100">
+                                                        {role}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 

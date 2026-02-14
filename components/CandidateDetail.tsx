@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { pdf } from '@react-pdf/renderer';
+import { CandidateReportPDF } from '../src/components/reports/CandidateReportPDF';
 import { CandidateService } from '../services/candidateService';
 import { Candidate, WorkflowStage, CandidateDocument, PassportData, PCCData, TimelineEventType, PassportStatus } from '../types';
 import { User, FileText, History, Bot, AlertCircle, Plus, Trash2, ShieldCheck, ShieldAlert, Edit2, CheckCircle, X, Mail, Globe, MapPin, Calendar, Briefcase, Phone, Award, Clock } from 'lucide-react';
@@ -18,6 +20,7 @@ import MedicalStatusInput from './ui/MedicalStatusInput';
 import JobRoleEntry from './JobRoleEntry';
 import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
 import EmploymentHistoryEntry from './ui/EmploymentHistoryEntry';
+import CandidateReport from './CandidateReport';
 
 // Existing Components
 import DocumentManager from './DocumentManager';
@@ -29,7 +32,7 @@ import WorkflowEngine, { WORKFLOW_STAGES } from '../services/workflowEngine';
 const CandidateDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [candidate, setCandidate] = useState<Candidate | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'timeline' | 'ai'>('timeline');
+  const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'timeline' | 'ai'>('profile');
 
   const refreshCandidate = React.useCallback(() => {
     if (id) {
@@ -213,6 +216,44 @@ const CandidateDetail: React.FC = () => {
     if (confirm(`Are you sure you want to delete ${candidate.name}?`)) {
       CandidateService.deleteCandidate(candidate.id);
       window.location.href = '/#/candidates';
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!candidate) return;
+
+    try {
+      // Generate system report first for AI insights and risk scoring
+      const { ReportService } = await import('../services/reportService');
+      const systemReport = await ReportService.generateReport(candidate);
+
+      const blob = await pdf(
+        <CandidateReportPDF
+          candidate={candidate}
+          reportId={`REP-${Date.now()}`}
+          generatedBy="System Administrator"
+          systemReport={systemReport}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Candidate_Audit_Report_${candidate.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      CandidateService.addTimelineEvent(candidate.id, {
+        type: 'SYSTEM',
+        title: 'Report Generated',
+        description: 'Candidate Audit Report with AI Insights was generated',
+        actor: 'Current User'
+      });
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate report. Please try again.');
     }
   };
 
@@ -1375,18 +1416,18 @@ const CandidateDetail: React.FC = () => {
             {/* AI Analysis Tab */}
             {activeTab === 'ai' && (
               <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">AI Analysis</h2>
-                <div className="text-center py-12 text-slate-500">
-                  <Bot size={48} className="mx-auto mb-4 text-slate-300" />
-                  <p>AI Analysis coming soon!</p>
-                </div>
+                <CandidateReport candidate={candidate} />
               </div>
             )}
           </div>
 
           {/* Sidebar (30%) */}
           <div className="space-y-4">
-            <QuickActionsWidget candidate={candidate} onDelete={handleDelete} />
+            <QuickActionsWidget
+              candidate={candidate}
+              onDelete={handleDelete}
+              onGenerateReport={handleGenerateReport}
+            />
             <ComplianceWidget
               candidate={candidate}
               onUpdate={handleComplianceUpdate}

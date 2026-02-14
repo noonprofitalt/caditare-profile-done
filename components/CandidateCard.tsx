@@ -4,13 +4,17 @@ import { Phone, Mail, MapPin, Calendar, ChevronDown, ChevronUp, FileText, CheckC
 import { Link } from 'react-router-dom';
 import { ProfileCompletionService } from '../services/profileCompletionService';
 
+import WorkflowEngine from '../services/workflowEngine.v2';
+import { ReportService } from '../services/reportService';
+
 interface CandidateCardProps {
     candidate: Candidate;
     onSelect?: (id: string) => void;
     isSelected?: boolean;
+    showAudit?: boolean;
 }
 
-const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSelected }) => {
+const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSelected, showAudit }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Get profile completion badge
@@ -92,9 +96,37 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
         return date.toLocaleDateString();
     };
 
+    const sla = WorkflowEngine.calculateSLAStatus(candidate);
+    const nextStage = WorkflowEngine.getNextStage(candidate.stage);
+    const validation = nextStage ? WorkflowEngine.validateTransition(candidate, nextStage) : null;
+    const hasBlockers = !!(validation && !validation.allowed);
+
     return (
         <div className={`bg-white border rounded-xl p-5 transition-all duration-200 ${isExpanded ? 'border-blue-400 shadow-lg' : 'border-slate-200 hover:border-blue-300 hover:shadow-md'
-            }`}>
+            } ${showAudit && (sla.status === 'OVERDUE' || hasBlockers) ? 'bg-red-50/50 border-red-200 ring-2 ring-red-500/20' : ''
+            } ${showAudit && sla.status === 'WARNING' && !hasBlockers ? 'bg-orange-50/50 border-orange-200' : ''}`}>
+
+            {/* Integrity Audit Banner */}
+            {showAudit && (
+                <div className={`-mt-5 -mx-5 px-5 py-2 mb-4 rounded-t-xl border-b flex items-center justify-between ${sla.status === 'OVERDUE' || hasBlockers
+                    ? 'bg-red-600 text-white border-red-700'
+                    : sla.status === 'WARNING'
+                        ? 'bg-orange-500 text-white border-orange-600'
+                        : 'bg-emerald-600 text-white border-emerald-700'
+                    }`}>
+                    <div className="flex items-center gap-2">
+                        <AlertTriangle size={14} className="animate-pulse" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                            {sla.status === 'OVERDUE' || hasBlockers ? 'CRITICAL INTEGRITY BREACH' : sla.status === 'WARNING' ? 'SLA WARNING' : 'INTEGRITY PASSED'}
+                        </span>
+                    </div>
+                    <div className="text-[10px] font-medium">
+                        {sla.status === 'OVERDUE' && `SLA Breach: ${sla.daysElapsed} days `}
+                        {hasBlockers && `| Missing Critical Items `}
+                        {sla.status === 'ON_TIME' && !hasBlockers && 'All documents & timelines on track'}
+                    </div>
+                </div>
+            )}
             {/* Main Card Content */}
             <div className="flex items-start gap-4">
                 {/* Checkbox */}
