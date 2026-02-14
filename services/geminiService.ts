@@ -195,6 +195,19 @@ export class GeminiService {
         }
     }
 
+    private static SYSTEM_INSTRUCTIONS = `
+You are the GlobalWorkforce Intelligence Advisor, a high-level recruitment data analyst and operational strategist. 
+Your goal is to provide precise, data-driven, and actionable insights to agency managers.
+
+- Maintain a professional, executive tone.
+- When provided with SYSTEM SNAPSHOT data, use it to justify your claims.
+- If a user asks about candidate health, refer to SLA compliance and data integrity.
+- If a user asks about financials, focus on collected vs. projected revenue.
+- Be proactive: if you see a bottleneck (e.g. medical stage delay), mention it.
+- Format your responses using clean Markdown with bold headers and bullet points for readability.
+- If you don't have enough data to answer a specific query, state what info is missing.
+`;
+
     static async chat(message: string, context?: string): Promise<string> {
         try {
             return await this.withRetry(async () => {
@@ -202,24 +215,31 @@ export class GeminiService {
 
                 // If context isn't provided, try to generate a brief system context if it's the first message or data is requested
                 let activeContext = context || "";
-                if (!context && (message.toLowerCase().includes('data') || message.toLowerCase().includes('stat') || message.toLowerCase().includes('candidate') || message.toLowerCase().includes('who'))) {
+                if (!context && (message.toLowerCase().includes('data') || message.toLowerCase().includes('stat') || message.toLowerCase().includes('candidate') || message.toLowerCase().includes('who') || message.toLowerCase().includes('how'))) {
                     const { ReportingService } = await import('./reportingService');
                     const { CandidateService } = await import('./candidateService');
                     const snapshot = ReportingService.getSystemSnapshot();
                     const candidates = CandidateService.getCandidates();
 
-                    activeContext = `SYSTEM SNAPSHOT: ${JSON.stringify({
-                        totalCandidates: snapshot.kpi.totalCandidates,
-                        activeProcessing: snapshot.kpi.activeProcessing,
-                        revenue: snapshot.financials.totalCollected,
-                        bottlenecks: snapshot.bottlenecks.filter(b => b.status !== 'Good').map(b => `${b.stage}: ${b.count} cases`),
-                        recentCandidates: candidates.slice(0, 5).map(c => ({ name: c.name, stage: c.stage, role: c.role, location: c.location }))
-                    })}`;
+                    activeContext = `SYSTEM SNAPSHOT (CURRENT LIVE DATA):
+- Total: ${snapshot.kpi.totalCandidates} candidates
+- Active: ${snapshot.kpi.activeProcessing} processing
+- Revenue Collected: $${snapshot.financials.totalCollected.toLocaleString()}
+- Pipeline Value: $${snapshot.financials.pipelineValue.toLocaleString()}
+- Critical Bottlenecks: ${snapshot.bottlenecks.filter(b => b.status === 'Critical').map(b => `${b.stage} (${b.count} delayed, ${b.avgDays}d avg)`).join(', ') || 'None'}
+- Top Candidates: ${candidates.slice(0, 3).map(c => `${c.name} (${c.stage})`).join(', ')}`;
                 }
 
-                const prompt = activeContext
-                    ? `Context: ${activeContext}\n\nUser Question: ${message}\n\nRespond as a helpful recruitment data analyst.`
-                    : message;
+                const prompt = `
+${this.SYSTEM_INSTRUCTIONS}
+
+USER CONTEXT/SYSTEM DATA:
+${activeContext || "No specific system context provided for this query."}
+
+USER QUERY:
+${message}
+
+RESPONSE:`;
 
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
