@@ -1,78 +1,59 @@
+import { supabase, getUserProfile } from './supabase';
 import { User } from '../types';
 
-const MOCK_USERS: User[] = [
-    {
-        id: 'u-admin',
-        name: 'Admin User',
-        email: 'admin@globalworkforce.com',
-        role: 'Admin',
-        avatar: 'https://ui-avatars.com/api/?name=Admin+User&background=0F172A&color=fff',
-        lastLogin: new Date().toISOString()
-    },
-    {
-        id: 'u-recruiter',
-        name: 'Sarah Connor',
-        email: 'sarah@globalworkforce.com',
-        role: 'Recruiter',
-        avatar: 'https://ui-avatars.com/api/?name=Sarah+Connor&background=2563EB&color=fff',
-        lastLogin: new Date().toISOString()
-    },
-    {
-        id: 'u-viewer',
-        name: 'Guest Viewer',
-        email: 'guest@globalworkforce.com',
-        role: 'Viewer',
-        avatar: 'https://ui-avatars.com/api/?name=Guest+Viewer&background=64748B&color=fff',
-        lastLogin: new Date().toISOString()
-    }
-];
-
 export class AuthService {
-    private static STORAGE_KEY = 'globalworkforce_auth_user';
-
-    static login(email: string, password: string): Promise<User> {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                // Mock simple password check
-                if (password === 'admin123' || password === 'demo123') {
-                    const user = MOCK_USERS.find(u => u.email === email);
-                    if (user) {
-                        this.saveSession(user);
-                        resolve(user);
-                    } else {
-                        reject(new Error('User not found. Try admin@globalworkforce.com'));
-                    }
-                } else {
-                    reject(new Error('Invalid password. (Hint: admin123)'));
-                }
-            }, 800); // Simulate network delay
+    static async login(email: string, password: string): Promise<User> {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
         });
+
+        if (error) {
+            throw error;
+        }
+
+        if (!data.user) {
+            throw new Error('Login failed: No user returned');
+        }
+
+        // Fetch profile to get name and role
+        const profile = await getUserProfile(data.user.id);
+
+        return {
+            id: data.user.id,
+            email: data.user.email || '',
+            name: profile?.full_name || email.split('@')[0],
+            role: profile?.role || 'Viewer',
+            avatar: profile?.avatar_url || 'https://ui-avatars.com/api/?name=' + (profile?.full_name || 'User'),
+            lastLogin: new Date().toISOString()
+        };
     }
 
-    static logout(): Promise<void> {
-        return new Promise((resolve) => {
-            localStorage.removeItem(this.STORAGE_KEY);
-            setTimeout(resolve, 500);
-        });
+    static async logout(): Promise<void> {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        localStorage.removeItem('globalworkforce_auth_user'); // Clean up old legacy key if exists
     }
 
-    static getCurrentUser(): User | null {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (!stored) return null;
+    static async getCurrentUser(): Promise<User | null> {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) return null;
+
         try {
-            return JSON.parse(stored);
+            const profile = await getUserProfile(user.id);
+            return {
+                id: user.id,
+                email: user.email || '',
+                name: profile?.full_name || user.email?.split('@')[0] || 'User',
+                role: profile?.role || 'Viewer',
+                avatar: profile?.avatar_url || 'https://ui-avatars.com/api/?name=' + (profile?.full_name || 'User'),
+                lastLogin: new Date().toISOString()
+            };
         } catch (e) {
-            console.error('Failed to parse user session', e);
-            localStorage.removeItem(this.STORAGE_KEY);
-            return null;
+            console.error('Error fetching user profile', e);
+            return null; // Handle detached users gracefully
         }
     }
 
-    static isAuthenticated(): boolean {
-        return !!this.getCurrentUser();
-    }
-
-    private static saveSession(user: User) {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-    }
 }

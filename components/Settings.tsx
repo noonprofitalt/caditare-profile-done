@@ -23,11 +23,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+import UserManagement from './UserManagement';
+
 const Settings: React.FC = () => {
    const { user } = useAuth();
    const isAdmin = user?.role === 'Admin';
 
-   const [activeTab, setActiveTab] = useState<'agency' | 'security' | 'data' | 'ai'>('data'); // Default to safe tab
+   const [activeTab, setActiveTab] = useState<'agency' | 'security' | 'data' | 'ai' | 'users'>('data'); // Default to safe tab
    const [isSaved, setIsSaved] = useState(false);
    const [apiKey, setApiKey] = useState(() => localStorage.getItem('globalworkforce_gemini_api_key') || '');
    const [scanning, setScanning] = useState(false);
@@ -47,10 +49,10 @@ const Settings: React.FC = () => {
       setIntegrityIssues([]);
       setScanComplete(false);
 
-      setTimeout(() => {
+      setTimeout(async () => {
          const issues: string[] = [];
-         const candidates = CandidateService.getCandidates();
-         const jobs = JobService.getJobs();
+         const candidates = await CandidateService.getCandidates();
+         const jobs = JobService.getJobs(); // Assuming JobService is still sync or needs similar fix?
          const employers = PartnerService.getEmployers();
          const employerIds = new Set(employers.map(e => e.id));
 
@@ -110,6 +112,14 @@ const Settings: React.FC = () => {
                >
                   <Database size={18} /> Data Management
                </button>
+               {isAdmin && (
+                  <button
+                     onClick={() => setActiveTab('users')}
+                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'users' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                  >
+                     <Users size={18} /> User Management
+                  </button>
+               )}
                <button
                   onClick={() => setActiveTab('ai')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'ai' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
@@ -433,34 +443,37 @@ const Settings: React.FC = () => {
                         </div>
                      </div>
 
-                     {/* Existing Backup Buttons */}
-                     <h4 className="font-bold text-slate-800 mb-4 text-sm">Local Data Backups</h4>
-                     <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors cursor-pointer group">
-                           <div>
-                              <h4 className="font-bold text-slate-800 group-hover:text-blue-700">Candidate Database Backup</h4>
-                              <p className="text-xs text-slate-500">Last backup: 12 hours ago</p>
-                           </div>
-                           <button className="text-slate-400 group-hover:text-blue-600"><Download size={20} /></button>
+                     <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors cursor-pointer group">
+                        <div>
+                           <h4 className="font-bold text-slate-800 group-hover:text-blue-700">Financial Records Backup</h4>
+                           <p className="text-xs text-slate-500">Last backup: 2 days ago</p>
                         </div>
+                        <button className="text-slate-400 group-hover:text-blue-600"><Download size={20} /></button>
                      </div>
                   </div>
                )}
 
+               {/* USERS TAB */}
+               {activeTab === 'users' && (
+                  <UserManagement />
+               )}
+
                {/* Footer Actions */}
-               <div className="flex justify-end pt-4 border-t border-slate-200">
-                  <button
-                     onClick={handleSave}
-                     className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all active:scale-95"
-                  >
-                     {isSaved ? <CheckCircle2 size={18} /> : <Save size={18} />}
-                     {isSaved ? 'Changes Saved' : 'Save Changes'}
-                  </button>
-               </div>
+               {activeTab !== 'users' && (
+                  <div className="flex justify-end pt-4 border-t border-slate-200">
+                     <button
+                        onClick={handleSave}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition-all active:scale-95"
+                     >
+                        {isSaved ? <CheckCircle2 size={18} /> : <Save size={18} />}
+                        {isSaved ? 'Changes Saved' : 'Save Changes'}
+                     </button>
+                  </div>
+               )}
 
             </div>
          </div>
-      </div>
+      </div >
    );
 };
 

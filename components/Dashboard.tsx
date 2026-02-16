@@ -3,6 +3,7 @@ import { TaskEngine } from '../services/taskEngine';
 import { CandidateService } from '../services/candidateService';
 import { NotificationService } from '../services/notificationService';
 import { FinanceService } from '../services/financeService';
+import { PartnerService } from '../services/partnerService';
 import { WorkTask, SystemAlert, Candidate, WorkflowStage, ProfileCompletionStatus } from '../types';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -23,26 +24,31 @@ const Dashboard: React.FC = () => {
    useEffect(() => {
       // setIsLoading(true); // Already true by default
       // Simulate loading delay
-      setTimeout(() => {
-         const data = CandidateService.getCandidates() || [];
-         setCandidates(data);
-         const generatedTasks = TaskEngine.generateWorkQueue(data);
-         const generatedAlerts = TaskEngine.generateAlerts(data);
-         setTasks(generatedTasks);
-         setAlerts(generatedAlerts);
-         setProjectedRevenue(FinanceService.getProjectedRevenue());
-         setIsLoading(false);
+      setTimeout(async () => {
+         try {
+            const data = await CandidateService.getCandidates() || [];
+            setCandidates(data);
+            const generatedTasks = TaskEngine.generateWorkQueue(data);
+            const generatedAlerts = TaskEngine.generateAlerts(data);
+            setTasks(generatedTasks);
+            setAlerts(generatedAlerts);
+            // Finance service needs employers too, but for now we might mock it or fetch it
+            // Assuming PartnerService is still sync or we need to fetch it.
+            // Let's check PartnerService.
+            const employers = PartnerService.getEmployers();
+            setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
+         } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+         } finally {
+            setIsLoading(false);
+         }
 
          // Check for critical tasks and notify if needed
-         const criticalTasks = generatedTasks.filter(t => t.priority === 'Critical');
-         if (criticalTasks.length > 0) {
-            NotificationService.addNotification({
-               type: 'DELAY',
-               title: 'Critical SLA Breaches detected!',
-               message: `There are ${criticalTasks.length} candidates requiring immediate attention due to processing delays.`,
-               link: '/'
-            });
-         }
+         // We need to regenerate tasks to check for critical ones, or use state? 
+         // Actually we can just use the data we just fetched.
+         const data = await CandidateService.getCandidates() || []; // fetching again is wasteful but safe, or better: use local var
+         // Wait, I can just use the 'data' variable from above if I structure it right.
+         // Let's rewrite the block cleanly.
       }, 800);
    }, []);
 

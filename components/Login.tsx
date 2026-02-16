@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2, Lock, Mail, ArrowRight, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
 
 const Login: React.FC = () => {
-    const [email, setEmail] = useState('admin@globalworkforce.com');
+    const [email, setEmail] = useState('admin@suhara.com');
     const [password, setPassword] = useState('admin123');
     const [error, setError] = useState('');
     const { login, isLoading } = useAuth();
@@ -38,8 +38,8 @@ const Login: React.FC = () => {
                     <div className="bg-gradient-to-br from-blue-500 to-indigo-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
                         <Building2 className="text-white" size={32} />
                     </div>
-                    <h1 className="text-2xl font-bold text-white mb-2">GlobalWorkforce Solutions</h1>
-                    <p className="text-slate-400 text-sm">Enterprise Recruitment Portal</p>
+                    <h1 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Suhara ERP CORE</h1>
+                    <p className="text-blue-400 text-xs font-bold uppercase tracking-widest">Command Center</p>
                 </div>
 
                 {error && (
@@ -93,9 +93,9 @@ const Login: React.FC = () => {
                 <div className="mt-8 pt-6 border-t border-white/10 text-center">
                     <p className="text-slate-400 text-xs mb-3">Login Details for Demo</p>
                     <div className="flex justify-center gap-2 text-[10px]">
-                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('admin@globalworkforce.com'); setPassword('admin123'); }}>Admin</span>
-                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('sarah@globalworkforce.com'); setPassword('demo123'); }}>Recruiter</span>
-                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('guest@globalworkforce.com'); setPassword('demo123'); }}>Viewer</span>
+                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('admin@suhara.com'); setPassword('admin123'); }}>Admin</span>
+                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('sarah@suhara.com'); setPassword('demo123'); }}>Recruiter</span>
+                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('guest@suhara.com'); setPassword('demo123'); }}>Viewer</span>
                     </div>
                 </div>
 

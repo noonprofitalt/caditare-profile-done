@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { PartnerService } from '../services/partnerService';
 import { CandidateService } from '../services/candidateService';
 import { JobService } from '../services/jobService';
-import { Employer, EmployerStatus } from '../types';
+import { Employer, EmployerStatus, Candidate } from '../types';
 import {
     Building2, Users, MapPin, Mail,
     ShieldCheck, AlertTriangle, Clock, Search, Plus,
@@ -16,7 +16,17 @@ const PartnerManager: React.FC = () => {
     const navigate = useNavigate();
 
     // Lazy load employers
-    const [employers] = useState<Employer[]>(() => PartnerService.getEmployers() || []);
+    const [employers, setEmployers] = useState<Employer[]>([]);
+    const [candidates, setCandidates] = useState<Candidate[]>([]);
+
+    useEffect(() => {
+        setEmployers(PartnerService.getEmployers());
+        const loadCandidates = async () => {
+            const data = await CandidateService.getCandidates() || [];
+            setCandidates(data);
+        };
+        loadCandidates();
+    }, []);
 
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -38,9 +48,8 @@ const PartnerManager: React.FC = () => {
         if (!selectedEmployer) return [];
         const jobs = JobService.getJobsByEmployerId(selectedEmployer.id);
         const jobIds = jobs.map(j => j.id);
-        const allCandidates = CandidateService.getCandidates() || [];
-        return allCandidates.filter(c => c.jobId && jobIds.includes(c.jobId));
-    }, [selectedEmployer]);
+        return candidates.filter(c => c.jobId && jobIds.includes(c.jobId));
+    }, [selectedEmployer, candidates]);
 
     const filteredEmployers = employers.filter(e => {
         const query = searchQuery.toLowerCase();

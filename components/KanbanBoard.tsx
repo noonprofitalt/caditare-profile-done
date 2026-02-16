@@ -3,10 +3,18 @@ import { WorkflowStage, StageStatus, Candidate } from '../types';
 import { STAGE_ORDER, WorkflowEngine, SLA_CONFIG } from '../services/workflowEngine';
 import { AlertTriangle, MoreHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const KanbanBoard: React.FC = () => {
-  const [candidates] = useState<Candidate[]>(() => CandidateService.getCandidates());
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+
+  useEffect(() => {
+    const loadCandidates = async () => {
+      const data = await CandidateService.getCandidates() || [];
+      setCandidates(data);
+    };
+    loadCandidates();
+  }, []);
 
   const getColumns = () => {
     return STAGE_ORDER.map(stage => {

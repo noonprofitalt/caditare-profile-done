@@ -12,17 +12,20 @@ const DevTools: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [status, setStatus] = useState('');
 
-    const seedTestData = () => {
+    const seedTestData = async () => {
         setStatus('Generating test data...');
         const candidates = generateAllTestData();
 
-        // Clear existing data
-        localStorage.removeItem('candidates');
+        // Clear existing data - In Supabase this is harder, so we might just add new ones
+        // or we could implement a cleanup method. For now, let's just add.
+        // localStorage.removeItem('candidates'); 
 
         // Add each candidate
-        candidates.forEach(candidate => {
-            CandidateService.addCandidate(candidate);
-        });
+        for (const candidate of candidates) {
+            // Remove ID to let Supabase generate it, and audit fields
+            const { id, audit, ...rest } = candidate;
+            await CandidateService.createCandidate(rest);
+        }
 
         setStatus(`✅ Added ${candidates.length} test candidates! Refresh to see changes.`);
         setTimeout(() => {
@@ -30,23 +33,28 @@ const DevTools: React.FC = () => {
         }, 1500);
     };
 
-    const clearAllData = () => {
-        if (confirm('⚠️ This will delete ALL candidate data. Are you sure?')) {
+    const clearAllData = async () => {
+        if (confirm('⚠️ This will delete ALL candidate data from Supabase. Are you sure?')) {
+            // TODO: Implement delete all in service if needed, or just warn user
+            setStatus('❌ Bulk delete not implemented for Supabase yet.');
+            /*
             localStorage.removeItem('candidates');
             setStatus('🗑️ All data cleared! Refresh to see changes.');
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
+            */
         }
     };
 
-    const exportData = () => {
-        const data = localStorage.getItem('candidates');
-        if (!data) {
+    const exportData = async () => {
+        const candidates = await CandidateService.getCandidates();
+        if (!candidates || candidates.length === 0) {
             setStatus('❌ No data to export');
             return;
         }
 
+        const data = JSON.stringify(candidates, null, 2);
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -85,16 +93,18 @@ const DevTools: React.FC = () => {
         input.click();
     };
 
-    const getCandidateStats = () => {
-        const candidates = CandidateService.getCandidates();
-        const quick = candidates.filter((c: Candidate) => c.profileCompletionStatus === 'QUICK').length;
-        const partial = candidates.filter((c: Candidate) => c.profileCompletionStatus === 'PARTIAL').length;
-        const complete = candidates.filter((c: Candidate) => c.profileCompletionStatus === 'COMPLETE').length;
+    const [stats, setStats] = useState({ total: 0, quick: 0, partial: 0, complete: 0 });
 
-        return { total: candidates.length, quick, partial, complete };
-    };
-
-    const stats = getCandidateStats();
+    React.useEffect(() => {
+        const fetchStats = async () => {
+            const candidates = await CandidateService.getCandidates() || [];
+            const quick = candidates.filter((c: Candidate) => c.profileCompletionStatus === 'QUICK').length;
+            const partial = candidates.filter((c: Candidate) => c.profileCompletionStatus === 'PARTIAL').length;
+            const complete = candidates.filter((c: Candidate) => c.profileCompletionStatus === 'COMPLETE').length;
+            setStats({ total: candidates.length, quick, partial, complete });
+        };
+        fetchStats();
+    }, [isOpen]); // Refresh when opened
 
     if (!isOpen) {
         return (

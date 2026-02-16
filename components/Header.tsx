@@ -49,47 +49,50 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
   // Smart Search Logic
   // Move function definition up to fix no-use-before-define
-  const Method_GetCandidates = () => {
+  const Method_GetCandidates = async () => {
     try {
-      return CandidateService.getCandidates() || [];
+      return await CandidateService.getCandidates() || [];
     } catch {
       return MOCK_CANDIDATES;
     }
   };
 
   useEffect(() => {
-    if (query.length < 2) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResults({ candidates: [], employers: [], jobs: [] });
-      setIsOpen(false);
-      return;
-    }
+    const performSearch = async () => {
+      if (query.length < 2) {
+        setResults({ candidates: [], employers: [], jobs: [] });
+        setIsOpen(false);
+        return;
+      }
 
-    const lowerQ = query.toLowerCase();
+      const lowerQ = query.toLowerCase();
 
-    // Search Candidates
-    const candidates = Method_GetCandidates().filter(c =>
-      c.name.toLowerCase().includes(lowerQ) ||
-      (c.nic && c.nic.toLowerCase().includes(lowerQ)) ||
-      (c.phone && c.phone.includes(lowerQ)) ||
-      c.role.toLowerCase().includes(lowerQ)
-    ).slice(0, 3);
+      // Search Candidates
+      const allCandidates = await Method_GetCandidates();
+      const candidates = allCandidates.filter(c =>
+        c.name.toLowerCase().includes(lowerQ) ||
+        (c.nic && c.nic.toLowerCase().includes(lowerQ)) ||
+        (c.phone && c.phone.includes(lowerQ)) ||
+        (c.role && c.role.toLowerCase().includes(lowerQ))
+      ).slice(0, 3);
 
-    // Search Employers
-    const employers = PartnerService.getEmployers().filter(e =>
-      e.companyName.toLowerCase().includes(lowerQ) ||
-      e.contactPerson.toLowerCase().includes(lowerQ)
-    ).slice(0, 3);
+      // Search Employers
+      const employers = PartnerService.getEmployers().filter(e =>
+        e.companyName.toLowerCase().includes(lowerQ) ||
+        e.contactPerson.toLowerCase().includes(lowerQ)
+      ).slice(0, 3);
 
-    // Search Jobs
-    const jobs = JobService.getJobs().filter(j =>
-      j.title.toLowerCase().includes(lowerQ) ||
-      j.company.toLowerCase().includes(lowerQ)
-    ).slice(0, 3);
+      // Search Jobs
+      const jobs = JobService.getJobs().filter(j =>
+        j.title.toLowerCase().includes(lowerQ) ||
+        j.company.toLowerCase().includes(lowerQ)
+      ).slice(0, 3);
 
-    setResults({ candidates, employers, jobs });
-    setIsOpen(true);
-    setSelectedIndex(-1);
+      setResults({ candidates, employers, jobs });
+      setIsOpen(true);
+      setSelectedIndex(-1);
+    };
+    performSearch();
   }, [query]);
 
   useEffect(() => {
@@ -468,8 +471,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   <MessageSquare size={20} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">Organization Chat</h2>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Internal Communications</p>
+                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">Team Comms</h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Suhara ERP Hub</p>
                 </div>
               </div>
               <button

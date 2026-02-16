@@ -113,8 +113,8 @@ const TeamChat: React.FC = () => {
                 key={t}
                 onClick={() => setFilterType(t)}
                 className={`flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${filterType === t
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
                   }`}
               >
                 {t}
@@ -136,8 +136,8 @@ const TeamChat: React.FC = () => {
                   key={channel.id}
                   onClick={() => setActiveChannelId(channel.id)}
                   className={`w-full flex items-center justify-between p-3 rounded-xl transition-all group ${activeChannelId === channel.id
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-slate-600 hover:bg-slate-50'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-slate-600 hover:bg-slate-50'
                     }`}
                 >
                   <div className="flex items-center gap-3">
@@ -176,8 +176,8 @@ const TeamChat: React.FC = () => {
                     <div className="relative shrink-0">
                       <img src={user.avatar} className="w-10 h-10 rounded-xl object-cover ring-2 ring-transparent group-hover:ring-slate-100 transition-all" alt={user.name} />
                       <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-emerald-500' :
-                          user.status === 'busy' ? 'bg-red-500' :
-                            'bg-slate-300'
+                        user.status === 'busy' ? 'bg-red-500' :
+                          'bg-slate-300'
                         }`} />
                     </div>
                     <div className="text-left flex-1 min-w-0">
@@ -234,7 +234,7 @@ const TeamChat: React.FC = () => {
                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{currentChatInfo.isUser ? 'Private' : 'Channel'}</span>
               </div>
               <p className="text-xs text-slate-500 font-medium">
-                {currentChatInfo.isUser ? 'Member of Caditare Executive Team' : 'General company announcements and chatter...'}
+                {currentChatInfo.isUser ? 'Member of Suhara Executive Team' : 'General company announcements and chatter...'}
               </p>
             </div>
           </div>
@@ -268,7 +268,7 @@ const TeamChat: React.FC = () => {
               </div>
               <div className="text-center">
                 <p className="text-sm font-black text-slate-900">Start of conversation</p>
-                <p className="text-xs text-slate-500">Messages are secure and internal to Caditare</p>
+                <p className="text-xs text-slate-500">Messages are secure and internal to Suhara</p>
               </div>
             </div>
 
@@ -311,8 +311,8 @@ const TeamChat: React.FC = () => {
                         </div>
                       )}
                       <div className={`relative px-5 py-3.5 text-sm leading-relaxed ${isMe
-                          ? 'bg-blue-600 text-white rounded-[1.5rem] rounded-tr-[0.25rem] shadow-lg shadow-blue-100'
-                          : 'bg-[#F3F4F6] text-slate-700 rounded-[1.5rem] rounded-tl-[0.25rem]'
+                        ? 'bg-blue-600 text-white rounded-[1.5rem] rounded-tr-[0.25rem] shadow-lg shadow-blue-100'
+                        : 'bg-[#F3F4F6] text-slate-700 rounded-[1.5rem] rounded-tl-[0.25rem]'
                         }`}>
                         {msg.text}
 
@@ -375,8 +375,8 @@ const TeamChat: React.FC = () => {
                     onClick={handleSend}
                     disabled={!inputValue.trim()}
                     className={`p-3 rounded-full transition-all active:scale-95 ${inputValue.trim()
-                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 hover:bg-blue-700'
-                        : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                      ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 hover:bg-blue-700'
+                      : 'bg-slate-100 text-slate-300 cursor-not-allowed'
                       }`}
                   >
                     <Send size={20} className={inputValue.trim() ? "translate-x-0.5" : ""} />
@@ -410,7 +410,7 @@ const TeamChat: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-xl font-black text-slate-900 leading-tight">{currentChatInfo.name}</h4>
-                <p className="text-sm text-slate-400 font-medium">Caditare Official Hub</p>
+                <p className="text-sm text-slate-400 font-medium">Suhara ERP Official Hub</p>
               </div>
             </div>
 
@@ -480,8 +480,8 @@ const TeamChat: React.FC = () => {
                     type="button"
                     onClick={() => setNewChannelType('public')}
                     className={`flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all ${newChannelType === 'public'
-                        ? 'border-blue-600 bg-blue-50/50 text-blue-700 shadow-lg shadow-blue-100'
-                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
+                      ? 'border-blue-600 bg-blue-50/50 text-blue-700 shadow-lg shadow-blue-100'
+                      : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
                       }`}
                   >
                     <Users size={24} />
@@ -491,8 +491,8 @@ const TeamChat: React.FC = () => {
                     type="button"
                     onClick={() => setNewChannelType('private')}
                     className={`flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all ${newChannelType === 'private'
-                        ? 'border-amber-500 bg-amber-50/50 text-amber-700 shadow-lg shadow-amber-100'
-                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
+                      ? 'border-amber-500 bg-amber-50/50 text-amber-700 shadow-lg shadow-amber-100'
+                      : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
                       }`}
                   >
                     <Shield size={24} />

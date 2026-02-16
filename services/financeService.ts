@@ -125,14 +125,11 @@ export class FinanceService {
      * REVENUE PROJECTION LOGIC
      * Calculates potential revenue based on active candidates in the pipeline
      */
-    static getProjectedRevenue(): number {
-        const candidates = CandidateService.getCandidates() || [];
-        const employers = PartnerService.getEmployers() || [];
-
+    static getProjectedRevenue(candidates: Candidate[], employers: Employer[] = []): number {
         return candidates.reduce((total, candidate) => {
             if (!candidate) return total;
             // If already departed, it's actual revenue, not projected
-            if (candidate.stage === WorkflowStage.DEPARTURE) return total;
+            if (candidate.stage === WorkflowStage.DEPARTED) return total;
 
             const employer = employers.find(e => e.id === candidate.jobId || (candidate as Candidate & { employerId?: string }).employerId); // fallback
             const commission = employer?.commissionPerHire || 450; // Use default if no specific employer found

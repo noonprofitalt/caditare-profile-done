@@ -59,21 +59,23 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
 
     // Handle Smart Input (# for Candidates)
     useEffect(() => {
-        const lastWord = inputValue.split(' ').pop();
-        if (lastWord && lastWord.startsWith('#') && lastWord.length > 1) {
-            const query = lastWord.substring(1).toLowerCase();
-            const allCandidates = CandidateService.getCandidates() || [];
-            const matches = allCandidates.filter(c =>
-                c.name.toLowerCase().includes(query) ||
-                c.role.toLowerCase().includes(query)
-            ).slice(0, 5);
+        const handleInput = async () => {
+            const lastWord = inputValue.split(' ').pop();
+            if (lastWord && lastWord.startsWith('#') && lastWord.length > 1) {
+                const query = lastWord.substring(1).toLowerCase();
+                const allCandidates = await CandidateService.getCandidates() || [];
+                const matches = allCandidates.filter(c =>
+                    c.name.toLowerCase().includes(query) ||
+                    (c.role && c.role.toLowerCase().includes(query))
+                ).slice(0, 5);
 
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setSuggestions(matches);
-            setShowSuggestions(matches.length > 0);
-        } else {
-            setShowSuggestions(false);
-        }
+                setSuggestions(matches);
+                setShowSuggestions(matches.length > 0);
+            } else {
+                setShowSuggestions(false);
+            }
+        };
+        handleInput();
     }, [inputValue]);
 
     const handleSelectCandidate = (candidate: Candidate) => {

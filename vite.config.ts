@@ -20,6 +20,19 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'pdf-renderer': ['@react-pdf/renderer'],
+            'recharts': ['recharts'],
+            'lucide': ['lucide-react']
+          }
+        }
+      },
+      chunkSizeWarningLimit: 1600, // Elevated for pdf-renderer
     }
   };
 });

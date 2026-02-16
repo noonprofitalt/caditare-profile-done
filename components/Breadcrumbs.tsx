@@ -8,20 +8,34 @@ const Breadcrumbs: React.FC = () => {
     const location = useLocation();
     const pathnames = location.pathname.split('/').filter((x) => x);
 
-    const getBreadcrumbName = (value: string, index: number, pathArray: string[]) => {
-        // Check if previous segment invalidates simple capitalization
-        const prev = index > 0 ? pathArray[index - 1] : '';
+    const [breadcrumbNames, setBreadcrumbNames] = React.useState<Record<string, string>>({});
 
-        if (prev === 'candidates') {
-            const candidate = CandidateService.getCandidates().find(c => c.id === value);
-            return candidate ? candidate.name : value;
-        }
+    React.useEffect(() => {
+        const resolveNames = async () => {
+            const names: Record<string, string> = {};
+            // Parallelize fetching
+            const [candidates, employers] = await Promise.all([
+                CandidateService.getCandidates(),
+                Promise.resolve(PartnerService.getEmployers()) // Wrap in promise to keep structure consistent if PartnerService becomes async
+            ]);
 
-        if (prev === 'partners') {
-            const partner = PartnerService.getEmployers().find(e => e.id === value);
-            return partner ? partner.companyName : value;
-        }
+            pathnames.forEach((value, index) => {
+                const prev = index > 0 ? pathnames[index - 1] : '';
+                if (prev === 'candidates') {
+                    const candidate = (candidates || []).find(c => c.id === value);
+                    if (candidate) names[value] = candidate.name;
+                } else if (prev === 'partners') {
+                    const partner = employers.find(e => e.id === value);
+                    if (partner) names[value] = partner.companyName;
+                }
+            });
+            setBreadcrumbNames(names);
+        };
+        resolveNames();
+    }, [location.pathname]);
 
+    const getBreadcrumbName = (value: string) => {
+        if (breadcrumbNames[value]) return breadcrumbNames[value];
         // Default formatting
         return value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
     };
@@ -36,7 +50,7 @@ const Breadcrumbs: React.FC = () => {
             {pathnames.map((value, index) => {
                 const to = `/${pathnames.slice(0, index + 1).join('/')}`;
                 const isLast = index === pathnames.length - 1;
-                const name = getBreadcrumbName(value, index, pathnames);
+                const name = getBreadcrumbName(value);
 
                 return (
                     <React.Fragment key={to}>

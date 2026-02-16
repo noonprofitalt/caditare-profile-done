@@ -20,11 +20,20 @@ const CandidateList: React.FC = () => {
   const navigate = useNavigate();
 
   // Load candidates
+  // Load candidates
   useEffect(() => {
-    setIsLoading(true);
-    const allCandidates = CandidateService.getCandidates();
-    setCandidates(allCandidates);
-    setIsLoading(false);
+    const loadCandidates = async () => {
+      setIsLoading(true);
+      try {
+        const allCandidates = await CandidateService.getCandidates();
+        setCandidates(allCandidates);
+      } catch (error) {
+        console.error('Failed to load candidates:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadCandidates();
   }, []);
 
   // Initialize filters from URL

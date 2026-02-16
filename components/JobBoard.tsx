@@ -31,8 +31,9 @@ const JobBoard: React.FC = () => {
   useEffect(() => {
     setIsLoading(true);
     // Simulate loading delay
-    setTimeout(() => {
-      setCandidates(CandidateService.getCandidates());
+    // Simulate loading delay
+    setTimeout(async () => {
+      setCandidates(await CandidateService.getCandidates() || []);
       setEmployers(PartnerService.getEmployers());
       setIsLoading(false);
     }, 700);
@@ -60,11 +61,11 @@ const JobBoard: React.FC = () => {
     }
   };
 
-  const handleSelectCandidate = (candidate: Candidate) => {
+  const handleSelectCandidate = async (candidate: Candidate) => {
     if (!selectedJob) return;
     const updatedCandidate = { ...candidate, jobId: selectedJob.id };
-    CandidateService.updateCandidate(updatedCandidate);
-    setCandidates(CandidateService.getCandidates());
+    await CandidateService.updateCandidate(updatedCandidate);
+    setCandidates(await CandidateService.getCandidates() || []);
 
     // Update local jobs state if we had matchedCandidateIds
     const updatedJobs = jobs.map(j => {
