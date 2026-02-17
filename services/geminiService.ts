@@ -26,6 +26,10 @@ export class GeminiService {
         return genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     }
 
+    static clearCache(): void {
+        this.cache.clear();
+    }
+
     // --- Caching Utilities ---
 
     private static getCacheKey(type: string, id: string): string {

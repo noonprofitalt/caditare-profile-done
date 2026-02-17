@@ -1,0 +1,473 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/user/Downloads/Antigravity Projects/caditare-profile-done[39m
+
+node.exe : TypeError: 
+messagesEndRef.current?.scrollIntoView is not a 
+function
+At line:1 char:1
++ & "C:\nvm4w\nodejs/node.exe" 
+"C:\nvm4w\nodejs/node_modules/npm/bin/np ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (TypeEr 
+   ror: mess... not a function:String) [], RemoteE  
+  xception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:62:29
+    at commitHookEffectListMount 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:23189:26)
+    at commitPassiveMountOnFiber 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24970:11)
+    at commitPassiveMountEffects_complete 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24930:9)
+    at commitPassiveMountEffects_begin 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24917:7)
+    at commitPassiveMountEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24905:3)
+    at flushPassiveEffectsImpl 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27078:3)
+    at flushPassiveEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27023:14)
+    at C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-dom\cjs\rea
+ct-dom.development.js:26808:9
+    at flushActQueue 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react\cjs\react.develop
+ment.js:2667:24)
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+render without crashing
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+TypeError: messagesEndRef.current?.scrollIntoView 
+is not a function
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:62:29
+    at commitHookEffectListMount 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:23189:26)
+    at commitPassiveMountOnFiber 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24970:11)
+    at commitPassiveMountEffects_complete 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24930:9)
+    at commitPassiveMountEffects_begin 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24917:7)
+    at commitPassiveMountEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24905:3)
+    at flushPassiveEffectsImpl 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27078:3)
+    at flushPassiveEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27023:14)
+    at C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-dom\cjs\rea
+ct-dom.development.js:26808:9
+    at flushActQueue 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react\cjs\react.develop
+ment.js:2667:24)
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+display channels list
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+TypeError: messagesEndRef.current?.scrollIntoView 
+is not a function
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:62:29
+    at commitHookEffectListMount 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:23189:26)
+    at commitPassiveMountOnFiber 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24970:11)
+    at commitPassiveMountEffects_complete 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24930:9)
+    at commitPassiveMountEffects_begin 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24917:7)
+    at commitPassiveMountEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24905:3)
+    at flushPassiveEffectsImpl 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27078:3)
+    at flushPassiveEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27023:14)
+    at C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-dom\cjs\rea
+ct-dom.development.js:26808:9
+    at flushActQueue 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react\cjs\react.develop
+ment.js:2667:24)
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+show unread count badge
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+TypeError: messagesEndRef.current?.scrollIntoView 
+is not a function
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:62:29
+    at commitHookEffectListMount 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:23189:26)
+    at commitPassiveMountOnFiber 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24970:11)
+    at commitPassiveMountEffects_complete 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24930:9)
+    at commitPassiveMountEffects_begin 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24917:7)
+    at commitPassiveMountEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24905:3)
+    at flushPassiveEffectsImpl 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27078:3)
+    at flushPassiveEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27023:14)
+    at C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-dom\cjs\rea
+ct-dom.development.js:26808:9
+    at flushActQueue 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react\cjs\react.develop
+ment.js:2667:24)
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+allow sending a message
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+TypeError: messagesEndRef.current?.scrollIntoView 
+is not a function
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:62:29
+    at commitHookEffectListMount 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:23189:26)
+    at commitPassiveMountOnFiber 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24970:11)
+    at commitPassiveMountEffects_complete 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24930:9)
+    at commitPassiveMountEffects_begin 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24917:7)
+    at commitPassiveMountEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24905:3)
+    at flushPassiveEffectsImpl 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27078:3)
+    at flushPassiveEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27023:14)
+    at C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-dom\cjs\rea
+ct-dom.development.js:26808:9
+    at flushActQueue 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react\cjs\react.develop
+ment.js:2667:24)
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+handle keyboard shortcuts
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+TypeError: messagesEndRef.current?.scrollIntoView 
+is not a function
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:62:29
+    at commitHookEffectListMount 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:23189:26)
+    at commitPassiveMountOnFiber 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24970:11)
+    at commitPassiveMountEffects_complete 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24930:9)
+    at commitPassiveMountEffects_begin 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24917:7)
+    at commitPassiveMountEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:24905:3)
+    at flushPassiveEffectsImpl 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27078:3)
+    at flushPassiveEffects 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:27023:14)
+    at C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-dom\cjs\rea
+ct-dom.development.js:26808:9
+    at flushActQueue 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react\cjs\react.develop
+ment.js:2667:24)
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+be accessible via keyboard
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+ [31mΓ¥»[39m components/__tests__/TeamChat.test.tsx [2m([22m[2m6 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 205[2mms[22m[39m
+[31m     [31m├ù[31m should render without crashing[39m[32m 68[2mms[22m[39m
+[31m     [31m├ù[31m should display channels list[39m[32m 23[2mms[22m[39m
+[31m     [31m├ù[31m should show unread count badge[39m[32m 39[2mms[22m[39m
+[31m     [31m├ù[31m should allow sending a message[39m[32m 23[2mms[22m[39m
+[31m     [31m├ù[31m should handle keyboard shortcuts[39m[32m 32[2mms[22m[39m
+[31m     [31m├ù[31m should be accessible via keyboard[39m[32m 17[2mms[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed 
+Tests 6 [49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22mTeamChat Component[2m > [22mshould render 
+without crashing
+[41m[1m FAIL [22m[49m 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22mTeamChat Component[2m > [22mshould display 
+channels list
+[41m[1m FAIL [22m[49m 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22mTeamChat Component[2m > [22mshould show 
+unread count badge
+[41m[1m FAIL [22m[49m 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22mTeamChat Component[2m > [22mshould allow 
+sending a message
+[41m[1m FAIL [22m[49m 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22mTeamChat Component[2m > [22mshould handle 
+keyboard shortcuts
+[41m[1m FAIL [22m[49m 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22mTeamChat Component[2m > [22mshould be 
+accessible via keyboard
+[31m[1mTypeError[22m: 
+messagesEndRef.current?.scrollIntoView is not a 
+function[39m
+[36m [2mΓ¥»[22m 
+components/TeamChat.tsx:[2m62:29[22m[39m
+    [90m 60| [39m
+    [90m 61| [39m  [34museEffect[39m(() 
+[33m=>[39m {
+    [90m 62| [39m    messagesEndRef[33m.[39mcurr
+ent[33m?.[39m[34mscrollIntoView[39m({ 
+behavior[33m:[39m [32m'smooth'[39m })[33m;[39m
+    [90m   | [39m                            
+[31m^[39m
+    [90m 63| [39m  }[33m,[39m 
+[messages[33m,[39m isTyping])[33m;[39m
+    [90m 64| [39m
+[90m [2mΓ¥»[22m commitHookEffectListMount node_mo
+dules/react-dom/cjs/react-dom.development.js:[2m231
+89:26[22m[39m
+[90m [2mΓ¥»[22m commitPassiveMountOnFiber node_mo
+dules/react-dom/cjs/react-dom.development.js:[2m249
+70:11[22m[39m
+[90m [2mΓ¥»[22m 
+commitPassiveMountEffects_complete node_modules/reac
+t-dom/cjs/react-dom.development.js:[2m24930:9[22m
+[39m
+[90m [2mΓ¥»[22m commitPassiveMountEffects_begin n
+ode_modules/react-dom/cjs/react-dom.development.js:
+[2m24917:7[22m[39m
+[90m [2mΓ¥»[22m commitPassiveMountEffects node_mo
+dules/react-dom/cjs/react-dom.development.js:[2m249
+05:3[22m[39m
+[90m [2mΓ¥»[22m flushPassiveEffectsImpl node_modu
+les/react-dom/cjs/react-dom.development.js:[2m27078
+:3[22m[39m
+[90m [2mΓ¥»[22m flushPassiveEffects node_modules/
+react-dom/cjs/react-dom.development.js:[2m27023:14
+[22m[39m
+[90m [2mΓ¥»[22m node_modules/react-dom/cjs/react-
+dom.development.js:[2m26808:9[22m[39m
+[90m [2mΓ¥»[22m flushActQueue node_modules/react/
+cjs/react.development.js:[2m2667:24[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/6]ΓÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[90m (6)[39m
+[2m   Start at [22m 12:48:17
+[2m   Duration [22m 4.05s[2m (transform 192ms, setup 243ms, import 551ms, tests 205ms, environment 2.00s)[22m
+

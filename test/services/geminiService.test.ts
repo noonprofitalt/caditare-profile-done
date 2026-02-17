@@ -2,25 +2,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeminiService } from '../../services/geminiService';
 import { Candidate, Job } from '../../types';
 
+const { mockText } = vi.hoisted(() => ({
+    mockText: vi.fn(),
+}));
+
 // Mock the Google Generative AI
 vi.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: vi.fn().mockImplementation(() => ({
-        getGenerativeModel: vi.fn().mockReturnValue({
+    GoogleGenerativeAI: class {
+        getGenerativeModel = vi.fn().mockReturnValue({
             generateContent: vi.fn().mockResolvedValue({
                 response: {
-                    text: vi.fn().mockReturnValue('Mock AI response'),
+                    text: mockText,
                 },
             }),
-        }),
-    })),
+        });
+    },
 }));
 
 describe('GeminiService', () => {
     beforeEach(() => {
         // Clear cache before each test
         vi.clearAllMocks();
+        GeminiService.clearCache();
         localStorage.clear();
         localStorage.setItem('globalworkforce_gemini_api_key', 'test-api-key');
+        mockText.mockReturnValue('Mock AI response');
     });
 
     describe('analyzeCandidate', () => {
@@ -43,8 +49,7 @@ describe('GeminiService', () => {
                 phone: '+1234567890',
                 preferredCountries: ['UAE'],
                 avatarUrl: '',
-                documents: [],
-            };
+            } as any as Candidate;
 
             const result = await GeminiService.analyzeCandidate(mockCandidate);
             expect(result).toBe('Mock AI response');
@@ -70,7 +75,7 @@ describe('GeminiService', () => {
                 preferredCountries: ['UAE'],
                 avatarUrl: '',
                 documents: [],
-            };
+            } as any as Candidate;
 
             const result1 = await GeminiService.analyzeCandidate(mockCandidate);
             const result2 = await GeminiService.analyzeCandidate(mockCandidate);
@@ -100,7 +105,7 @@ describe('GeminiService', () => {
                 preferredCountries: ['UAE'],
                 avatarUrl: '',
                 documents: [],
-            };
+            } as any as Candidate;
 
             const mockJob: Job = {
                 id: 'j1',
@@ -114,6 +119,8 @@ describe('GeminiService', () => {
                 postedDate: '2024-01-01',
                 requirements: ['5+ years experience', 'Wiring expertise'],
             };
+
+            mockText.mockReturnValue(JSON.stringify({ score: 85, reason: "Good match" }));
 
             const result = await GeminiService.getMatchScore(mockCandidate, mockJob);
             expect(result).toHaveProperty('score');
@@ -149,7 +156,7 @@ describe('GeminiService', () => {
                 preferredCountries: [],
                 avatarUrl: '',
                 documents: [],
-            };
+            } as any as Candidate;
 
             const result = await GeminiService.analyzeCandidate(mockCandidate);
             expect(result).toContain('AI Analysis Failed');

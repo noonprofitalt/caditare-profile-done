@@ -6,12 +6,13 @@ import { WorkflowStage, Candidate, PassportStatus, DocumentStatus } from '../typ
 
 describe('CandidateService Workflow Integration', () => {
     let mockCandidate: Candidate;
+    const mockCandidateId = '550e8400-e29b-41d4-a716-446655440000';
 
     beforeEach(() => {
         vi.clearAllMocks();
         // Setup a compliant candidate for testing
         mockCandidate = {
-            id: '123',
+            id: mockCandidateId,
             name: 'Test Candidate',
             stage: WorkflowStage.REGISTERED,
             documents: [
@@ -21,8 +22,8 @@ describe('CandidateService Workflow Integration', () => {
             // ... other necessary fields
         } as any;
 
-        vi.spyOn(CandidateService, 'getCandidateById').mockReturnValue(mockCandidate);
-        vi.spyOn(CandidateService, 'updateCandidate').mockImplementation(() => { });
+        vi.spyOn(CandidateService, 'getCandidate').mockResolvedValue(mockCandidate);
+        vi.spyOn(CandidateService, 'updateCandidate').mockResolvedValue(undefined);
     });
 
     it('should advance stage successfully when valid', async () => {
@@ -38,7 +39,7 @@ describe('CandidateService Workflow Integration', () => {
             } as any
         });
 
-        const result = await CandidateService.advanceStage('123', 'User');
+        const result = await CandidateService.advanceStage(mockCandidateId, 'User');
 
         expect(result.success).toBe(true);
         expect(CandidateService.updateCandidate).toHaveBeenCalled();
@@ -52,7 +53,7 @@ describe('CandidateService Workflow Integration', () => {
             error: 'Blocked by missing passport'
         });
 
-        const result = await CandidateService.advanceStage('123', 'User');
+        const result = await CandidateService.advanceStage(mockCandidateId, 'User');
 
         expect(result.success).toBe(false);
         expect(result.error).toContain('Blocked');
@@ -72,7 +73,7 @@ describe('CandidateService Workflow Integration', () => {
             } as any
         });
 
-        const result = await CandidateService.rollbackStage('123', WorkflowStage.REGISTERED, 'Mistake', 'User');
+        const result = await CandidateService.rollbackStage(mockCandidateId, WorkflowStage.REGISTERED, 'User', 'Mistake');
 
         expect(result.success).toBe(true);
         expect(mockCandidate.stage).toBe(WorkflowStage.REGISTERED);

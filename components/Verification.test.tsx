@@ -17,7 +17,6 @@ vi.mock('../services/candidateService', () => ({
         createQuickCandidate: vi.fn(),
         addTimelineEvent: vi.fn(),
         updateCandidate: vi.fn(),
-        advanceStage: vi.fn().mockResolvedValue({ success: false, error: 'Passport document not uploaded' }),
         rollbackStage: vi.fn(),
     },
     ProfileCompletionService: {
@@ -32,6 +31,20 @@ vi.mock('./widgets/WorkflowProgressWidget', () => ({
             <button onClick={() => onRollback?.('reason')}>Rollback</button>
         </div>
     )
+}));
+
+vi.mock('../services/workflowEngine', () => ({
+    default: {
+        getNextStage: vi.fn((s) => {
+            if (s === 'Registered') return 'Verified';
+            return null;
+        }),
+        performTransition: vi.fn().mockResolvedValue({ success: true }),
+        canPerformAction: vi.fn().mockReturnValue({ allowed: true }),
+        getWorkflowProgress: vi.fn().mockReturnValue(10),
+        getRemainingStages: vi.fn().mockReturnValue([]),
+    },
+    WORKFLOW_STAGES: ['Registered', 'Verified', 'Applied'],
 }));
 
 // Mock Data
@@ -52,10 +65,12 @@ describe('Candidate Features Verification', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(CandidateService.getCandidate).mockResolvedValue(mockCandidate);
+        vi.mocked(CandidateService.getCandidates).mockResolvedValue([mockCandidate]);
     });
 
     test('CandidateDetail: Should display all 5 Digital Form Sections in View Mode', async () => {
-        vi.mocked(CandidateService.getCandidateById).mockReturnValue(mockCandidate);
+        vi.mocked(CandidateService.getCandidate).mockResolvedValue(mockCandidate);
 
         render(
             <CandidateProvider>
@@ -68,7 +83,7 @@ describe('Candidate Features Verification', () => {
         );
 
         // Wait for data load
-        expect(await screen.findByText('Rajesh Kumar')).toBeInTheDocument();
+        expect(await screen.findByRole('heading', { name: /Rajesh Kumar/i })).toBeInTheDocument();
 
         // Click Profile Tab (using text match, assuming TabNavigation renders "Profile")
         // Note: TabNavigation is NOT mocked now (I removed the mock). So it renders real tabs.
@@ -82,7 +97,7 @@ describe('Candidate Features Verification', () => {
     });
 
     test('CandidateDetail: Should allow editing School, Height, Weight in Edit Mode', async () => {
-        vi.mocked(CandidateService.getCandidateById).mockReturnValue(mockCandidate);
+        vi.mocked(CandidateService.getCandidate).mockResolvedValue(mockCandidate);
 
         render(
             <CandidateProvider>
@@ -94,27 +109,45 @@ describe('Candidate Features Verification', () => {
             </CandidateProvider>
         );
 
-        expect(await screen.findByText('Rajesh Kumar')).toBeInTheDocument();
+        expect(await screen.findByRole('heading', { name: /Rajesh Kumar/i })).toBeInTheDocument();
 
         // Click Profile Tab
         fireEvent.click(screen.getByText('Profile'));
 
         // Enter Edit Mode
-        const editButton = screen.getByText(/Edit Profile/i);
-        fireEvent.click(editButton);
+        fireEvent.click(screen.getByText(/Edit Profile/i));
 
-        // Check inputs (using placeholders or display values)
-        // Note: Input matching depends on exact implementation.
-        // Assuming "Height" or similar labels exist.
+        // Find inputs (using labels)
+        const schoolInput = screen.getByLabelText(/School/i);
+        const heightInput = screen.getByLabelText(/Height \(FT\)/i);
+        const weightInput = screen.getByLabelText(/Weight \(KG\)/i);
+
+        // Change values
+        fireEvent.change(schoolInput, { target: { value: 'Global High School' } });
+        fireEvent.change(heightInput, { target: { value: '6' } });
+        fireEvent.change(weightInput, { target: { value: '85' } });
+
+        // Save
+        const saveButton = screen.getByText(/Save Changes/i);
+        fireEvent.click(saveButton);
+
+        // Verify service update call
+        expect(CandidateService.updateCandidate).toHaveBeenCalled();
+
+        // Check if values are updated in View Mode (wait for re-render)
+        expect(await screen.findByText('Global High School')).toBeInTheDocument();
+        expect(screen.getByText('6 FT')).toBeInTheDocument();
+        expect(screen.getByText('85 KG')).toBeInTheDocument();
     });
 
 
     test('CandidateDetail: Should block stage advance if requirements not met', async () => {
-        // Mock getCandidateById to return our candidate
-        vi.mocked(CandidateService.getCandidateById).mockReturnValue(mockCandidate);
+        // Mock getCandidate to return our candidate
+        vi.mocked(CandidateService.getCandidate).mockResolvedValue(mockCandidate);
 
-        // Mock advanceStage to return failure (simulating strict workflow)
-        vi.mocked(CandidateService.advanceStage).mockResolvedValue({
+        const WorkflowEngine = (await import('../services/workflowEngine')).default;
+        // Mock performTransition to return failure
+        vi.mocked(WorkflowEngine.performTransition).mockResolvedValue({
             success: false,
             error: 'Passport document not uploaded'
         });
@@ -132,12 +165,15 @@ describe('Candidate Features Verification', () => {
             </CandidateProvider>
         );
 
+        // Wait for data load
+        expect(await screen.findByRole('heading', { name: /Rajesh Kumar/i })).toBeInTheDocument();
+
         // Click Advance
         // Note: The button might be "Advance Stage" or similar based on UI.
         // In CandidateDetail.tsx it was "Advance to {nextStage}" or just "Advance" logic.
         // Let's check the button text in CandidateDetail.tsx later if this fails.
         // Assuming "Advance" exists.
-        const advanceButton = await screen.findByText(/Advance/i);
+        const advanceButton = await screen.findByRole('button', { name: /Advance/i });
         fireEvent.click(advanceButton);
 
         // Expect alert with block message

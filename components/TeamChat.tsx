@@ -406,6 +406,7 @@ const TeamChat: React.FC = () => {
                   <button
                     onClick={handleSend}
                     disabled={!inputValue.trim()}
+                    aria-label="Send message"
                     className={`p-3 rounded-full transition-all active:scale-95 ${inputValue.trim()
                       ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 hover:bg-blue-700'
                       : 'bg-slate-100 text-slate-300 cursor-not-allowed'

@@ -1,0 +1,1202 @@
+﻿
+> globalworkforce-erp@0.0.0 test
+> vitest --run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/user/Downloads/Antigravity Projects/caditare-profile-done[39m
+
+[90mstdout[2m | test/services/geminiService.test.ts[2m > [22m[2mGeminiService[2m > [22m[2manalyzeCandidate[2m > [22m[2mshould use cache for repeated requests
+[22m[39mGemini: Serving analysis from cache
+
+[90mstdout[2m | test/services/geminiService.test.ts[2m > [22m[2mGeminiService[2m > [22m[2manalyzeCandidate[2m > [22m[2mshould use cache for repeated requests
+[22m[39mGemini: Serving analysis from cache
+
+node.exe : [90mstderr[2m | 
+test/services/geminiService.test.ts[2m > 
+[22m[2mGeminiService[2m > 
+[22m[2mgetMatchScore[2m > [22m[2mshould return 
+match score for candidate and job
+At line:1 char:1
++ & "C:\nvm4w\nodejs/node.exe" 
+"C:\nvm4w\nodejs/node_modules/npm/bin/np ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90ms 
+   tderr[2m...ndidate and job:String) [], RemoteE  
+  xception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mGemini API call failed, retrying... (2 
+attempts left)
+
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+[90mstderr[2m | tests/ComplianceFlags.test.ts[2m 
+> [22m[2mCompliance Flags & Workflow Blocking[2m 
+> [22m[2mshould add a compliance flag
+[22m[39m[2026-02-17T07:13:17.219Z] ERROR: Error 
+fetching candidate (Supabase): {
+  error: {
+    code: [32m'22P02'[39m,
+    message: [32m'invalid input syntax for type 
+uuid: "test-candidate-1"'[39m,
+    details: [1mnull[22m,
+    id: [32m'test-candidate-1'[39m
+  },
+  stack: [90mundefined[39m
+}
+
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+Error: Test error
+    at ThrowError 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/chat/__tests__/ErrorBound
+ary.test.tsx:9:15)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+    at HTMLUnknownElement.callCallback 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:4164:14)
+    at 
+HTMLUnknownElement.callTheUserObjectsOperation 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+generated\EventListener.js:26:30)
+    at innerInvokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:360:16)
+    at invokeEventListeners 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:114:17)
+ [31mΓ¥»[39m components/chat/__tests__/ErrorBoundary.test.tsx [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 300[2mms[22m[39m
+     [32mΓ£ô[39m should render children when there is no error[32m 29[2mms[22m[39m
+     [32mΓ£ô[39m should render error UI when child throws error[32m 25[2mms[22m[39m
+     [32mΓ£ô[39m should display error message[32m 11[2mms[22m[39m
+     [32mΓ£ô[39m should show retry button[32m 167[2mms[22m[39m
+[31m     [31m├ù[31m should reset error state when retry is clicked[39m[32m 65[2mms[22m[39m
+[90mstderr[2m | tests/ComplianceFlags.test.ts[2m 
+> [22m[2mCompliance Flags & Workflow Blocking[2m 
+> [22m[2mshould resolve a compliance flag
+[22m[39m[2026-02-17T07:13:17.443Z] ERROR: Error 
+fetching candidate (Supabase): {
+  error: {
+    code: [32m'22P02'[39m,
+    message: [32m'invalid input syntax for type 
+uuid: "test-candidate-1"'[39m,
+    details: [1mnull[22m,
+    id: [32m'test-candidate-1'[39m
+  },
+  stack: [90mundefined[39m
+}
+
+ [31mΓ¥»[39m tests/ComplianceFlags.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 557[2mms[22m[39m
+[31m     [31m├ù[31m should add a compliance flag[39m[33m 338[2mms[22m[39m
+[31m     [31m├ù[31m should resolve a compliance flag[39m[32m 213[2mms[22m[39m
+     [32mΓ£ô[39m should block workflow transition if CRITICAL flag is active[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should allow workflow transition if CRITICAL flag is RESOLVED[32m 1[2mms[22m[39m
+     [32mΓ£ô[39m should not block workflow transition for WARNING flag[32m 0[2mms[22m[39m
+[90mstderr[2m | 
+test/services/geminiService.test.ts[2m > 
+[22m[2mGeminiService[2m > 
+[22m[2mgetMatchScore[2m > [22m[2mshould return 
+match score for candidate and job
+[22m[39mGemini API call failed, retrying... (1 
+attempts left)
+
+[90mstderr[2m | 
+test/services/geminiService.test.ts[2m > 
+[22m[2mGeminiService[2m > 
+[22m[2mgetMatchScore[2m > [22m[2mshould return 
+match score for candidate and job
+[22m[39mGemini Match Error: Error: No JSON found 
+in response
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/services/geminiService.ts:271:
+39
+    at GeminiService.withRetry 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/services/geminiService.ts:54:20)
+    at GeminiService.getMatchScore 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/services/geminiService.ts:264:28)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/test/services/geminiService.te
+st.ts:117:28
+    at [90mfile:///C:/Users/user/Downloads/Antigrav
+ity%20Projects/caditare-profile-done/[39mnode_modul
+es/[4m@vitest/runner[24m/dist/index.js:915:20
+
+[90mstdout[2m | test/services/geminiService.test.ts[2m > [22m[2mGeminiService[2m > [22m[2mAPI Key Management[2m > [22m[2mshould throw error when API key is missing
+[22m[39mGemini: Serving analysis from cache
+
+ [31mΓ¥»[39m test/services/geminiService.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 2037[2mms[22m[39m
+       [32mΓ£ô[39m should analyze a candidate and return response[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m should use cache for repeated requests[32m 2[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should return match score for candidate and job [33m 2024[2mms[22m[39m
+       [32mΓ£ô[39m should save and retrieve API key[32m 0[2mms[22m[39m
+[31m       [31m├ù[31m should throw error when API key is missing[39m[32m 5[2mms[22m[39m
+ [31mΓ¥»[39m services/workflowIntegration.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 9[2mms[22m[39m
+[31m     [31m├ù[31m should advance stage successfully when valid[39m[32m 6[2mms[22m[39m
+[31m     [31m├ù[31m should fail to advance when engine blocks[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should rollback stage successfully with reason[39m[32m 1[2mms[22m[39m
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+Error: [vitest] No "ChatService" export is defined 
+on the "../../services/chatService" mock. Did you 
+forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use 
+"importOriginal" helper inside:
+
+    at VitestMocker.createError (file:///C:/Users/us
+er/Downloads/Antigravity%20Projects/caditare-profile
+-done/node_modules/vitest/dist/chunks/startModuleRun
+ner.DEj0jb3e.js:311:17)
+    at Object.get (file:///C:/Users/user/Downloads/A
+ntigravity%20Projects/caditare-profile-done/node_mod
+ules/vitest/dist/chunks/startModuleRunner.DEj0jb3e.j
+s:384:16)
+    at C:/Users/user/Downloads/Antigravity Projects/
+caditare-profile-done/components/TeamChat.tsx:88:12
+    at mountMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16406:19)
+    at Object.useMemo 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:16851:16)
+    at useMemo (C:\Users\user\Downloads\Antigravity 
+Projects\caditare-profile-done\node_modules\react\cj
+s\react.development.js:1650:21)
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:87:27)
+    at renderWithHooks 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:15486:18)
+    at mountIndeterminateComponent 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:20103:13)
+    at beginWork 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-dom\cjs\react-dom
+.development.js:21626:16)
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+render without crashing
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+display channels list
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+ [31mΓ¥»[39m components/__tests__/TeamChat.test.tsx [2m([22m[2m6 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 50[2mms[22m[39m
+[31m     [31m├ù[31m should render without crashing[39m[32m 30[2mms[22m[39m
+[31m     [31m├ù[31m should display channels list[39m[32m 4[2mms[22m[39m
+[31m     [31m├ù[31m should show unread count badge[39m[32m 3[2mms[22m[39m
+[31m     [31m├ù[31m should allow sending a message[39m[32m 4[2mms[22m[39m
+[31m     [31m├ù[31m should handle keyboard shortcuts[39m[32m 4[2mms[22m[39m
+[31m     [31m├ù[31m should be accessible via keyboard[39m[32m 4[2mms[22m[39m
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+show unread count badge
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+allow sending a message
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+handle keyboard shortcuts
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould 
+be accessible via keyboard
+[22m[39mThe above error occurred in the 
+<TeamChat> component:
+
+    at TeamChat 
+(C:/Users/user/Downloads/Antigravity Projects/cadita
+re-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity P
+rojects\caditare-profile-done\node_modules\react-rou
+ter\dist\umd\react-router.development.js:1163:17)
+    at BrowserRouter 
+(C:\Users\user\Downloads\Antigravity Projects\cadita
+re-profile-done\node_modules\react-router-dom\dist\u
+md\react-router-dom.development.js:673:7)
+
+Consider adding an error boundary to your tree to 
+customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to 
+learn more about error boundaries.
+
+ [31mΓ¥»[39m __tests__/integration/chat-flow.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m server/__tests__/routes/channels.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m e2e/candidate-profile.spec.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m server/__tests__/routes/messages.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m e2e/workflows.spec.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m server/__tests__/socket/chatSocket.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [32mΓ£ô[39m tests/CandidateCardVerification.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 116[2mms[22m[39m
+ [32mΓ£ô[39m hooks/__tests__/useMediaQuery.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32mΓ£ô[39m components/Verification.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1668[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m CandidateDetail: Should display all 5 Digital Form Sections in View Mode [33m 781[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m CandidateDetail: Should allow editing School, Height, Weight in Edit Mode [33m 437[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m CandidateDetail: Should block stage advance if requirements not met [33m 447[2mms[22m[39m
+ [32mΓ£ô[39m components/Sidebar.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32mΓ£ô[39m hooks/__tests__/usePermission.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32mΓ£ô[39m utils/__tests__/sanitization.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mΓ£ô[39m tests/TaskEngine.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CandidateService } from '../services/candidateService';
+import '@testing-library/jest-dom';
 import WorkflowEngine, { WORKFLOW_STAGES } from '../services/workflowEngine.v2';
 import { ComplianceEngine } from '../services/compliance/ComplianceEngine';
 import { Candidate, WorkflowStage, ComplianceFlag } from '../types';
@@ -10,7 +11,7 @@ describe('Compliance Flags & Workflow Blocking', () => {
     beforeEach(() => {
         // Mock candidate
         candidate = {
-            id: 'test-candidate-1',
+            id: '550e8400-e29b-41d4-a716-446655440000',
             name: 'Test User',
             stage: WorkflowStage.REGISTERED,
             complianceFlags: [],
@@ -18,11 +19,11 @@ describe('Compliance Flags & Workflow Blocking', () => {
             personalInfo: {} as any,
             contactInfo: {} as any,
             professionalProfile: {} as any
-        } as Candidate;
+        } as any as Candidate;
 
-        // Mock CandidateService.getCandidateById
-        vi.spyOn(CandidateService, 'getCandidateById').mockReturnValue(candidate);
-        vi.spyOn(CandidateService, 'updateCandidate').mockImplementation((c) => {
+        // Mock CandidateService.getCandidate
+        vi.spyOn(CandidateService, 'getCandidate').mockResolvedValue(candidate);
+        vi.spyOn(CandidateService, 'updateCandidate').mockImplementation(async (c) => {
             candidate = c; // Update local mock
         });
     });
@@ -35,10 +36,10 @@ describe('Compliance Flags & Workflow Blocking', () => {
             createdBy: 'Admin'
         });
 
-        expect(candidate.complianceFlags).toHaveLength(1);
-        expect(candidate.complianceFlags[0].type).toBe('BEHAVIORAL');
-        expect(candidate.complianceFlags[0].severity).toBe('WARNING');
-        expect(candidate.complianceFlags[0].isResolved).toBe(false);
+        expect(candidate.complianceFlags!).toHaveLength(1);
+        expect(candidate.complianceFlags![0].type).toBe('BEHAVIORAL');
+        expect(candidate.complianceFlags![0].severity).toBe('WARNING');
+        expect(candidate.complianceFlags![0].isResolved).toBe(false);
     });
 
     it('should resolve a compliance flag', async () => {
@@ -50,12 +51,12 @@ describe('Compliance Flags & Workflow Blocking', () => {
             createdBy: 'Admin'
         });
 
-        const flagId = candidate.complianceFlags[0].id;
+        const flagId = candidate.complianceFlags![0].id;
 
         await CandidateService.resolveComplianceFlag(candidate.id, flagId, 'Cleared by manager', 'Manager');
 
-        expect(candidate.complianceFlags[0].isResolved).toBe(true);
-        expect(candidate.complianceFlags[0].resolutionNotes).toBe('Cleared by manager');
+        expect(candidate.complianceFlags![0].isResolved).toBe(true);
+        expect(candidate.complianceFlags![0].resolutionNotes).toBe('Cleared by manager');
     });
 
     it('should block workflow transition if CRITICAL flag is active', async () => {

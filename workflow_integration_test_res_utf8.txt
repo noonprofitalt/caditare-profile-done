@@ -1,0 +1,174 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/user/Downloads/Antigravity Projects/caditare-profile-done[39m
+
+node.exe : [90mstderr[2m | 
+services/workflowIntegration.test.tsx[2m > 
+[22m[2mCandidateService Workflow Integration[2m 
+> [22m[2mshould advance stage successfully when 
+valid
+At line:1 char:1
++ & "C:\nvm4w\nodejs/node.exe" 
+"C:\nvm4w\nodejs/node_modules/npm/bin/np ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90ms 
+   tderr[2m...ully when valid:String) [], RemoteE  
+  xception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39m[2026-02-17T07:18:37.671Z] ERROR: Error 
+fetching candidate (Supabase): {
+  error: {
+    code: [32m'22P02'[39m,
+    message: [32m'invalid input syntax for type 
+uuid: "123"'[39m,
+    details: [1mnull[22m,
+    id: [32m'123'[39m
+  },
+  stack: [90mundefined[39m
+}
+
+[90mstderr[2m | 
+services/workflowIntegration.test.tsx[2m > 
+[22m[2mCandidateService Workflow Integration[2m 
+> [22m[2mshould fail to advance when engine blocks
+[22m[39m[2026-02-17T07:18:37.978Z] ERROR: Error 
+fetching candidate (Supabase): {
+  error: {
+    code: [32m'22P02'[39m,
+    message: [32m'invalid input syntax for type 
+uuid: "123"'[39m,
+    details: [1mnull[22m,
+    id: [32m'123'[39m
+  },
+  stack: [90mundefined[39m
+}
+
+[90mstderr[2m | 
+services/workflowIntegration.test.tsx[2m > 
+[22m[2mCandidateService Workflow Integration[2m 
+> [22m[2mshould rollback stage successfully with 
+reason
+[22m[39m[2026-02-17T07:18:38.182Z] ERROR: Error 
+fetching candidate (Supabase): {
+  error: {
+    code: [32m'22P02'[39m,
+    message: [32m'invalid input syntax for type 
+uuid: "123"'[39m,
+    details: [1mnull[22m,
+    id: [32m'123'[39m
+  },
+  stack: [90mundefined[39m
+}
+
+ [31mΓ¥»[39m services/workflowIntegration.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 838[2mms[22m[39m
+[31m     [31m├ù[31m should advance stage successfully when valid[39m[33m 341[2mms[22m[39m
+[31m     [31m├ù[31m should fail to advance when engine blocks[39m[32m 296[2mms[22m[39m
+[31m     [31m├ù[31m should rollback stage successfully with reason[39m[32m 198[2mms[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed 
+Tests 3 [49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+services/workflowIntegration.test.tsx[2m > 
+[22mCandidateService Workflow Integration[2m > 
+[22mshould advance stage successfully when valid
+[31m[1mAssertionError[22m: expected false to be 
+true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2mΓ¥»[22m services/workflowIntegration.test
+.tsx:[2m43:32[22m[39m
+    [90m 41| [39m        const result = await 
+CandidateService.advanceStage('123', 'UseΓÇª
+    [90m 42| [39m
+    [90m 43| [39m        [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mtrue
+[39m)[33m;[39m
+    [90m   | [39m                               
+[31m^[39m
+    [90m 44| [39m        [34mexpect[39m([33mCan
+didateService[39m[33m.[39mupdateCandidate)[33m.
+[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m 45| [39m        [34mexpect[39m(mockCand
+idate[33m.[39mstage)[33m.[39m[34mtoBe[39m([33
+mWorkflowStage[39m[33m.[39m[33mVERIFIED[39m)[3
+3m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/3]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+services/workflowIntegration.test.tsx[2m > 
+[22mCandidateService Workflow Integration[2m > 
+[22mshould fail to advance when engine blocks
+[31m[1mAssertionError[22m: expected 'Candidate 
+not found' to contain 'Blocked'[39m
+
+Expected: [32m"[7mBlocke[27md"[39m
+Received: [31m"[7mCandidate not foun[27md"[39m
+
+[36m [2mΓ¥»[22m services/workflowIntegration.test
+.tsx:[2m58:30[22m[39m
+    [90m 56| [39m
+    [90m 57| [39m        [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mfals
+e[39m)[33m;[39m
+    [90m 58| [39m        [34mexpect[39m(result[
+33m.[39merror)[33m.[39m[34mtoContain[39m([32m'
+Blocked'[39m)[33m;[39m
+    [90m   | [39m                             
+[31m^[39m
+    [90m 59| [39m        [90m// Should NOT 
+update candidate stage[39m
+    [90m 60| [39m        [34mexpect[39m(mockCand
+idate[33m.[39mstage)[33m.[39m[34mtoBe[39m([33
+mWorkflowStage[39m[33m.[39m[33mREGISTERED[39m)
+[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/3]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+services/workflowIntegration.test.tsx[2m > 
+[22mCandidateService Workflow Integration[2m > 
+[22mshould rollback stage successfully with reason
+[31m[1mAssertionError[22m: expected false to be 
+true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2mΓ¥»[22m services/workflowIntegration.test
+.tsx:[2m77:32[22m[39m
+    [90m 75| [39m        const result = await 
+CandidateService.rollbackStage('123', WorΓÇª
+    [90m 76| [39m
+    [90m 77| [39m        [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mtrue
+[39m)[33m;[39m
+    [90m   | [39m                               
+[31m^[39m
+    [90m 78| [39m        [34mexpect[39m(mockCand
+idate[33m.[39mstage)[33m.[39m[34mtoBe[39m([33
+mWorkflowStage[39m[33m.[39m[33mREGISTERED[39m)
+[33m;[39m
+    [90m 79| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»Γ
+Ä»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/3]ΓÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m3 failed[39m[22m[90m (3)[39m
+[2m   Start at [22m 12:48:34
+[2m   Duration [22m 3.72s[2m (transform 200ms, setup 235ms, import 277ms, tests 838ms, environment 1.90s)[22m
+

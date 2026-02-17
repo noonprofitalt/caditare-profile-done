@@ -1,0 +1,387 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/user/Downloads/Antigravity Projects/caditare-profile-done[39m
+
+node.exe : [90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould render 
+without crashing
+At line:1 char:1
++ & "C:\nvm4w\nodejs/node.exe" 
+"C:\nvm4w\nodejs/node_modules/npm/bin/np ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2 
+   m...ithout crashing:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mWarning: An update to TeamChat inside a test was 
+not wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user 
+would see in the browser. Learn more at 
+https://reactjs.org/link/wrap-tests-with-act
+    at TeamChat (C:/Users/user/Downloads/Antigravity Project
+s/caditare-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-router\dist\umd\rea
+ct-router.development.js:1163:17)
+    at BrowserRouter (C:\Users\user\Downloads\Antigravity Pr
+ojects\caditare-profile-done\node_modules\react-router-dom\d
+ist\umd\react-router-dom.development.js:673:7)
+Warning: An update to TeamChat inside a test was not 
+wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user 
+would see in the browser. Learn more at 
+https://reactjs.org/link/wrap-tests-with-act
+    at TeamChat (C:/Users/user/Downloads/Antigravity Project
+s/caditare-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-router\dist\umd\rea
+ct-router.development.js:1163:17)
+    at BrowserRouter (C:\Users\user\Downloads\Antigravity Pr
+ojects\caditare-profile-done\node_modules\react-router-dom\d
+ist\umd\react-router-dom.development.js:673:7)
+Warning: An update to TeamChat inside a test was not 
+wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user 
+would see in the browser. Learn more at 
+https://reactjs.org/link/wrap-tests-with-act
+    at TeamChat (C:/Users/user/Downloads/Antigravity Project
+s/caditare-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-router\dist\umd\rea
+ct-router.development.js:1163:17)
+    at BrowserRouter (C:\Users\user\Downloads\Antigravity Pr
+ojects\caditare-profile-done\node_modules\react-router-dom\d
+ist\umd\react-router-dom.development.js:673:7)
+
+[90mstderr[2m | 
+components/__tests__/TeamChat.test.tsx[2m > 
+[22m[2mTeamChat Component[2m > [22m[2mshould handle 
+keyboard shortcuts
+[22m[39mWarning: An update to TeamChat inside a test was 
+not wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user 
+would see in the browser. Learn more at 
+https://reactjs.org/link/wrap-tests-with-act
+    at TeamChat (C:/Users/user/Downloads/Antigravity Project
+s/caditare-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-router\dist\umd\rea
+ct-router.development.js:1163:17)
+    at BrowserRouter (C:\Users\user\Downloads\Antigravity Pr
+ojects\caditare-profile-done\node_modules\react-router-dom\d
+ist\umd\react-router-dom.development.js:673:7)
+Warning: An update to TeamChat inside a test was not 
+wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user 
+would see in the browser. Learn more at 
+https://reactjs.org/link/wrap-tests-with-act
+    at TeamChat (C:/Users/user/Downloads/Antigravity Project
+s/caditare-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-router\dist\umd\rea
+ct-router.development.js:1163:17)
+    at BrowserRouter (C:\Users\user\Downloads\Antigravity Pr
+ojects\caditare-profile-done\node_modules\react-router-dom\d
+ist\umd\react-router-dom.development.js:673:7)
+Warning: An update to TeamChat inside a test was not 
+wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user 
+would see in the browser. Learn more at 
+https://reactjs.org/link/wrap-tests-with-act
+    at TeamChat (C:/Users/user/Downloads/Antigravity Project
+s/caditare-profile-done/components/TeamChat.tsx:24:69)
+    at Router (C:\Users\user\Downloads\Antigravity Projects\
+caditare-profile-done\node_modules\react-router\dist\umd\rea
+ct-router.development.js:1163:17)
+    at BrowserRouter (C:\Users\user\Downloads\Antigravity Pr
+ojects\caditare-profile-done\node_modules\react-router-dom\d
+ist\umd\react-router-dom.development.js:673:7)
+
+ [31mΓ¥»[39m components/__tests__/TeamChat.test.tsx [2m([22m[2m6 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 286[2mms[22m[39m
+     [32mΓ£ô[39m should render without crashing[32m 73[2mms[22m[39m
+     [32mΓ£ô[39m should display channels list[32m 84[2mms[22m[39m
+     [32mΓ£ô[39m should show unread count badge[32m 40[2mms[22m[39m
+[31m     [31m├ù[31m should allow sending a message[39m[32m 49[2mms[22m[39m
+     [32mΓ£ô[39m should handle keyboard shortcuts[32m 14[2mms[22m[39m
+     [32mΓ£ô[39m should be accessible via keyboard[32m 25[2mms[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Tests 1 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+components/__tests__/TeamChat.test.tsx[2m > [22mTeamChat 
+Component[2m > [22mshould allow sending a message
+[31m[1mTestingLibraryElementError[22m[39m: Unable to 
+find an element with the placeholder text of: /type a 
+message/i
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"h-[calc(100vh-4rem)] flex 
+bg-[#F0F2F5] overflow-hidden relative"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"
+        hidden md:flex
+        w-full md:w-80 bg-white border-r border-slate-200 
+flex-col shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 
+absolute md:relative inset-0 md:inset-auto
+      "[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-5 space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<h2[39m
+              [33mclass[39m=[32m"text-xl font-bold 
+text-slate-900 tracking-tight"[39m
+            [36m>[39m
+              [0mMessages[0m
+            [36m</h2>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"p-2 hover:bg-slate-100 
+rounded-full transition-colors text-blue-600"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"lucide 
+lucide-plus"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"20"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"20"[39m
+                
+[33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M5 12h14"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 5v14"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"relative group"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33mclass[39m=[32m"absolute left-3 top-1/2 
+-translate-y-1/2 text-slate-400 
+group-focus-within:text-blue-500 transition-colors"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"16"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"16"[39m
+              
+[33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"11"[39m
+                [33mcy[39m=[32m"11"[39m
+                [33mr[39m=[32m"8"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m21 21-4.3-4.3"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"w-full pl-10 pr-4 
+py-2.5 bg-slate-50 border border-transparent focus:bg-white 
+focus:border-blue-500 rounded-xl text-sm transition-all 
+outline-none text-slate-800 placeholder:text-slate-400"[39m
+              [33mplaceholder[39m=[32m"Search 
+conversations..."[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex p-1 bg-slate-100 
+rounded-lg"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex-1 py-1.5 
+text-[11px] font-bold uppercase tracking-wider rounded-md 
+transition-all bg-white text-blue-600 shadow-sm"[39m
+            [36m>[39m
+              [0mall[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex-1 py-1.5 
+text-[11px] font-bold uppercase tracking-wider rounded-md 
+transition-all text-slate-500 hover:text-slate-700"[39m
+            [36m>[39m
+              [0mchannels[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"flex-1 py-1.5 
+text-[11px] font-bold uppercase tracking-wider rounded-md 
+transition-all text-slate-500 hover:text-slate-700"[39m
+            [36m>[39m
+              [0mdms[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex-1 overflow-y-auto px-2 
+pb-4 space-y-1 custom-scrollbar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"mb-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"px-4 mb-2"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-[10px] 
+font-black text-slate-400 uppercase tracking-widest"[39m
+              [36m>[39m
+                [0mChannels[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"w-full flex 
+items-center justify-between p-3 rounded-xl transition-all 
+group text-slate-600 hover:bg-slate-50"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center 
+gap-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"p-2 rounded-lg 
+bg-slate-100 text-slate-400 group-hover:bg-slate-200"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide 
+lucide-hash"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"16"[39m
+                    
+[33mstroke[39m=[32m"currentColor"[39m
+                    
+[33mstroke-linecap[39m=[32m"round"[39m
+                    
+[33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"16"[39m
+                    
+[33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<line[39m
+                      [33mx1[39m=[32m"4"[39m
+                      [33mx2[39m=[32m"20"[39m
+                      [33my1[39m=[32m"9"[39m
+                      [33my2[39m=[32m"9"[39m
+                    [36m/>[39m
+                    [36m<line[39m
+                      [33mx1[39m=[32m"4"[39m
+                      [33mx2[39m=[32m"20"[39m
+                      [33my1[39m=[32m"15"[39m
+                      [33my2[39m=[32m"15"[39m
+                    [36m/>[39m
+                    [36m<line[39m
+                      [33mx1[39m=[32m"10"[39m
+                      [33mx2[39m=[32m"8"[39m
+                      [33my1[...
+[90m [2mΓ¥»[22m Object.getElementError node_modules/@test
+ing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dist/qu
+ery-helpers.js:[2m76:38[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dist/qu
+ery-helpers.js:[2m52:17[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dist/qu
+ery-helpers.js:[2m95:19[22m[39m
+[36m [2mΓ¥»[22m 
+components/__tests__/TeamChat.test.tsx:[2m85:30[22m[39m
+    [90m 83| [39m        })[33m;[39m
+    [90m 84| [39m
+    [90m 85| [39m        [35mconst[39m input 
+[33m=[39m 
+screen[33m.[39m[34mgetByPlaceholderText[39m([36m/type 
+a message/i[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m 86| [39m        
+fireEvent[33m.[39m[34mchange[39m(input[33m,[39m { 
+target[33m:[39m { value[33m:[39m [32m'Test 
+message'[39m } })[33m;[39m
+    [90m 87| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 12:59:57
+[2m   Duration [22m 4.19s[2m (transform 172ms, setup 276ms, import 408ms, tests 286ms, environment 1.98s)[22m
+

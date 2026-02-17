@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { supabase } from './supabase';
 import { logger } from './loggerService';
+import WorkflowEngine from './workflowEngine.v2';
 
 export class CandidateService {
 
@@ -303,5 +304,42 @@ export class CandidateService {
 
         candidate.timelineEvents = [newEvent, ...(candidate.timelineEvents || [])];
         await this.updateCandidate(candidate);
+    }
+
+    // --- Workflow Integration methods ---
+
+    static async advanceStage(candidateId: string, userId: string, reason?: string): Promise<{ success: boolean, error?: string }> {
+        const candidate = await this.getCandidate(candidateId);
+        if (!candidate) return { success: false, error: 'Candidate not found' };
+
+        const nextStage = WorkflowEngine.getNextStage(candidate.stage);
+        if (!nextStage) return { success: false, error: 'No next stage available' };
+
+        const result = WorkflowEngine.performTransition(candidate, nextStage, userId, reason);
+        if (!result.success) return { success: false, error: result.error };
+
+        candidate.stage = nextStage;
+        candidate.stageEnteredAt = new Date().toISOString();
+        if (result.event) {
+            candidate.timelineEvents = [result.event as any, ...(candidate.timelineEvents || [])];
+        }
+        await this.updateCandidate(candidate);
+        return { success: true };
+    }
+
+    static async rollbackStage(candidateId: string, toStage: WorkflowStage, userId: string, reason: string): Promise<{ success: boolean, error?: string }> {
+        const candidate = await this.getCandidate(candidateId);
+        if (!candidate) return { success: false, error: 'Candidate not found' };
+
+        const result = WorkflowEngine.performTransition(candidate, toStage, userId, reason);
+        if (!result.success) return { success: false, error: result.error };
+
+        candidate.stage = toStage;
+        candidate.stageEnteredAt = new Date().toISOString();
+        if (result.event) {
+            candidate.timelineEvents = [result.event as any, ...(candidate.timelineEvents || [])];
+        }
+        await this.updateCandidate(candidate);
+        return { success: true };
     }
 }

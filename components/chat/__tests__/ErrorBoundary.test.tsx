@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import ErrorBoundary from '../ErrorBoundary';
 
 // Component that throws an error
@@ -69,15 +70,15 @@ describe('ErrorBoundary Component', () => {
             </ErrorBoundary>
         );
 
-        const retryButton = screen.getByRole('button', { name: /try again/i });
-        fireEvent.click(retryButton);
-
-        // After retry, re-render with no error
+        // First re-render with safe child
         rerender(
             <ErrorBoundary>
                 <ThrowError shouldThrow={false} />
             </ErrorBoundary>
         );
+
+        const retryButton = screen.getByRole('button', { name: /try again/i });
+        fireEvent.click(retryButton);
 
         expect(screen.getByText('No error')).toBeInTheDocument();
     });

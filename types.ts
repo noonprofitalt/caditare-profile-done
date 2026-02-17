@@ -807,22 +807,22 @@ export interface ChatNotification {
 }
 
 export type Permission =
-  | 'view_dashboard'
-  | 'view_candidates'
-  | 'edit_candidates'
-  | 'delete_candidates'
-  | 'view_finance'
-  | 'edit_finance'
-  | 'view_reports'
-  | 'manage_users'
-  | 'chat';
+  | 'candidates.view'
+  | 'candidates.edit'
+  | 'candidates.delete'
+  | 'finance.view'
+  | 'finance.edit'
+  | 'finance.manage'
+  | 'reports.view'
+  | 'users.manage'
+  | 'chat.view';
 
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
-  'Admin': ['view_dashboard', 'view_candidates', 'edit_candidates', 'delete_candidates', 'view_finance', 'edit_finance', 'view_reports', 'manage_users', 'chat'],
-  'Recruiter': ['view_dashboard', 'view_candidates', 'edit_candidates', 'view_reports', 'chat'],
-  'Viewer': ['view_dashboard', 'view_candidates', 'view_reports', 'chat'],
-  'Manager': ['view_dashboard', 'view_candidates', 'edit_candidates', 'view_reports', 'chat'],
-  'Finance': ['view_dashboard', 'view_finance', 'edit_finance', 'view_reports', 'chat'],
-  'Compliance': ['view_dashboard', 'view_candidates', 'view_reports', 'chat'],
-  'Operations': ['view_dashboard', 'view_candidates', 'view_reports', 'chat']
+  'Admin': ['candidates.view', 'candidates.edit', 'candidates.delete', 'finance.view', 'finance.edit', 'reports.view', 'users.manage', 'chat.view'],
+  'Recruiter': ['candidates.view', 'candidates.edit', 'reports.view', 'chat.view'],
+  'Viewer': ['candidates.view', 'reports.view', 'chat.view'],
+  'Manager': ['candidates.view', 'candidates.edit', 'reports.view', 'chat.view'],
+  'Finance': ['finance.view', 'finance.edit', 'reports.view', 'chat.view'],
+  'Compliance': ['candidates.view', 'reports.view', 'chat.view'],
+  'Operations': ['candidates.view', 'reports.view', 'chat.view']
 };

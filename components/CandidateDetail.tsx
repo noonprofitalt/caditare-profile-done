@@ -823,9 +823,10 @@ const CandidateDetail: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-5">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Height (FT)</label>
+                      <label htmlFor="height-ft" className="block text-xs font-bold text-slate-500 uppercase mb-1">Height (FT)</label>
                       {isEditingProfile ? (
                         <input
+                          id="height-ft"
                           type="number"
                           value={editedProfile.personalInfo?.height?.feet || 0}
                           onChange={(e) => setEditedProfile({
@@ -844,9 +845,10 @@ const CandidateDetail: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Height (IN)</label>
+                      <label htmlFor="height-in" className="block text-xs font-bold text-slate-500 uppercase mb-1">Height (IN)</label>
                       {isEditingProfile ? (
                         <input
+                          id="height-in"
                           type="number"
                           value={editedProfile.personalInfo?.height?.inches || 0}
                           onChange={(e) => setEditedProfile({
@@ -865,9 +867,10 @@ const CandidateDetail: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Weight (KG)</label>
+                      <label htmlFor="weight-kg" className="block text-xs font-bold text-slate-500 uppercase mb-1">Weight (KG)</label>
                       {isEditingProfile ? (
                         <input
+                          id="weight-kg"
                           type="number"
                           value={editedProfile.personalInfo?.weight || 0}
                           onChange={(e) => setEditedProfile({
@@ -926,9 +929,10 @@ const CandidateDetail: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">School</label>
+                      <label htmlFor="school" className="block text-xs font-bold text-slate-500 uppercase mb-1">School</label>
                       {isEditingProfile ? (
                         <input
+                          id="school"
                           type="text"
                           value={editedProfile.professionalProfile?.school || ''}
                           onChange={(e) => setEditedProfile({

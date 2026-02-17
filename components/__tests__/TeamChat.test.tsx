@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import TeamChat from '../TeamChat';
 
 // Mock services
-vi.mock('../../services/chatService', () => ({
-    default: {
+vi.mock('../../services/chatService', () => {
+    const mockChatService = {
         getChannels: vi.fn().mockResolvedValue([
             { id: '1', name: 'General', type: 'public', unreadCount: 0 },
             { id: '2', name: 'Random', type: 'public', unreadCount: 2 },
@@ -20,9 +21,16 @@ vi.mock('../../services/chatService', () => ({
                 },
             ],
         }),
+        getUsers: vi.fn().mockResolvedValue([]),
         sendMessage: vi.fn().mockResolvedValue({ id: 'new-msg' }),
-    },
-}));
+        getDmChannelId: vi.fn().mockReturnValue('dm-1'),
+        getChannelDisplay: vi.fn().mockReturnValue({ name: 'General', isUser: false }),
+    };
+    return {
+        ChatService: mockChatService,
+        default: mockChatService,
+    };
+});
 
 vi.mock('../../services/socketService', () => ({
     default: {
@@ -51,7 +59,8 @@ describe('TeamChat Component', () => {
         renderTeamChat();
 
         await waitFor(() => {
-            expect(screen.getByText('General')).toBeInTheDocument();
+            const generalChannels = screen.getAllByText('General');
+            expect(generalChannels.length).toBeGreaterThan(0);
             expect(screen.getByText('Random')).toBeInTheDocument();
         });
     });
@@ -69,13 +78,14 @@ describe('TeamChat Component', () => {
         renderTeamChat();
 
         await waitFor(() => {
-            expect(screen.getByText('General')).toBeInTheDocument();
+            const generalChannels = screen.getAllByText('General');
+            expect(generalChannels.length).toBeGreaterThan(0);
         });
 
-        const input = screen.getByPlaceholderText(/type a message/i);
+        const input = screen.getByPlaceholderText(/Message General/i);
         fireEvent.change(input, { target: { value: 'Test message' } });
 
-        const sendButton = screen.getByRole('button', { name: /send/i });
+        const sendButton = screen.getByRole('button', { name: /Send message/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -97,11 +107,13 @@ describe('TeamChat Component', () => {
         renderTeamChat();
 
         await waitFor(() => {
-            expect(screen.getByText('General')).toBeInTheDocument();
+            const generalChannels = screen.getAllByText('General');
+            expect(generalChannels.length).toBeGreaterThan(0);
         });
 
         // Tab through interactive elements
-        const firstChannel = screen.getByText('General').closest('button');
+        const generalChannels = screen.getAllByText('General');
+        const firstChannel = generalChannels[0].closest('button');
         firstChannel?.focus();
 
         expect(document.activeElement).toBe(firstChannel);
