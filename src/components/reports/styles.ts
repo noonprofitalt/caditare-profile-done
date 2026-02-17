@@ -5,14 +5,13 @@ import { StyleSheet } from '@react-pdf/renderer';
 export const styles = StyleSheet.create({
   // 1️⃣ PURE A4 LAYOUT RESET
   page: {
-    paddingTop: 40,
-    paddingBottom: 90, // EXTENDED SAFE ZONE for Fixed Footer
-    paddingLeft: 40,
-    paddingRight: 40,
-    fontFamily: 'Times-Roman',
+    paddingTop: 45,
+    paddingBottom: 60,
+    paddingLeft: 45,
+    paddingRight: 45,
+    fontFamily: 'Helvetica',
     fontSize: 10,
-    color: '#000000',
-    lineHeight: 1.4,
+    color: '#0c0a09',
     backgroundColor: '#FFFFFF',
     position: 'relative',
   },
@@ -21,22 +20,21 @@ export const styles = StyleSheet.create({
   headerSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end', // Align bottoms
-    marginBottom: 20,
+    alignItems: 'center',
+    marginBottom: 10,
     borderBottomWidth: 2,
     borderBottomColor: '#1e1b4b',
-    paddingBottom: 15,
+    paddingBottom: 8,
     width: '100%',
   },
   headerLeft: {
-    width: '35%',
-    justifyContent: 'center',
+    width: '50%',
     alignItems: 'flex-start',
   },
   headerRight: {
-    width: '65%',
-    justifyContent: 'center',
+    width: '50%',
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
 
   // 3️⃣ EMBASSY TYPOGRAPHY - HIERARCHY
@@ -64,47 +62,46 @@ export const styles = StyleSheet.create({
   // 4️⃣ DOCUMENT TITLE
   reportTitle: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 14,
+    fontSize: 16,
     color: '#000000',
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginBottom: 10,
-    marginTop: 10,
-    letterSpacing: 1,
-    borderTopWidth: 1.5,
-    borderTopColor: '#000000',
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#000000',
-    paddingVertical: 8,
+    marginBottom: 8,
+    marginTop: 8,
+    letterSpacing: 2,
+    borderTopWidth: 2,
+    borderTopColor: '#1e1b4b',
+    borderBottomWidth: 2,
+    borderBottomColor: '#1e1b4b',
+    paddingVertical: 10,
   },
 
   // 5️⃣ META DATA ROW
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9', // Very light divider
-    paddingBottom: 8,
+    backgroundColor: '#f8fafc',
+    padding: '6 10',
+    marginBottom: 25,
   },
   metaText: {
-    fontSize: 8,
+    fontSize: 8.5,
     fontFamily: 'Helvetica',
-    color: '#475569',
+    color: '#64748b',
   },
 
   // 6️⃣ SECTION HEADERS
   h1: { fontSize: 13, fontFamily: 'Helvetica-Bold', marginBottom: 6, textTransform: 'uppercase', color: '#000' },
   h2: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 5,
-    marginTop: 10,
+    marginBottom: 8,
+    marginTop: 12,
     textTransform: 'uppercase',
     color: '#000000',
-    borderBottomWidth: 1,
+    borderBottomWidth: 1.5,
     borderBottomColor: '#000000',
-    paddingBottom: 2,
+    paddingBottom: 4,
   },
   h3: {
     fontSize: 10,
@@ -157,11 +154,11 @@ export const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   tableCell: {
-    padding: 4,
+    padding: 6,
     borderRightWidth: 1,
     borderRightColor: '#000000',
     fontSize: 9,
-    fontFamily: 'Times-Roman',
+    fontFamily: 'Helvetica',
   },
   lastCell: { borderRightWidth: 0 },
 
@@ -218,9 +215,9 @@ export const styles = StyleSheet.create({
   },
   watermarkText: {
     position: 'absolute',
-    bottom: 70, // Just above footer
-    left: 40,
-    right: 40,
+    bottom: 20, // Absolute bottom center
+    left: 45,
+    right: 45,
     textAlign: 'center',
     fontSize: 8,
     color: '#cbd5e1', // Very faint grey

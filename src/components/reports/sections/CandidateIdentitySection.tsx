@@ -10,23 +10,31 @@ interface CandidateIdentitySectionProps {
 
 export const CandidateIdentitySection: React.FC<CandidateIdentitySectionProps> = ({ candidate }) => {
     const IdentityRow = ({ label, value }: { label: string, value: string | undefined }) => (
-        <View style={styles.row}>
-            <Text style={styles.label}>{label}</Text>
-            <Text style={{ width: 10, fontFamily: 'Times-Roman', fontSize: 11 }}>:</Text>
-            <Text style={styles.value}>{formatText(value)}</Text>
+        <View style={[styles.row, { marginBottom: 6 }]}>
+            <Text style={[styles.label, { width: 110, fontSize: 9.5 }]}>{label}</Text>
+            <Text style={{ width: 15, fontSize: 10, color: '#64748b' }}>:</Text>
+            <Text style={[styles.value, { fontSize: 10, color: '#000', fontFamily: 'Helvetica' }]}>{formatText(value)}</Text>
         </View>
     );
 
     return (
         <View style={styles.section}>
             <Text style={styles.h2}>CANDIDATE IDENTITY</Text>
-            <View style={[styles.row, { alignItems: 'flex-start' }]}>
-                {/* Photo Placeholder - Biometric Style */}
-                <View style={{ width: 100, height: 120, border: '1px solid #000', marginRight: 20, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 8, fontFamily: 'Times-Roman' }}>PHOTO</Text>
+            <View style={[styles.row, { marginTop: 10 }]}>
+                {/* Photo Placeholder */}
+                <View style={{
+                    width: 120,
+                    height: 140,
+                    borderWidth: 1,
+                    borderColor: '#000',
+                    marginRight: 30,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <Text style={{ fontSize: 9, color: '#666' }}>PHOTO</Text>
                 </View>
 
-                {/* Identity Details - Biometric Style with Colon Alignment */}
+                {/* Identity Details */}
                 <View style={{ flex: 1 }}>
                     <IdentityRow label="Full Name" value={candidate.name} />
                     <IdentityRow label="NIC Number" value={candidate.nic} />

@@ -23,8 +23,8 @@ export const ComplianceSnapshot: React.FC<ComplianceSnapshotProps> = ({ candidat
 
     // Helper for Status Coloring
     const statusStyle = (status: string) => ({
-        fontFamily: status === 'Pending' || status === 'Unfit' ? 'Helvetica-Bold' : 'Helvetica',
-        color: status === 'Pending' || status === 'Unfit' ? '#ef4444' : '#166534', // Red/Green logic
+        fontFamily: 'Helvetica-Bold',
+        color: (status === 'Pending' || status === 'Unfit') ? '#ef4444' : '#166534', // Bright Red / Forest Green
         fontSize: 9
     });
 

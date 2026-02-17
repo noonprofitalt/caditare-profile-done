@@ -10,7 +10,7 @@ interface JobInfoSectionProps {
 
 export const JobInfoSection: React.FC<JobInfoSectionProps> = ({ candidate }) => (
     <View style={styles.section}>
-        <Text style={styles.h2}>Employment Information</Text>
+        <Text style={styles.h2}>EMPLOYMENT INFORMATION</Text>
         <View style={styles.table}>
             <View style={[styles.tableRow, styles.tableHeader]}>
                 <Text style={[styles.tableCell, { width: '30%' }]}>Job Position</Text>

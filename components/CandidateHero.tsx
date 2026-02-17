@@ -93,15 +93,15 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
 
     return (
         <div className="bg-slate-900 text-white relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-50"></div>
-            <div className="px-4 md:px-8 py-8 md:py-12 relative z-10">
-                <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent"></div>
+            <div className="px-4 md:px-8 py-4 relative z-10">
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-5 md:gap-8">
                     {/* Avatar */}
                     <div className="relative flex-shrink-0 group">
                         <img
-                            src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&size=256`}
+                            src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&size=160`}
                             alt={candidate.name}
-                            className="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-4 border-white/20 shadow-2xl object-cover transition-premium group-hover:scale-105"
+                            className="w-20 h-20 md:w-24 md:h-24 rounded-2xl border border-white/10 shadow-xl object-cover transition-premium group-hover:scale-105"
                         />
                         <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 border-4 border-slate-900 rounded-2xl flex items-center justify-center shadow-lg">
                             <CheckCircle size={14} className="text-white" />
@@ -111,14 +111,14 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
                     {/* Main Info */}
                     <div className="flex-1 min-w-0 text-center md:text-left">
                         {/* Name & Badges */}
-                        <div className="flex flex-col md:flex-row items-center gap-3 mb-4">
-                            <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase">{candidate.name}</h1>
+                        <div className="flex flex-col md:flex-row items-center gap-3 mb-1">
+                            <h1 className="text-xl md:text-2xl font-bold tracking-tight uppercase">{candidate.name}</h1>
                             {getCompletionBadge()}
                         </div>
 
                         {/* Role & Stage */}
-                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 md:gap-4 mb-6">
-                            <span className="text-lg md:text-xl text-blue-300 font-bold tracking-tight">{candidate.role || 'No Role Assigned'}</span>
+                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 md:gap-3 mb-3">
+                            <span className="text-sm md:text-base text-blue-300 font-semibold tracking-tight">{candidate.role || 'No Role Assigned'}</span>
                             <span className="hidden md:block text-slate-700 font-black">•</span>
                             <span className={`px-4 py-1.5 rounded-xl border text-[10px] md:text-xs font-black uppercase tracking-widest bg-white/5 backdrop-blur-md ${getStageColor()}`}>
                                 {candidate.stage}
@@ -128,7 +128,7 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
                         </div>
 
                         {/* Contact Info */}
-                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 md:gap-8 text-[11px] md:text-xs mb-8">
+                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 md:gap-6 text-[10px] mb-4">
                             {candidate.phone && (
                                 <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 transition-premium hover:bg-white/10 cursor-pointer">
                                     <Phone size={14} className="text-blue-400" />
@@ -150,34 +150,37 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
                         </div>
 
                         {/* Quick Stats */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-10 pt-6 border-t border-white/5">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 pt-3 border-t border-white/5">
                             <div>
-                                <div className="text-3xl font-black tracking-tighter text-blue-400">{candidate.profileCompletionPercentage}%</div>
+                                <div className="text-lg font-bold tracking-tight text-blue-400">{candidate.profileCompletionPercentage}%</div>
                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Integrity</div>
                             </div>
                             <div>
-                                <div className="text-3xl font-black tracking-tighter">{candidate.documents?.length || 0}</div>
+                                <div className="text-lg font-bold tracking-tight">{candidate.documents?.length || 0}</div>
                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Repository</div>
                             </div>
                             <div>
-                                <div className="text-3xl font-black tracking-tighter">{candidate.timelineEvents?.length || 0}</div>
+                                <div className="text-lg font-bold tracking-tight">{candidate.timelineEvents?.length || 0}</div>
                                 <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Operations</div>
                             </div>
                             {candidate.experienceYears !== undefined && (
                                 <div>
-                                    <div className="text-3xl font-black tracking-tighter text-emerald-400">{candidate.experienceYears}Y</div>
-                                    <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Experience</div>
+                                    <div className="text-lg font-bold tracking-tight text-emerald-400">{candidate.experienceYears}Y</div>
+                                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Experience</div>
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col gap-3 w-full md:w-auto">
-                        {getPrimaryAction()}
+                    <div className="flex flex-col gap-2 w-full md:w-auto self-center">
+                        <button className="flex items-center justify-center gap-2 px-6 py-2 bg-white text-blue-700 rounded-lg hover:bg-blue-50 transition-colors font-bold text-xs shadow-md">
+                            <Calendar size={16} />
+                            Schedule Interview
+                        </button>
                         <Link
                             to={`/candidates`}
-                            className="flex items-center justify-center gap-3 px-8 py-3.5 bg-white/5 text-white rounded-2xl hover:bg-white/10 transition-premium font-black text-[10px] uppercase tracking-widest border border-white/10 shadow-xl"
+                            className="flex items-center justify-center gap-2 px-6 py-2 bg-white/5 text-white rounded-lg hover:bg-white/10 transition-premium font-bold text-[9px] uppercase tracking-widest border border-white/10 shadow-md"
                         >
                             Return to Registry
                         </Link>

@@ -19,12 +19,12 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ candidate }) => {
             <View style={styles.row}>
                 <View style={{ width: '50%', flexDirection: 'row' }}>
                     <Text style={styles.label}>Father's Name</Text>
-                    <Text style={{ width: 10, fontFamily: 'Times-Roman', fontSize: 11 }}>:</Text>
+                    <Text style={{ width: 10, fontFamily: 'Helvetica', fontSize: 11 }}>:</Text>
                     <Text style={styles.value}>{formatText(personalInfo.fatherName || candidate.fatherName)}</Text>
                 </View>
                 <View style={{ width: '50%', flexDirection: 'row' }}>
                     <Text style={styles.label}>Mother's Name</Text>
-                    <Text style={{ width: 10, fontFamily: 'Times-Roman', fontSize: 11 }}>:</Text>
+                    <Text style={{ width: 10, fontFamily: 'Helvetica', fontSize: 11 }}>:</Text>
                     <Text style={styles.value}>{formatText(personalInfo.motherName || candidate.motherName)}</Text>
                 </View>
             </View>
@@ -32,12 +32,12 @@ export const FamilySection: React.FC<FamilySectionProps> = ({ candidate }) => {
             <View style={styles.row}>
                 <View style={{ width: '50%', flexDirection: 'row' }}>
                     <Text style={styles.label}>Spouse's Name</Text>
-                    <Text style={{ width: 10, fontFamily: 'Times-Roman', fontSize: 11 }}>:</Text>
+                    <Text style={{ width: 10, fontFamily: 'Helvetica', fontSize: 11 }}>:</Text>
                     <Text style={styles.value}>{formatText(personalInfo.spouseName || candidate.spouseName)}</Text>
                 </View>
                 <View style={{ width: '50%', flexDirection: 'row' }}>
                     <Text style={styles.label}>No. of Children</Text>
-                    <Text style={{ width: 10, fontFamily: 'Times-Roman', fontSize: 11 }}>:</Text>
+                    <Text style={{ width: 10, fontFamily: 'Helvetica', fontSize: 11 }}>:</Text>
                     <Text style={styles.value}>{childrenCount}</Text>
                 </View>
             </View>

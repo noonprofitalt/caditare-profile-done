@@ -15,13 +15,13 @@ export const WorkflowStatusSection: React.FC<WorkflowStatusSectionProps> = ({ ca
         <View style={{ flexDirection: 'row', marginBottom: 10 }}>
             <View style={{ width: '50%', flexDirection: 'row' }}>
                 <Text style={styles.label}>Current Stage</Text>
-                <Text style={{ width: 10, fontFamily: 'Times-Roman', fontSize: 11 }}>:</Text>
-                <Text style={[styles.value, { fontFamily: 'Times-Bold', textTransform: 'uppercase' }]}>{candidate.stage}</Text>
+                <Text style={{ width: 10, fontFamily: 'Helvetica', fontSize: 11 }}>:</Text>
+                <Text style={[styles.value, { fontFamily: 'Helvetica-Bold', textTransform: 'uppercase' }]}>{candidate.stage}</Text>
             </View>
             <View style={{ width: '50%', flexDirection: 'row' }}>
                 <Text style={styles.label}>Status</Text>
-                <Text style={{ width: 10, fontFamily: 'Times-Roman', fontSize: 11 }}>:</Text>
-                <Text style={[styles.value, { fontFamily: 'Times-Bold' }]}>{candidate.stageStatus || 'IN PROGRESS'}</Text>
+                <Text style={{ width: 10, fontFamily: 'Helvetica', fontSize: 11 }}>:</Text>
+                <Text style={[styles.value, { fontFamily: 'Helvetica-Bold' }]}>{candidate.stageStatus || 'IN PROGRESS'}</Text>
             </View>
         </View>
 

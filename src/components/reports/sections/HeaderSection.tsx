@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View, Image } from '@react-pdf/renderer';
 import { styles } from '../styles';
-import { SUHARA_LOGO_BASE64 as logo } from '../logoBase64';
+import logo from '../logo_suhara.jpg';
 
 interface HeaderSectionProps {
     reportId: string;
@@ -17,24 +17,22 @@ export const HeaderSection: React.FC<HeaderSectionProps> = ({ reportId, generate
                 <View style={styles.headerLeft}>
                     <Image
                         src={logo}
-                        style={{ width: 160, height: 'auto', objectFit: 'contain' }}
+                        style={{ width: 220, height: 'auto' }}
                         cache={false}
                     />
                 </View>
 
                 {/* 2. TEXT BLOCK - RIGHT ALIGNED  */}
                 <View style={styles.headerRight}>
-                    <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end' }}>
-                        <Text style={[styles.contactBox, { textAlign: 'right', fontFamily: 'Helvetica-Bold', marginBottom: 2 }]}>
-                            No 138, 2nd Floor, Colombo Road, Kurunegala
-                        </Text>
-                        <Text style={[styles.contactBox, { textAlign: 'right', marginBottom: 2 }]}>
-                            Tel: 037 223 1333 | Mobile: 070 7008000
-                        </Text>
-                        <Text style={[styles.contactBox, { textAlign: 'right' }]}>
-                            Web: www.suharaagency.com | Email: info@suharaagency.com
-                        </Text>
-                    </View>
+                    <Text style={[styles.contactBox, { fontFamily: 'Helvetica-Bold', fontSize: 10, color: '#1e1b4b' }]}>
+                        No 138, 2nd Floor, Colombo Road, Kurunegala
+                    </Text>
+                    <Text style={styles.contactBox}>
+                        Tel: 037 223 1333 | Mobile: 070 7008000
+                    </Text>
+                    <Text style={styles.contactBox}>
+                        Web: www.suharaagency.com | Email: info@suharaagency.com
+                    </Text>
                 </View>
             </View>
 
