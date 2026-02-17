@@ -22,41 +22,62 @@ const FinanceLedger: React.FC = () => {
     const [newTxDescription, setNewTxDescription] = useState('');
     const [newTxCategory, setNewTxCategory] = useState<TransactionCategory>(TransactionCategory.OFFICE_RENT);
 
-    const [transactions, setTransactions] = useState<FinanceTransaction[]>(() => FinanceService.getTransactions() || []);
-    const [invoices, setInvoices] = useState<Invoice[]>(() => FinanceService.getInvoices() || []);
-    const [projection, setProjection] = useState(() => FinanceService.getProjectedRevenue() || 0);
-    const [actualRevenue, setActualRevenue] = useState(() => FinanceService.getTotalActualRevenue() || 0);
-    const [expenses, setExpenses] = useState(() => FinanceService.getTotalExpenses() || 0);
+    const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [candidateNames, setCandidateNames] = useState<Record<string, string>>({});
+    const [projection, setProjection] = useState(0);
+    const [actualRevenue, setActualRevenue] = useState(0);
+    const [expenses, setExpenses] = useState(0);
     const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'invoices'>('overview');
+    const [isLoading, setIsLoading] = useState(true);
 
-    const netProfit = actualRevenue - expenses;
+    const refreshFinanceData = async () => {
+        setIsLoading(true);
+        try {
+            const [rawTxData, rawInvData] = await Promise.all([
+                Promise.resolve(FinanceService.getTransactions() || []),
+                Promise.resolve(FinanceService.getInvoices() || [])
+            ]);
 
-    const getCategoryColor = (category: TransactionCategory) => {
-        switch (category) {
-            case TransactionCategory.COMMISSION: return 'bg-green-100 text-green-700';
-            case TransactionCategory.FLIGHT_TICKET: return 'bg-blue-100 text-blue-700';
-            case TransactionCategory.VISA_FEE: return 'bg-purple-100 text-purple-700';
-            case TransactionCategory.AGENT_COMMISSION: return 'bg-red-100 text-red-700';
-            default: return 'bg-slate-100 text-slate-700';
+            const txData = (rawTxData || []).filter(t => t && t.id);
+            const invData = (rawInvData || []).filter(i => i && i.id);
+
+            setTransactions(txData);
+            setInvoices(invData);
+            setActualRevenue(FinanceService.getTotalActualRevenue() || 0);
+            setExpenses(FinanceService.getTotalExpenses() || 0);
+
+            // Fetch candidate names for the ledger
+            const uniqueCandIds = Array.from(new Set([
+                ...txData.map(t => t.candidateId),
+                ...invData.map(i => i.candidateId)
+            ])).filter(id => id && id !== 'system');
+
+            const nameMap: Record<string, string> = {};
+            await Promise.all(uniqueCandIds.map(async id => {
+                const cand = await CandidateService.getCandidateById(id);
+                if (cand && cand.name) {
+                    nameMap[id] = cand.name.split(' ')[0];
+                } else {
+                    nameMap[id] = id;
+                }
+            }));
+            setCandidateNames(nameMap);
+
+            // Fetch projection (Needs candidates and employers)
+            const allCandidates = await CandidateService.getCandidates();
+            setProjection(FinanceService.getProjectedRevenue(allCandidates) || 0);
+
+        } catch (error) {
+            console.error("Failed to load finance data", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const getInvoiceStatusColor = (status: InvoiceStatus) => {
-        switch (status) {
-            case InvoiceStatus.PAID: return 'bg-green-100 text-green-700';
-            case InvoiceStatus.SENT: return 'bg-blue-100 text-blue-700';
-            case InvoiceStatus.OVERDUE: return 'bg-red-100 text-red-700';
-            default: return 'bg-slate-100 text-slate-700';
-        }
-    };
-
-    const refreshFinanceData = () => {
-        setTransactions(FinanceService.getTransactions() || []);
-        setInvoices(FinanceService.getInvoices() || []);
-        setProjection(FinanceService.getProjectedRevenue() || 0);
-        setActualRevenue(FinanceService.getTotalActualRevenue() || 0);
-        setExpenses(FinanceService.getTotalExpenses() || 0);
-    };
+    React.useEffect(() => {
+        refreshFinanceData();
+    }, []);
 
     const handleAddTransaction = (e: React.FormEvent) => {
         e.preventDefault();
@@ -104,6 +125,37 @@ const FinanceLedger: React.FC = () => {
             link.click();
             document.body.removeChild(link);
         }
+    };
+
+    if (isLoading) return <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center h-96 gap-4">
+        <TrendingUp size={48} className="text-blue-600 animate-pulse" />
+        <p className="font-bold">Loading Financial Ledger...</p>
+    </div>;
+
+    const netProfit = actualRevenue - expenses;
+
+    const getCategoryColor = (category: TransactionCategory) => {
+        switch (category) {
+            case TransactionCategory.COMMISSION: return 'bg-green-100 text-green-700';
+            case TransactionCategory.FLIGHT_TICKET: return 'bg-blue-100 text-blue-700';
+            case TransactionCategory.VISA_FEE: return 'bg-purple-100 text-purple-700';
+            case TransactionCategory.AGENT_COMMISSION: return 'bg-red-100 text-red-700';
+            default: return 'bg-slate-100 text-slate-700';
+        }
+    };
+
+    const getInvoiceStatusColor = (status: InvoiceStatus) => {
+        switch (status) {
+            case InvoiceStatus.PAID: return 'bg-green-100 text-green-700';
+            case InvoiceStatus.SENT: return 'bg-blue-100 text-blue-700';
+            case InvoiceStatus.OVERDUE: return 'bg-red-100 text-red-700';
+            default: return 'bg-slate-100 text-slate-700';
+        }
+    };
+
+    const formatCategory = (category: string) => {
+        if (!category) return 'OTHER';
+        return category.toString().replace(/_/g, ' ');
     };
 
     return (
@@ -222,14 +274,16 @@ const FinanceLedger: React.FC = () => {
                                                     <td className="px-4 py-3">
                                                         <p className="font-bold text-slate-800 line-clamp-1">{tx.description}</p>
                                                         <div className="flex flex-wrap gap-x-2 text-[10px] text-slate-400 mt-1">
-                                                            <Link to={`/candidates/${tx.candidateId}`} className="text-blue-600 hover:underline">Cnv: {CandidateService.getCandidateById(tx.candidateId)?.name.split(' ')[0] || tx.candidateId}</Link>
+                                                            <Link to={`/candidates/${tx.candidateId}`} className="text-blue-600 hover:underline">Cnv: {candidateNames[tx.candidateId] || tx.candidateId}</Link>
                                                             <span>•</span>
-                                                            <Link to={`/partners/${tx.employerId}`} className="text-blue-600 hover:underline">Emp: {PartnerService.getEmployerById(tx.employerId)?.companyName.split(' ')[0] || tx.employerId}</Link>
+                                                            <Link to={`/partners/${tx.employerId}`} className="text-blue-600 hover:underline">
+                                                                Emp: {PartnerService.getEmployerById(tx.employerId)?.companyName?.split(' ')[0] || 'System'}
+                                                            </Link>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 hidden sm:table-cell">
                                                         <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase ${getCategoryColor(tx.category)}`}>
-                                                            {tx.category.replace('_', ' ')}
+                                                            {formatCategory(tx.category)}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3 hidden md:table-cell">
@@ -273,7 +327,7 @@ const FinanceLedger: React.FC = () => {
                                                             {PartnerService.getEmployerById(inv.employerId)?.companyName || `Employer: ${inv.employerId}`}
                                                         </Link>
                                                         <Link to={`/candidates/${inv.candidateId}`} className="block text-[10px] text-slate-400 hover:text-blue-600 hover:underline mt-1">
-                                                            Candidate: {CandidateService.getCandidateById(inv.candidateId)?.name || inv.candidateId}
+                                                            Candidate: {candidateNames[inv.candidateId] || inv.candidateId}
                                                         </Link>
                                                     </td>
                                                     <td className="px-4 py-4 text-slate-500 font-medium hidden sm:table-cell">

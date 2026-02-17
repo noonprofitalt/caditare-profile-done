@@ -2,16 +2,123 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Premium FinTech Palette - HSL Tailored */
+  --slate-50: 210 40% 98%;
+  --slate-100: 210 40% 96.1%;
+  --slate-200: 214.3 31.8% 91.4%;
+  --slate-300: 212.7 26.8% 83.9%;
+  --slate-400: 215 20.2% 65.1%;
+  --slate-500: 215.4 16.3% 46.9%;
+  --slate-600: 215.3 19.3% 34.5%;
+  --slate-700: 215.3 25% 26.7%;
+  --slate-800: 217.2 32.6% 17.5%;
+  --slate-900: 222.2 47.4% 11.2%;
+  --slate-950: 222.2 84% 4.9%;
+
+  /* Primary Brand - Deep Royal Blue */
+  --brand-solid: 221.2 83.2% 53.3%;
+  --brand-hover: 222.2 74.7% 44.5%;
+  --brand-glow: 221.2 83.2% 53.3% / 0.15;
+
+  /* Interaction & UI */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  /* Mobile Specific */
+  --header-height: 64px;
+  --bottom-nav-height: 72px;
+}
+
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smooth Scrolling */
+  html {
+    scroll-behavior: smooth;
   }
 }
 
-/* Custom Scrollbar */
+@layer components {
+
+  /* Premium Glass Card System */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 rounded-2xl transition-all duration-300;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  }
+
+  .glass-card-interactive {
+    @apply glass-card hover:bg-white/80 hover:-translate-y-0.5 active:scale-[0.98];
+
+    &:hover {
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
+    }
+  }
+
+  /* High-Performance Transitions */
+  .transition-premium {
+    @apply transition-all duration-300;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .slate-header {
+    @apply font-black tracking-tighter text-slate-950;
+    font-feature-settings: \"ss01\" on, \"cv02\" on;
+  }
+
+  /* Mobile-First Navigation Classes */
+  .mobile-nav-item {
+    @apply flex flex-col items-center justify-center gap-1 p-2 text-slate-400 transition-premium;
+  }
+
+  .mobile-nav-item.active {
+    @apply text-blue-600 font-bold;
+  }
+
+  /* Badge System */
+  .badge {
+    @apply px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-premium;
+  }
+
+  .badge-blue {
+    @apply bg-blue-50/50 text-blue-600 border-blue-100;
+  }
+
+  .badge-green {
+    @apply bg-emerald-50/50 text-emerald-600 border-emerald-100;
+  }
+
+  .badge-amber {
+    @apply bg-amber-50/50 text-amber-600 border-amber-100;
+  }
+
+  .badge-red {
+    @apply bg-red-50/50 text-red-600 border-red-100;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Custom Scrollbar Enhancement */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -19,11 +126,37 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full;
+  @apply bg-slate-200/50 rounded-full hover:bg-slate-300/50 transition-colors;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-300;
+/* ANIMATIONS */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* MOBILE RESPONSIVE TWEAKS */
+@media (max-width: 1024px) {
+  .sidebar-hidden {
+    @apply -translate-x-full;
+  }
+
+  .main-content-mobile {
+    @apply ml-0 !important;
+  }
 }
 
 /* PRINT STYLES */
@@ -33,27 +166,24 @@
     size: A4 portrait;
   }
 
-  /* Hide navigation, sidebars, buttons */
-  nav, 
-  aside, 
-  header, 
-  button, 
+  nav,
+  aside,
+  header,
+  button,
   .no-print,
   .fixed,
-  [role="dialog"] {
+  [role=\"dialog\"],
+  .mobile-nav {
     display: none !important;
   }
 
-  /* Reset layout for print */
   body {
     background: white !important;
-    font-size: 12pt;
+    font-size: 11pt;
     color: black !important;
   }
 
-  /* Expand main content */
-  main,
-  .max-w-7xl {
+  main {
     max-width: none !important;
     width: 100% !important;
     margin: 0 !important;
@@ -62,24 +192,8 @@
     border: none !important;
   }
 
-  /* Ensure background colors print (for status badges etc) */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-  }
-
-  /* Specific tweaks for candidate profile */
-  .grid {
-    display: block !important;
-  }
-  
-  /* Force page breaks */
-  h2, h3 {
-    page-break-after: avoid;
-  }
-  
-  .bg-white {
-    box-shadow: none !important;
-    border: 1px solid #eee !important;
   }
 }

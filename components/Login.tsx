@@ -4,8 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2, Lock, Mail, ArrowRight, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
 
 const Login: React.FC = () => {
-    const [email, setEmail] = useState('admin@suhara.com');
-    const [password, setPassword] = useState('admin123');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login, isLoading } = useAuth();
     const navigate = useNavigate();
@@ -33,7 +33,7 @@ const Login: React.FC = () => {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[100px] animate-pulse delay-700" />
             </div>
 
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl w-full max-w-md p-8 relative z-10 animate-in fade-in zoom-in duration-500">
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl w-full max-w-md p-8 relative z-10 duration-500">
                 <div className="text-center mb-8">
                     <div className="bg-gradient-to-br from-blue-500 to-indigo-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
                         <Building2 className="text-white" size={32} />
@@ -91,12 +91,9 @@ const Login: React.FC = () => {
                 </form>
 
                 <div className="mt-8 pt-6 border-t border-white/10 text-center">
-                    <p className="text-slate-400 text-xs mb-3">Login Details for Demo</p>
-                    <div className="flex justify-center gap-2 text-[10px]">
-                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('admin@suhara.com'); setPassword('admin123'); }}>Admin</span>
-                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('sarah@suhara.com'); setPassword('demo123'); }}>Recruiter</span>
-                        <span className="px-2 py-1 bg-slate-800 rounded text-slate-300 border border-slate-700 cursor-pointer hover:bg-slate-700 transition" onClick={() => { setEmail('guest@suhara.com'); setPassword('demo123'); }}>Viewer</span>
-                    </div>
+                    <p className="text-slate-500/50 text-xs">
+                        Enter your credentials to access the command center.
+                    </p>
                 </div>
 
                 <div className="mt-6 flex justify-center items-center gap-2 text-slate-500/50 text-xs">

@@ -1,5 +1,5 @@
 import { supabase, getUserProfile } from './supabase';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 
 export class AuthService {
     static async login(email: string, password: string): Promise<User> {
@@ -23,8 +23,9 @@ export class AuthService {
             id: data.user.id,
             email: data.user.email || '',
             name: profile?.full_name || email.split('@')[0],
-            role: profile?.role || 'Viewer',
+            role: (profile?.role || 'Viewer') as UserRole,
             avatar: profile?.avatar_url || 'https://ui-avatars.com/api/?name=' + (profile?.full_name || 'User'),
+            status: profile?.status || 'Active',
             lastLogin: new Date().toISOString()
         };
     }
@@ -46,8 +47,9 @@ export class AuthService {
                 id: user.id,
                 email: user.email || '',
                 name: profile?.full_name || user.email?.split('@')[0] || 'User',
-                role: profile?.role || 'Viewer',
+                role: (profile?.role || 'Viewer') as UserRole,
                 avatar: profile?.avatar_url || 'https://ui-avatars.com/api/?name=' + (profile?.full_name || 'User'),
+                status: profile?.status || 'Active',
                 lastLogin: new Date().toISOString()
             };
         } catch (e) {

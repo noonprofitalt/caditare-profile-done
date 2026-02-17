@@ -226,16 +226,16 @@ export const styles = StyleSheet.create({
     color: '#cbd5e1', // Very faint grey
     fontFamily: 'Helvetica',
   },
-  // 1️⃣2️⃣ AI ENHANCED STYLES
-  aiRatingBox: {
+  // 1️⃣2️⃣ ASSESSMENT STYLES
+  assessmentBox: {
     padding: 10,
-    backgroundColor: '#eff6ff', // Soft Blue
+    backgroundColor: '#f8fafc', // Soft Gray
     borderWidth: 1,
-    borderColor: '#3b82f6',
+    borderColor: '#e2e8f0',
     borderRadius: 4,
     marginBottom: 10,
   },
-  aiProbabilityBar: {
+  ratingProgressBar: {
     height: 8,
     width: '100%',
     backgroundColor: '#e2e8f0',
@@ -243,9 +243,9 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 4,
   },
-  aiProbabilityFill: {
+  ratingProgressFill: {
     height: '100%',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0f172a', // Navy
   },
   riskBadgeLow: { backgroundColor: '#dcfce7', color: '#166534', padding: '2 6', borderRadius: 4, fontSize: 8, fontFamily: 'Helvetica-Bold' },
   riskBadgeMed: { backgroundColor: '#fef9c3', color: '#854d0e', padding: '2 6', borderRadius: 4, fontSize: 8, fontFamily: 'Helvetica-Bold' },

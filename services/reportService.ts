@@ -27,12 +27,6 @@ export interface SystemReport {
         rejected: { type: DocumentType; reason: string }[];
         pendingReview: DocumentType[];
     };
-    aiInsights: {
-        strengths: string[];
-        risks: string[];
-        placementProbability: number;
-        recommendedRoles: string[];
-    };
 }
 
 export class ReportService {
@@ -65,7 +59,7 @@ export class ReportService {
             pendingReview: [] as DocumentType[]
         };
 
-        candidate.documents.forEach(doc => {
+        (candidate.documents || []).forEach(doc => {
             if (doc.status === DocumentStatus.MISSING) {
                 documentGaps.missing.push(doc.type);
             } else if (doc.status === DocumentStatus.REJECTED || doc.status === DocumentStatus.CORRECTION_REQUIRED) {
@@ -75,10 +69,11 @@ export class ReportService {
             }
         });
 
-        // SLA Analysis (Mock logic: based on stageEnteredAt)
-        const entryDate = new Date(candidate.stageEnteredAt);
+        // SLA Analysis (Safe handling of missing/invalid entry date)
+        const entryDate = candidate.stageEnteredAt ? new Date(candidate.stageEnteredAt) : new Date();
         const now = new Date();
-        const daysInStage = Math.floor((now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
+        const timeDiff = now.getTime() - (isNaN(entryDate.getTime()) ? now.getTime() : entryDate.getTime());
+        const daysInStage = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
 
         let slaStatus: SystemReport['slaStatus']['status'] = 'ON_TRACK';
         if (daysInStage > 14) slaStatus = 'CRITICAL';
@@ -112,24 +107,12 @@ export class ReportService {
         if (riskPoints > 15) riskScore = 'HIGH';
         else if (riskPoints > 5) riskScore = 'MEDIUM';
 
-        // Calculate a basic completion percentage
-        const totalFields = 7 + candidate.documents.length;
-        const filledFields = (7 - missingInfo.length) + (candidate.documents.length - (documentGaps.missing.length + documentGaps.rejected.length));
-        const completionPercentage = Math.round((filledFields / totalFields) * 100);
-
-        // Get AI Insights
-        let aiInsights;
-        try {
-            aiInsights = await GeminiService.getReportInsights(candidate, riskScore);
-        } catch (error) {
-            console.warn("AI Insights failed, using fallback", error);
-            aiInsights = {
-                strengths: candidate.professionalProfile?.skills?.slice(0, 3) || ['Hardworking', 'Adaptable'],
-                risks: riskScore === 'HIGH' ? ['Missing Documentation', 'SLA Breach'] : ['None identified'],
-                placementProbability: riskScore === 'HIGH' ? 45 : 85,
-                recommendedRoles: candidate.professionalProfile?.jobRoles?.map(r => typeof r === 'string' ? r : r.title) || ['General Helper']
-            };
-        }
+        // Calculate a basic completion percentage (Safety against division by zero)
+        const documentCount = candidate.documents?.length || 0;
+        const totalFields = 7 + documentCount;
+        const filledEssential = 7 - (missingInfo?.length || 0);
+        const validDocuments = documentCount - (documentGaps.missing.length + documentGaps.rejected.length);
+        const completionPercentage = totalFields > 0 ? Math.round(((filledEssential + validDocuments) / totalFields) * 100) : 0;
 
         return {
             timestamp: new Date().toISOString(),
@@ -141,8 +124,7 @@ export class ReportService {
             comparativeMetrics,
             dataQuality,
             missingInfo,
-            documentGaps,
-            aiInsights
+            documentGaps
         };
     }
 }

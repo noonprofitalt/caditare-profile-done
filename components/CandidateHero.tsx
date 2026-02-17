@@ -35,18 +35,22 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
         }
     };
 
-    // Get stage badge color
     const getStageColor = () => {
         switch (candidate.stage) {
-            case WorkflowStage.REGISTRATION:
+            case WorkflowStage.REGISTERED:
                 return 'bg-blue-400/30 text-blue-100 border-blue-300';
-            case WorkflowStage.INTERVIEW:
+            case WorkflowStage.VERIFIED:
+            case WorkflowStage.APPLIED:
                 return 'bg-purple-400/30 text-purple-100 border-purple-300';
-            case WorkflowStage.MEDICAL:
+            case WorkflowStage.OFFER_RECEIVED:
+            case WorkflowStage.WP_RECEIVED:
+            case WorkflowStage.EMBASSY_APPLIED:
                 return 'bg-pink-400/30 text-pink-100 border-pink-300';
-            case WorkflowStage.TRAINING:
+            case WorkflowStage.VISA_RECEIVED:
+            case WorkflowStage.SLBFE_REGISTRATION:
+            case WorkflowStage.TICKET_ISSUED:
                 return 'bg-indigo-400/30 text-indigo-100 border-indigo-300';
-            case WorkflowStage.DEPLOYMENT:
+            case WorkflowStage.DEPARTED:
                 return 'bg-green-400/30 text-green-100 border-green-300';
             default:
                 return 'bg-slate-400/30 text-slate-100 border-slate-300';
@@ -55,11 +59,14 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
 
     // Calculate days in current stage
     const getDaysInStage = () => {
+        if (!candidate.stageEnteredAt) return 0;
         const enteredDate = new Date(candidate.stageEnteredAt);
+        if (isNaN(enteredDate.getTime())) return 0;
+
         const now = new Date();
         const diffMs = now.getTime() - enteredDate.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        return diffDays;
+        return Math.max(0, diffDays);
     };
 
     // Get primary action button
@@ -85,91 +92,94 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
     };
 
     return (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-            <div className="px-8 py-8">
-                <div className="flex items-start gap-6">
+        <div className="bg-slate-900 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-50"></div>
+            <div className="px-4 md:px-8 py-8 md:py-12 relative z-10">
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10">
                     {/* Avatar */}
-                    <div className="relative flex-shrink-0">
+                    <div className="relative flex-shrink-0 group">
                         <img
-                            src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&size=128`}
+                            src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&size=256`}
                             alt={candidate.name}
-                            className="w-28 h-28 rounded-full border-4 border-white/30 shadow-xl object-cover"
+                            className="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-4 border-white/20 shadow-2xl object-cover transition-premium group-hover:scale-105"
                         />
-                        <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-green-400 border-4 border-blue-700 rounded-full" />
+                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 border-4 border-slate-900 rounded-2xl flex items-center justify-center shadow-lg">
+                            <CheckCircle size={14} className="text-white" />
+                        </div>
                     </div>
 
                     {/* Main Info */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 text-center md:text-left">
                         {/* Name & Badges */}
-                        <div className="flex items-center gap-3 mb-3">
-                            <h1 className="text-3xl font-bold truncate">{candidate.name}</h1>
+                        <div className="flex flex-col md:flex-row items-center gap-3 mb-4">
+                            <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase">{candidate.name}</h1>
                             {getCompletionBadge()}
                         </div>
 
                         {/* Role & Stage */}
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className="text-lg text-blue-100">{candidate.role || 'No Role Assigned'}</span>
-                            <span className="text-blue-300">•</span>
-                            <span className={`px-3 py-1 rounded-lg border text-sm font-medium ${getStageColor()}`}>
+                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 md:gap-4 mb-6">
+                            <span className="text-lg md:text-xl text-blue-300 font-bold tracking-tight">{candidate.role || 'No Role Assigned'}</span>
+                            <span className="hidden md:block text-slate-700 font-black">•</span>
+                            <span className={`px-4 py-1.5 rounded-xl border text-[10px] md:text-xs font-black uppercase tracking-widest bg-white/5 backdrop-blur-md ${getStageColor()}`}>
                                 {candidate.stage}
                             </span>
-                            <span className="text-blue-300">•</span>
-                            <span className="text-sm text-blue-200">{getDaysInStage()} days in stage</span>
+                            <span className="hidden md:block text-slate-700 font-black">•</span>
+                            <span className="text-[10px] md:text-xs text-slate-400 font-black uppercase tracking-widest">{getDaysInStage()} Days Active</span>
                         </div>
 
                         {/* Contact Info */}
-                        <div className="flex flex-wrap items-center gap-6 text-sm text-blue-100">
+                        <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 md:gap-8 text-[11px] md:text-xs mb-8">
                             {candidate.phone && (
-                                <div className="flex items-center gap-2">
-                                    <Phone size={16} className="text-blue-300" />
-                                    <span>{candidate.phone}</span>
+                                <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 transition-premium hover:bg-white/10 cursor-pointer">
+                                    <Phone size={14} className="text-blue-400" />
+                                    <span className="font-bold tracking-tighter">{candidate.phone}</span>
                                 </div>
                             )}
                             {candidate.email && (
-                                <div className="flex items-center gap-2">
-                                    <Mail size={16} className="text-blue-300" />
-                                    <span className="truncate max-w-xs">{candidate.email}</span>
+                                <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 transition-premium hover:bg-white/10 cursor-pointer">
+                                    <Mail size={14} className="text-blue-400" />
+                                    <span className="font-bold tracking-tighter truncate max-w-[200px]">{candidate.email}</span>
                                 </div>
                             )}
                             {candidate.location && (
-                                <div className="flex items-center gap-2">
-                                    <MapPin size={16} className="text-blue-300" />
-                                    <span>{candidate.location}</span>
+                                <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/5 transition-premium hover:bg-white/10 cursor-pointer">
+                                    <MapPin size={14} className="text-blue-400" />
+                                    <span className="font-bold tracking-tighter">{candidate.location}</span>
                                 </div>
                             )}
                         </div>
 
                         {/* Quick Stats */}
-                        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-white/20">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-10 pt-6 border-t border-white/5">
                             <div>
-                                <div className="text-2xl font-bold">{candidate.profileCompletionPercentage}%</div>
-                                <div className="text-xs text-blue-200">Profile Complete</div>
+                                <div className="text-3xl font-black tracking-tighter text-blue-400">{candidate.profileCompletionPercentage}%</div>
+                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Integrity</div>
                             </div>
                             <div>
-                                <div className="text-2xl font-bold">{candidate.documents?.length || 0}</div>
-                                <div className="text-xs text-blue-200">Documents</div>
+                                <div className="text-3xl font-black tracking-tighter">{candidate.documents?.length || 0}</div>
+                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Repository</div>
                             </div>
                             <div>
-                                <div className="text-2xl font-bold">{candidate.timelineEvents?.length || 0}</div>
-                                <div className="text-xs text-blue-200">Activities</div>
+                                <div className="text-3xl font-black tracking-tighter">{candidate.timelineEvents?.length || 0}</div>
+                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Operations</div>
                             </div>
                             {candidate.experienceYears !== undefined && (
                                 <div>
-                                    <div className="text-2xl font-bold">{candidate.experienceYears}</div>
-                                    <div className="text-xs text-blue-200">Years Experience</div>
+                                    <div className="text-3xl font-black tracking-tighter text-emerald-400">{candidate.experienceYears}Y</div>
+                                    <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Experience</div>
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3 w-full md:w-auto">
                         {getPrimaryAction()}
                         <Link
                             to={`/candidates`}
-                            className="flex items-center justify-center gap-2 px-6 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors font-medium border border-white/30"
+                            className="flex items-center justify-center gap-3 px-8 py-3.5 bg-white/5 text-white rounded-2xl hover:bg-white/10 transition-premium font-black text-[10px] uppercase tracking-widest border border-white/10 shadow-xl"
                         >
-                            Back to List
+                            Return to Registry
                         </Link>
                     </div>
                 </div>

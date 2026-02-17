@@ -597,18 +597,24 @@ export class WorkflowEngine {
         const stage = candidate.stage;
         const stageHistory = candidate.stageHistory || [];
 
-        // Find when current stage was entered
+        // Find when current stage was entered (Safely handle potentially invalid history timestamps)
         const stageEntry = stageHistory
-            .filter(h => h.stage === stage)
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+            .filter(h => h && h.stage === stage && h.timestamp)
+            .sort((a, b) => {
+                const timeA = new Date(a.timestamp).getTime();
+                const timeB = new Date(b.timestamp).getTime();
+                return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+            })[0];
 
-        const enteredAt = stageEntry ? new Date(stageEntry.timestamp) : new Date();
+        const enteredAt = (stageEntry && stageEntry.timestamp) ? new Date(stageEntry.timestamp) : (candidate.stageEnteredAt ? new Date(candidate.stageEnteredAt) : new Date());
+        const safeEnteredAt = isNaN(enteredAt.getTime()) ? new Date() : enteredAt;
         const now = new Date();
-        const slaDays = SLA_CONFIG[stage];
-        const slaDeadline = new Date(enteredAt);
+        const slaDays = (this as any).SLA_CONFIG?.[stage] || 7; // Fallback to 7 days if config missing
+        const slaDeadline = new Date(safeEnteredAt);
         slaDeadline.setDate(slaDeadline.getDate() + slaDays);
 
-        const daysElapsed = Math.floor((now.getTime() - enteredAt.getTime()) / (1000 * 60 * 60 * 24));
+        const timeDiff = now.getTime() - safeEnteredAt.getTime();
+        const daysElapsed = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
         const daysRemaining = Math.floor((slaDeadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         const percentageElapsed = slaDays > 0 ? (daysElapsed / slaDays) * 100 : 0;
 
@@ -623,13 +629,13 @@ export class WorkflowEngine {
 
         return {
             stage,
-            enteredAt,
+            enteredAt: safeEnteredAt,
             slaDeadline,
             daysElapsed,
             daysRemaining,
             slaDays,
             status,
-            percentageElapsed: Math.round(percentageElapsed)
+            percentageElapsed: isNaN(percentageElapsed) ? 0 : Math.round(percentageElapsed)
         };
     }
 

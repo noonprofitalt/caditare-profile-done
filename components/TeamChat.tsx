@@ -25,9 +25,23 @@ const TeamChat: React.FC = () => {
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelType, setNewChannelType] = useState<'public' | 'private'>('public');
 
-  const refreshData = () => {
-    setChannels(ChatService.getChannels());
-    setUsers(ChatService.getUsers());
+  // Mobile Navigation State
+  const [showSidebarOnMobile, setShowSidebarOnMobile] = useState(true);
+
+  // Transition to chat view when channel changes on mobile
+  useEffect(() => {
+    if (activeChannelId) {
+      setShowSidebarOnMobile(false);
+    }
+  }, [activeChannelId]);
+
+  const refreshData = async () => {
+    const [channelsData, usersData] = await Promise.all([
+      ChatService.getChannels(),
+      ChatService.getUsers()
+    ]);
+    setChannels(channelsData);
+    setUsers(usersData);
   };
 
   useEffect(() => {
@@ -35,9 +49,13 @@ const TeamChat: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (activeChannelId) {
-      setMessages(ChatService.getMessages(activeChannelId));
-    }
+    const fetchMessages = async () => {
+      if (activeChannelId) {
+        const data = await ChatService.getMessages(activeChannelId);
+        setMessages(data.messages);
+      }
+    };
+    fetchMessages();
   }, [activeChannelId]);
 
   useEffect(() => {
@@ -48,7 +66,7 @@ const TeamChat: React.FC = () => {
     const q = searchQuery.toLowerCase();
 
     const matchedChannels = channels.filter(c => c.name.toLowerCase().includes(q));
-    const matchedUsers = users.filter(u => u.name.toLowerCase().includes(q) || u.role.toLowerCase().includes(q));
+    const matchedUsers = users.filter(u => u.name.toLowerCase().includes(q) || (u.role?.toLowerCase() || '').includes(q));
 
     if (filterType === 'channels') return { channels: matchedChannels, users: [] };
     if (filterType === 'dms') return { channels: [], users: matchedUsers };
@@ -56,11 +74,12 @@ const TeamChat: React.FC = () => {
     return { channels: matchedChannels, users: matchedUsers };
   }, [channels, users, searchQuery, filterType]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim() || !activeChannelId) return;
 
-    ChatService.sendMessage(activeChannelId, inputValue);
-    setMessages(ChatService.getMessages(activeChannelId));
+    await ChatService.sendMessage(activeChannelId, inputValue);
+    const data = await ChatService.getMessages(activeChannelId);
+    setMessages(data.messages);
     setInputValue('');
     setIsTyping(false);
   };
@@ -69,20 +88,23 @@ const TeamChat: React.FC = () => {
     return ChatService.getChannelDisplay(activeChannelId, users);
   }, [activeChannelId, users]);
 
-  const handleCreateChannel = (e: React.FormEvent) => {
+  const handleCreateChannel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newChannelName.trim()) return;
-    const created = ChatService.createChannel(newChannelName, newChannelType);
+    const created = await ChatService.createChannel(newChannelName, newChannelType);
     setActiveChannelId(created.id);
-    refreshData();
+    await refreshData();
     setShowNewChannelModal(false);
     setNewChannelName('');
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex bg-[#F0F2F5] overflow-hidden">
+    <div className="h-[calc(100vh-4rem)] flex bg-[#F0F2F5] overflow-hidden relative">
       {/* --- LIGHT MINIMAL SIDEBAR --- */}
-      <div className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20">
+      <div className={`
+        ${showSidebarOnMobile ? 'flex' : 'hidden md:flex'}
+        w-full md:w-80 bg-white border-r border-slate-200 flex-col shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 absolute md:relative inset-0 md:inset-auto
+      `}>
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">Messages</h2>
@@ -210,10 +232,20 @@ const TeamChat: React.FC = () => {
       </div>
 
       {/* --- MAIN CHAT INTERFACE --- */}
-      <div className="flex-1 flex flex-col bg-white overflow-hidden relative">
+      <div className={`
+        ${!showSidebarOnMobile ? 'flex' : 'hidden md:flex'}
+        flex-1 flex flex-col bg-white overflow-hidden relative
+      `}>
         {/* Modern Header */}
-        <header className="h-[72px] border-b border-slate-100 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md z-10">
-          <div className="flex items-center gap-4">
+        <header className="h-[72px] border-b border-slate-100 flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md z-10 shrink-0">
+          <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+            {/* Back Button on Mobile */}
+            <button
+              onClick={() => setShowSidebarOnMobile(true)}
+              className="md:hidden p-2 -ml-2 text-slate-400 hover:text-slate-600 active:scale-95 transition-all"
+            >
+              <Users size={20} />
+            </button>
             <div className="relative">
               {currentChatInfo.avatar ? (
                 <img src={currentChatInfo.avatar} className="w-11 h-11 rounded-2xl shadow-sm object-cover" />
@@ -259,7 +291,7 @@ const TeamChat: React.FC = () => {
         </header>
 
         {/* Message Region */}
-        <div className="flex-1 overflow-y-auto bg-white custom-scrollbar p-8">
+        <div className="flex-1 overflow-y-auto bg-white custom-scrollbar p-4 md:p-8">
           <div className="max-w-4xl mx-auto space-y-10">
             {/* Thread Start Indicator */}
             <div className="flex flex-col items-center justify-center space-y-4 py-6 border-b border-slate-50">
@@ -352,7 +384,7 @@ const TeamChat: React.FC = () => {
         </div>
 
         {/* Input Dock */}
-        <div className="px-8 pb-8 pt-4 bg-white">
+        <div className="px-4 md:px-8 pb-4 md:pb-8 pt-2 md:pt-4 bg-white border-t border-slate-50 md:border-none">
           <div className="max-w-4xl mx-auto">
             <div className="relative bg-white border border-slate-200 rounded-[2rem] p-2 shadow-[0_10px_40px_rgba(0,0,0,0.04)] focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50 focus-within:shadow-[0_15px_50px_rgba(59,130,246,0.1)] transition-all duration-300">
               <div className="flex items-center gap-2">
@@ -398,8 +430,8 @@ const TeamChat: React.FC = () => {
 
       {/* --- INFOBAR (Toggled) --- */}
       {showChannelInfo && (
-        <div className="w-80 bg-white border-l border-slate-100 flex flex-col animate-in slide-in-from-right duration-300 ease-out z-30">
-          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+        <div className="fixed md:relative inset-0 md:inset-auto md:w-80 bg-white border-l border-slate-100 flex flex-col animate-in md:slide-in-from-right slide-in-from-bottom duration-300 ease-out z-40">
+          <div className="p-4 md:p-6 border-b border-slate-50 flex items-center justify-between shrink-0">
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Information</h3>
             <button onClick={() => setShowChannelInfo(false)} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
           </div>

@@ -1,5 +1,5 @@
 import { Candidate } from '../types';
-import { CandidateService } from './candidateService';
+
 
 /**
  * Duplicate Detection Service
@@ -11,8 +11,8 @@ export class DuplicateDetectionService {
      * @param candidateData - Partial candidate data to check
      * @returns Array of matching candidates
      */
-    static findDuplicates(candidateData: Partial<Candidate>): Candidate[] {
-        const allCandidates = CandidateService.getCandidates();
+    static findDuplicates(candidateData: Partial<Candidate>, allCandidates: Candidate[]): Candidate[] {
+        if (!allCandidates) return [];
 
         return allCandidates.filter(existing => {
             // Skip self-comparison if ID exists
@@ -59,14 +59,15 @@ export class DuplicateDetectionService {
     /**
      * Check if candidate data represents a duplicate
      * @param candidateData - Partial candidate data to check
+     * @param allCandidates - List of current candidates
      * @returns Object with duplicate status, matches, and matched fields
      */
-    static isDuplicate(candidateData: Partial<Candidate>): {
+    static isDuplicate(candidateData: Partial<Candidate>, allCandidates: Candidate[]): {
         isDuplicate: boolean;
         matches: Candidate[];
         matchedFields: string[];
     } {
-        const matches = this.findDuplicates(candidateData);
+        const matches = this.findDuplicates(candidateData, allCandidates);
         const matchedFields: string[] = [];
 
         if (matches.length > 0) {

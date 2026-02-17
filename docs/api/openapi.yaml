@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: GlobalWorkforce ERP API
+  description: API for managing candidates, recruitment partners, and workflows.
+  version: 1.0.0
+
+servers:
+  - url: https://{project_id}.supabase.co/rest/v1
+    description: Supabase REST API server
+
+paths:
+  /candidates:
+    get:
+      summary: List all candidates
+      responses:
+        '200':
+          description: A list of candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Candidate'
+    post:
+      summary: Create a new candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CandidateCreate'
+      responses:
+        '201':
+          description: Candidate created
+
+  /candidates/{id}:
+    get:
+      summary: Get candidate details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+    patch:
+      summary: Update a candidate
+    delete:
+      summary: Delete a candidate
+
+components:
+  schemas:
+    Candidate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string, format: email }
+        stage: { $ref: '#/components/schemas/WorkflowStage' }
+        updated_at: { type: string, format: date-time }
+    
+    CandidateCreate:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+
+    WorkflowStage:
+      type: string
+      enum: [LEAD, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED]

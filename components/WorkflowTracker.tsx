@@ -12,7 +12,7 @@ const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ candidate }) => {
   const sla = WorkflowEngine.calculateSLAStatus(candidate);
   const nextStage = getNextStage(candidate.stage);
   // Validation for next stage
-  const validation = nextStage ? WorkflowEngine.validateTransition(candidate, nextStage) : { valid: true };
+  const validation = nextStage ? WorkflowEngine.validateTransition(candidate, nextStage) : { allowed: true, blockers: [] as string[] };
 
   const getStepIcon = (stageIdx: number) => {
     if (stageIdx < currentStageIdx) return <CheckCircle2 className="text-green-600" size={24} />;
@@ -115,12 +115,16 @@ const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ candidate }) => {
             </div>
 
             <div className="space-y-2">
-              {!validation.valid ? (
+              {!validation.allowed ? (
                 <div className="flex items-start gap-2 text-sm p-3 bg-red-50 text-red-700 rounded-md">
                   <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                   <div>
                     <span className="font-bold block mb-1">Blocking Issues:</span>
-                    {validation.error}
+                    <ul className="list-disc list-inside text-xs">
+                      {validation.blockers.map((blocker, i) => (
+                        <li key={i}>{blocker}</li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               ) : (

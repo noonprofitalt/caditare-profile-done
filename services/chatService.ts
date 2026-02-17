@@ -1,12 +1,7 @@
-import { ChatChannel, ChatMessage, ChatUser, ChatMessageContext } from '../types';
+import { ChatChannel, ChatMessage, ChatUser, ChatMessageContext, ChatNotification } from '../types';
 
 // Mock Data
-const MOCK_USERS: ChatUser[] = [
-    { id: 'u1', name: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', status: 'online', role: 'HR Manager' },
-    { id: 'u2', name: 'Mike Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', status: 'busy', role: 'Compliance Officer' },
-    { id: 'u3', name: 'Jessica Wong', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150', status: 'offline', role: 'Recruiter' },
-    { id: 'u4', name: 'David Kim', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', status: 'online', role: 'Admin' },
-];
+const MOCK_USERS: ChatUser[] = [];
 
 const INITIAL_CHANNELS: ChatChannel[] = [
     { id: 'c1', name: 'General', type: 'public', unreadCount: 0 },
@@ -15,47 +10,80 @@ const INITIAL_CHANNELS: ChatChannel[] = [
     { id: 'c4', name: 'Management', type: 'private', unreadCount: 5, allowedRoles: ['Admin', 'Manager', 'HR Manager'] },
 ];
 
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
-    'c1': [
-        { id: 'm1', text: 'Has everyone reviewed the new compliance guidelines?', senderId: 'u1', senderName: 'Sarah Jenkins', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-        { id: 'm2', text: 'Yes, looking good. Will implement by Friday.', senderId: 'u2', senderName: 'Mike Chen', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1.5).toISOString() },
-    ],
-    'c2': [
-        { id: 'm3', text: 'Office will be closed next Monday for maintenance.', senderId: 'u4', senderName: 'David Kim', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-    ]
-};
+const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {};
 
 const STORAGE_KEY_MESSAGES = 'caditare_chat_messages';
 const STORAGE_KEY_CHANNELS = 'caditare_chat_channels';
 
-export const ChatService = {
-    getChannels: (currentUserRole?: string): ChatChannel[] => {
+interface IChatService {
+    getChannels: (currentUserRole?: string) => Promise<ChatChannel[]>;
+    getUsers: () => Promise<ChatUser[]>;
+    getMessages: (channelId: string, options?: { limit?: number; offset?: number }) => Promise<{ messages: ChatMessage[], hasMore: boolean }>;
+    sendMessage: (channelId: string, text: string, context?: ChatMessageContext) => Promise<ChatMessage>;
+    systemPost: (channelId: string, text: string, context?: ChatMessageContext) => Promise<ChatMessage>;
+    createChannel: (name: string, type: 'public' | 'private', allowedRoles?: string[]) => Promise<ChatChannel>;
+    updateChannel: (channelId: string, updates: Partial<ChatChannel>) => Promise<ChatChannel | undefined>;
+    deleteChannel: (channelId: string) => Promise<boolean>;
+    getDmChannelId: (userId: string) => string;
+    getChannelDisplay: (channelId: string, users: ChatUser[]) => { name: string; avatar?: string; isUser: boolean; status?: string };
+    getNotifications: () => Promise<ChatNotification[]>;
+    markNotificationRead: (id: string) => Promise<void>;
+    markAllNotificationsRead: () => Promise<void>;
+    markChannelAsRead: (channelId: string) => void;
+    addReaction: (messageId: string, emoji: string) => Promise<void>;
+    removeReaction: (messageId: string, emoji: string) => Promise<void>;
+    on: (event: string, callback: Function) => void;
+    off: (event: string, callback: Function) => void;
+    emit: (event: string, data?: any) => void;
+    isConnected: () => boolean;
+    startTyping: (channelId: string) => void;
+    stopTyping: (channelId: string) => void;
+    joinChannel: (channelId: string) => void;
+    leaveChannel: (channelId: string) => void;
+}
+
+// Add Socket.IO style event emitters to the service
+const eventListeners: Map<string, Set<Function>> = new Map();
+
+export const ChatService: IChatService = {
+    getChannels: async (currentUserRole?: string): Promise<ChatChannel[]> => {
         const stored = localStorage.getItem(STORAGE_KEY_CHANNELS);
         const channels: ChatChannel[] = stored ? JSON.parse(stored) : INITIAL_CHANNELS;
 
         // RBAC Filtering
         if (currentUserRole) {
-            return channels.filter(c => !c.allowedRoles || c.allowedRoles.includes(currentUserRole));
+            return channels.filter(c => !c.allowedRoles || (c.allowedRoles && c.allowedRoles.includes(currentUserRole)));
         }
         return channels;
     },
 
-    getUsers: (): ChatUser[] => {
+    getUsers: async (): Promise<ChatUser[]> => {
         return MOCK_USERS;
     },
 
-    getMessages: (channelId: string): ChatMessage[] => {
+    getMessages: async (channelId: string, options: { limit?: number; offset?: number } = {}): Promise<{ messages: ChatMessage[], hasMore: boolean }> => {
+        const { limit = 50, offset = 0 } = options;
         const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
         const allMessages = stored ? JSON.parse(stored) : INITIAL_MESSAGES;
-        return allMessages[channelId] || [];
+        const messages = allMessages[channelId] || [];
+
+        const total = messages.length;
+        const start = Math.max(0, total - offset - limit);
+        const end = Math.max(0, total - offset);
+
+        return {
+            messages: messages.slice(start, end),
+            hasMore: start > 0
+        };
     },
 
-    sendMessage: (channelId: string, text: string, context?: ChatMessageContext) => {
+    sendMessage: async (channelId: string, text: string, context?: ChatMessageContext) => {
         const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
         const allMessages = stored ? JSON.parse(stored) : { ...INITIAL_MESSAGES };
 
         const newMessage: ChatMessage = {
             id: `m-${Date.now()}`,
+            channelId,
             text,
             senderId: 'current-user', // Mock ID for "Me"
             senderName: 'You',
@@ -69,16 +97,21 @@ export const ChatService = {
         }
         allMessages[channelId].push(newMessage);
         localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(allMessages));
+
+        // Emit event for real-time update simulators
+        ChatService.emit('message:new', newMessage);
+
         return newMessage;
     },
 
     // Automated System Post
-    systemPost: (channelId: string, text: string, context?: ChatMessageContext) => {
+    systemPost: async (channelId: string, text: string, context?: ChatMessageContext) => {
         const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
         const allMessages = stored ? JSON.parse(stored) : { ...INITIAL_MESSAGES };
 
         const newMessage: ChatMessage = {
             id: `sys-${Date.now()}`,
+            channelId,
             text,
             senderId: 'system',
             senderName: 'System Engine',
@@ -92,10 +125,13 @@ export const ChatService = {
         }
         allMessages[channelId].push(newMessage);
         localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(allMessages));
+
+        ChatService.emit('message:new', newMessage);
+
         return newMessage;
     },
 
-    createChannel: (name: string, type: 'public' | 'private', allowedRoles?: string[]): ChatChannel => {
+    createChannel: async (name: string, type: 'public' | 'private', allowedRoles?: string[]): Promise<ChatChannel> => {
         const stored = localStorage.getItem(STORAGE_KEY_CHANNELS);
         const channels: ChatChannel[] = stored ? JSON.parse(stored) : [...INITIAL_CHANNELS];
 
@@ -112,7 +148,7 @@ export const ChatService = {
         return newChannel;
     },
 
-    updateChannel: (channelId: string, updates: Partial<ChatChannel>): ChatChannel | undefined => {
+    updateChannel: async (channelId: string, updates: Partial<ChatChannel>): Promise<ChatChannel | undefined> => {
         const stored = localStorage.getItem(STORAGE_KEY_CHANNELS);
         const channels: ChatChannel[] = stored ? JSON.parse(stored) : [...INITIAL_CHANNELS];
 
@@ -124,7 +160,7 @@ export const ChatService = {
         return channels[index];
     },
 
-    deleteChannel: (channelId: string) => {
+    deleteChannel: async (channelId: string) => {
         // Protect critical channels
         if (['c1', 'c2', 'c3', 'c4'].includes(channelId)) return false;
 
@@ -155,9 +191,73 @@ export const ChatService = {
             return { name: user?.name || 'Unknown User', avatar: user?.avatar, isUser: true, status: user?.status };
         }
 
-        // Use getChannels which already handles storage
-        const channels = ChatService.getChannels();
+        const stored = localStorage.getItem(STORAGE_KEY_CHANNELS);
+        const channels: ChatChannel[] = stored ? JSON.parse(stored) : INITIAL_CHANNELS;
         const channel = channels.find(c => c.id === channelId);
         return { name: channel ? `# ${channel.name}` : 'Unknown Channel', isUser: false };
-    }
+    },
+
+    // --- NOTIFICATION METHODS ---
+    getNotifications: async (): Promise<ChatNotification[]> => {
+        const stored = localStorage.getItem('caditare_chat_notifications');
+        return stored ? JSON.parse(stored) : [];
+    },
+
+    markNotificationRead: async (id: string): Promise<void> => {
+        const stored = localStorage.getItem('caditare_chat_notifications');
+        if (!stored) return;
+        const notifications: ChatNotification[] = JSON.parse(stored);
+        const updated = notifications.map(n => n.id === id ? { ...n, isRead: true } : n);
+        localStorage.setItem('caditare_chat_notifications', JSON.stringify(updated));
+    },
+
+    markAllNotificationsRead: async (): Promise<void> => {
+        const stored = localStorage.getItem('caditare_chat_notifications');
+        if (!stored) return;
+        const notifications: ChatNotification[] = JSON.parse(stored);
+        const updated = notifications.map(n => ({ ...n, isRead: true }));
+        localStorage.setItem('caditare_chat_notifications', JSON.stringify(updated));
+    },
+
+    markChannelAsRead: (channelId: string): void => {
+        const stored = localStorage.getItem(STORAGE_KEY_CHANNELS);
+        const channels: ChatChannel[] = stored ? JSON.parse(stored) : [...INITIAL_CHANNELS];
+        const index = channels.findIndex(c => c.id === channelId);
+        if (index !== -1) {
+            channels[index].unreadCount = 0;
+            localStorage.setItem(STORAGE_KEY_CHANNELS, JSON.stringify(channels));
+        }
+    },
+
+    addReaction: async (messageId: string, emoji: string) => { },
+    removeReaction: async (messageId: string, emoji: string) => { },
+
+    on: (event: string, callback: Function) => {
+        if (!eventListeners.has(event)) {
+            eventListeners.set(event, new Set());
+        }
+        eventListeners.get(event)!.add(callback);
+    },
+
+    off: (event: string, callback: Function) => {
+        const listeners = eventListeners.get(event);
+        if (listeners) {
+            listeners.delete(callback);
+        }
+    },
+
+    emit: (event: string, data?: any) => {
+        const listeners = eventListeners.get(event);
+        if (listeners) {
+            listeners.forEach(callback => callback(data));
+        }
+    },
+
+    isConnected: () => true,
+    startTyping: (channelId: string) => { },
+    stopTyping: (channelId: string) => { },
+    joinChannel: (channelId: string) => { },
+    leaveChannel: (channelId: string) => { },
 };
+
+export default ChatService;

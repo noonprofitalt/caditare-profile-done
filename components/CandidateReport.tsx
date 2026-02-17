@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, FileSearch, User, MapPin, ShieldAlert, BrainCircuit, Bot, Upload, ArrowRight, ExternalLink, TrendingUp } from 'lucide-react';
+import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, FileSearch, User, MapPin, ShieldAlert, ShieldCheck, Upload, ArrowRight, ExternalLink, TrendingUp } from 'lucide-react';
 import { Candidate } from '../types';
 import { ReportService, SystemReport } from '../services/reportService';
 import ReactMarkdown from 'react-markdown';
@@ -43,7 +43,7 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
         return (
             <div className="flex flex-col items-center justify-center h-64 space-y-4">
                 <RefreshCw size={32} className="text-blue-600 animate-spin" />
-                <p className="text-slate-500 font-medium">Running deep system audit and profile intelligence analysis...</p>
+                <p className="text-slate-500 font-medium">Running comprehensive system audit and integrity analysis...</p>
             </div>
         );
     }
@@ -70,7 +70,7 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-slate-800">System Audit & Integrity Report</h3>
-                        <p className="text-slate-500 text-xs font-medium">Enterprise Grade Candidate Verification</p>
+                        <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Verified System Integrity Protocol</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -100,7 +100,7 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
             <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden printable-area max-w-5xl mx-auto relative">
                 {/* Confidentiality Watermark */}
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03] rotate-[-45deg] flex items-center justify-center overflow-hidden">
-                    <span className="text-9xl font-black whitespace-nowrap">CONFIDENTIAL AUDIT</span>
+                    <span className="text-9xl font-black whitespace-nowrap uppercase tracking-tighter">Confidential Audit Report</span>
                 </div>
 
                 {/* Report Header */}
@@ -111,9 +111,9 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                         <div>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10">
-                                    <Bot size={20} className="text-blue-400" />
+                                    <ShieldCheck size={20} className="text-blue-400" />
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-300">Intelligent Recruitment Audit</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-300">System Performance Audit</span>
                             </div>
                             <h2 className="text-4xl font-black tracking-tight mb-2">RECRUITMENT INTEGRITY AUDIT</h2>
                             <p className="text-slate-400 text-sm font-medium flex items-center gap-2">
@@ -302,93 +302,15 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                             </section>
                         </div>
 
-                        {/* Section 3: AI Intelligence Dashboard */}
-                        <div className="space-y-10">
-                            <section>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
-                                        <BrainCircuit size={16} />
-                                    </div>
-                                    <h4 className="text-sm font-black text-slate-900 tracking-widest uppercase">03. Intelligence Context</h4>
-                                </div>
-
-                                <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-10 relative overflow-hidden shadow-sm">
-                                    <div className="absolute top-0 right-0 p-8 opacity-5">
-                                        <Bot size={120} />
-                                    </div>
-                                    <div className="relative z-10 space-y-8">
-                                        {/* Probability Gauge */}
-                                        <div>
-                                            <div className="flex justify-between items-end mb-2">
-                                                <h5 className="font-black text-xs text-slate-400 uppercase tracking-widest">Placement Probability</h5>
-                                                <span className="text-3xl font-black text-blue-600">{report.aiInsights.placementProbability}%</span>
-                                            </div>
-                                            <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                                                <div
-                                                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-1000 ease-out"
-                                                    style={{ width: `${report.aiInsights.placementProbability}%` }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-sm">
-                                            <div>
-                                                <h5 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                                                    <span className="w-1.5 h-4 bg-emerald-500 rounded-full" />
-                                                    Key Strengths
-                                                </h5>
-                                                <ul className="space-y-2">
-                                                    {report.aiInsights.strengths.map((str, i) => (
-                                                        <li key={i} className="flex items-start gap-2 text-slate-600">
-                                                            <div className="mt-1.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0" />
-                                                            {str}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                            <div>
-                                                <h5 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                                                    <span className="w-1.5 h-4 bg-amber-500 rounded-full" />
-                                                    Potential Risks
-                                                </h5>
-                                                <ul className="space-y-2">
-                                                    {report.aiInsights.risks.map((risk, i) => (
-                                                        <li key={i} className="flex items-start gap-2 text-slate-600">
-                                                            <div className="mt-1.5 w-1.5 h-1.5 bg-amber-500 rounded-full shrink-0" />
-                                                            {risk}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-6 border-t border-slate-100">
-                                            <h5 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                                <TrendingUp size={16} className="text-blue-500" />
-                                                Recommended Deployment Strategy
-                                            </h5>
-                                            <div className="flex flex-wrap gap-2">
-                                                {report.aiInsights.recommendedRoles.map((role, i) => (
-                                                    <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-black uppercase tracking-wider border border-blue-100">
-                                                        {role}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-8 bg-slate-900 text-white rounded-[2rem] p-8 shadow-xl">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <Info size={16} className="text-blue-400" />
-                                        <h5 className="font-black text-xs uppercase tracking-widest">Audit Instructions</h5>
-                                    </div>
-                                    <p className="text-xs text-slate-400 leading-relaxed mb-6">
-                                        Case Officers must resolve all "Fix Required" items before
-                                        finalizing the <b>Verification</b> stage.
-                                    </p>
-                                </div>
-                            </section>
+                        <div className="mt-8 bg-slate-900 text-white rounded-[2rem] p-8 shadow-xl">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Info size={16} className="text-blue-400" />
+                                <h5 className="font-black text-xs uppercase tracking-widest">Audit Instructions</h5>
+                            </div>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                                Case Officers must resolve all "Fix Required" items before
+                                finalizing the <b>Verification</b> stage.
+                            </p>
                         </div>
                     </div>
                 </div>

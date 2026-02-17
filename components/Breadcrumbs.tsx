@@ -12,24 +12,28 @@ const Breadcrumbs: React.FC = () => {
 
     React.useEffect(() => {
         const resolveNames = async () => {
-            const names: Record<string, string> = {};
-            // Parallelize fetching
-            const [candidates, employers] = await Promise.all([
-                CandidateService.getCandidates(),
-                Promise.resolve(PartnerService.getEmployers()) // Wrap in promise to keep structure consistent if PartnerService becomes async
-            ]);
+            try {
+                const names: Record<string, string> = {};
+                // Parallelize fetching
+                const [candidates, employers] = await Promise.all([
+                    CandidateService.getCandidates(),
+                    Promise.resolve(PartnerService.getEmployers()) // Wrap in promise to keep structure consistent if PartnerService becomes async
+                ]);
 
-            pathnames.forEach((value, index) => {
-                const prev = index > 0 ? pathnames[index - 1] : '';
-                if (prev === 'candidates') {
-                    const candidate = (candidates || []).find(c => c.id === value);
-                    if (candidate) names[value] = candidate.name;
-                } else if (prev === 'partners') {
-                    const partner = employers.find(e => e.id === value);
-                    if (partner) names[value] = partner.companyName;
-                }
-            });
-            setBreadcrumbNames(names);
+                pathnames.forEach((value, index) => {
+                    const prev = index > 0 ? pathnames[index - 1] : '';
+                    if (prev === 'candidates') {
+                        const candidate = (candidates || []).find(c => c && c.id === value);
+                        if (candidate?.name) names[value] = candidate.name;
+                    } else if (prev === 'partners') {
+                        const partner = (employers || []).find(e => e && e.id === value);
+                        if (partner?.companyName) names[value] = partner.companyName;
+                    }
+                });
+                setBreadcrumbNames(names);
+            } catch (err) {
+                console.error('Failed to resolve breadcrumb names', err);
+            }
         };
         resolveNames();
     }, [location.pathname]);

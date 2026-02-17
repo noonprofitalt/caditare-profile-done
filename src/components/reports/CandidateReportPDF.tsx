@@ -12,7 +12,6 @@ import { FinancialSummarySection } from './sections/FinancialSummarySection';
 import { NotesDeclarationSection } from './sections/NotesDeclarationSection';
 import { FamilySection } from './sections/FamilySection';
 import { BureauSection } from './sections/BureauSection';
-import { AIExecutiveSummarySection } from './sections/AIExecutiveSummarySection';
 import { ComplianceSnapshot } from './sections/ComplianceSnapshot';
 
 import { SystemReport } from '../../../services/reportService';
@@ -58,9 +57,6 @@ export const CandidateReportPDF: React.FC<CandidateReportPDFProps> = ({ candidat
                 generatedAt={new Date().toLocaleString()}
                 candidateId={candidate.id}
             />
-
-            {/* AI Executive Summary - HIGHLIGHT OF THE V2 ENGINE */}
-            {systemReport && <AIExecutiveSummarySection systemReport={systemReport} />}
 
             {/* Compliance Snapshot */}
             <ComplianceSnapshot candidate={candidate} />

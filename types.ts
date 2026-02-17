@@ -134,7 +134,7 @@ export interface CandidateDocument {
   rejectionReason?: string;
 }
 
-export type TimelineEventType = 'STAGE_TRANSITION' | 'STATUS_CHANGE' | 'DOCUMENT' | 'NOTE' | 'ALERT' | 'SYSTEM' | 'MANUAL_OVERRIDE';
+export type TimelineEventType = 'STAGE_TRANSITION' | 'STATUS_CHANGE' | 'DOCUMENT' | 'NOTE' | 'ALERT' | 'SYSTEM' | 'MANUAL_OVERRIDE' | 'WORKFLOW';
 
 export interface TimelineEvent {
   id: string;
@@ -351,8 +351,11 @@ export interface Candidate {
   email: string;
   phone: string;
   whatsapp?: string; // Legacy
+  secondaryPhone?: string;
   additionalContactNumbers?: string[]; // Legacy
   nic?: string;
+  secondaryEmail?: string;
+  skills?: string[];
   stage: WorkflowStage;
 
   // Additional Legacy fields for forms
@@ -654,48 +657,9 @@ export interface Invoice {
   billingAddress?: string;
 }
 
-// --- CHAT SYSTEM TYPES ---
-
-export interface ChatUser {
-  id: string;
-  name: string;
-  avatar: string;
-  status: 'online' | 'offline' | 'busy' | 'away';
-  role: string;
-}
-
-export interface ChatChannel {
-  id: string;
-  name: string;
-  type: 'public' | 'private';
-  unreadCount?: number;
-  allowedRoles?: string[]; // RBAC: If set, only these roles can access
-}
-
-export interface ChatMessageContext {
-  type: 'CANDIDATE' | 'JOB' | 'SYSTEM_EVENT';
-  id: string;
-  label: string; // "John Doe" or "Visa Approved"
-  metadata?: Record<string, unknown>;
-}
-
-export interface ChatMessage {
-  id: string;
-  text: string;
-  senderId: string;
-  senderName: string;
-  timestamp: string;
-  isMe?: boolean;
-  context?: ChatMessageContext; // Smart Context
-  isSystem?: boolean;
-  participants?: string[];
-  unreadCount?: number;
-  lastMessage?: ChatMessage;
-}
-
 // --- AUTHENTICATION & SECURITY TYPES ---
 
-export type UserRole = 'Admin' | 'Recruiter' | 'Viewer';
+export type UserRole = 'Admin' | 'Recruiter' | 'Viewer' | 'Manager' | 'Finance' | 'Compliance' | 'Operations';
 
 export interface User {
   id: string;
@@ -703,7 +667,9 @@ export interface User {
   email: string;
   role: UserRole;
   avatar: string;
-  lastLogin: string;
+  status: 'Active' | 'Inactive' | 'Pending';
+  lastLogin?: string;
+  createdAt?: string;
 }
 
 export interface AuthState {
@@ -762,3 +728,101 @@ export interface ComplianceFlag {
   resolvedAt?: string;
   resolutionNotes?: string;
 }
+
+// --- CHAT SYSTEM TYPES ---
+
+export interface ChatUser {
+  id: string;
+  name: string;
+  avatar?: string;
+  status: 'online' | 'busy' | 'offline' | 'away';
+  role?: string;
+}
+
+export interface ChatChannel {
+  id: string;
+  name: string;
+  type: 'public' | 'private';
+  unreadCount: number;
+  allowedRoles?: string[];
+  lastMessage?: ChatMessage;
+}
+
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+  users: Array<{ id: string; name: string }>;
+}
+
+export interface ChatMessageContext {
+  type: 'candidate' | 'job' | 'finance' | 'system' | 'CANDIDATE' | 'JOB' | 'SYSTEM_EVENT';
+  id: string;
+  title?: string;
+  label?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ChatMessage {
+  id: string;
+  channelId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  text: string;
+  timestamp: string;
+  editedAt?: string;
+  isMe?: boolean;
+  isSystem?: boolean;
+  isDeleted?: boolean;
+  isEdited?: boolean;
+  reactions?: MessageReaction[];
+  parentMessageId?: string;
+  replyCount?: number;
+  context?: ChatMessageContext;
+}
+
+export interface TypingIndicator {
+  userId: string;
+  userName: string;
+}
+
+export interface ChannelMember {
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  role?: string;
+  joinedAt: string;
+}
+
+export interface ChatNotification {
+  id: string;
+  userId: string;
+  channelId: string;
+  messageId?: string;
+  title: string;
+  message: string;
+  type: 'mention' | 'reply' | 'channel_invite' | 'system';
+  isRead: boolean;
+  createdAt: string;
+}
+
+export type Permission =
+  | 'view_dashboard'
+  | 'view_candidates'
+  | 'edit_candidates'
+  | 'delete_candidates'
+  | 'view_finance'
+  | 'edit_finance'
+  | 'view_reports'
+  | 'manage_users'
+  | 'chat';
+
+export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  'Admin': ['view_dashboard', 'view_candidates', 'edit_candidates', 'delete_candidates', 'view_finance', 'edit_finance', 'view_reports', 'manage_users', 'chat'],
+  'Recruiter': ['view_dashboard', 'view_candidates', 'edit_candidates', 'view_reports', 'chat'],
+  'Viewer': ['view_dashboard', 'view_candidates', 'view_reports', 'chat'],
+  'Manager': ['view_dashboard', 'view_candidates', 'edit_candidates', 'view_reports', 'chat'],
+  'Finance': ['view_dashboard', 'view_finance', 'edit_finance', 'view_reports', 'chat'],
+  'Compliance': ['view_dashboard', 'view_candidates', 'view_reports', 'chat'],
+  'Operations': ['view_dashboard', 'view_candidates', 'view_reports', 'chat']
+};

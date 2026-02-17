@@ -7,11 +7,37 @@ interface TimelineViewProps {
 }
 
 const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
-  // Sort events newest first
-  const sortedEvents = [...events].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  // Sort events newest first, handle potentially invalid dates
+  const sortedEvents = [...(events || [])]
+    .filter(e => e && e.timestamp)
+    .sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+    });
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMs < 0) return date.toLocaleDateString(); // Future date
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
 
   const getEventIcon = (type: string) => {
-    switch (type) {
+    const safeType = type || 'SYSTEM';
+    switch (safeType) {
       case 'STAGE_TRANSITION': return <ArrowRight size={16} className="text-white" />;
       case 'STATUS_CHANGE': return <CheckCircle2 size={16} className="text-white" />;
       case 'DOCUMENT': return <FileText size={16} className="text-white" />;
@@ -25,7 +51,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
 
   const getEventColor = (type: string, isCritical?: boolean) => {
     if (isCritical) return 'bg-red-500 ring-4 ring-red-100';
-    switch (type) {
+    const safeType = type || 'SYSTEM';
+    switch (safeType) {
       case 'STAGE_TRANSITION': return 'bg-blue-600 ring-4 ring-blue-100';
       case 'STATUS_CHANGE': return 'bg-green-500 ring-4 ring-green-100';
       case 'ALERT': return 'bg-orange-500 ring-4 ring-orange-100';
@@ -47,7 +74,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
         <div className="absolute left-[27px] top-2 bottom-2 w-0.5 bg-slate-200"></div>
 
         {sortedEvents.map((event) => (
-          <div key={event.id} className="relative flex gap-6 group">
+          <div key={event.id || `evt-${Math.random()}`} className="relative flex gap-6 group">
             {/* Timeline Dot */}
             <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${getEventColor(event.type, event.metadata?.isCritical)}`}>
               {getEventIcon(event.type)}
@@ -56,21 +83,21 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
             {/* Content */}
             <div className="flex-1 pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1">
-                <h4 className="font-bold text-slate-800 text-sm">{event.title}</h4>
+                <h4 className="font-bold text-slate-800 text-sm">{event.title || 'Timeline Event'}</h4>
                 <span className="text-xs text-slate-400 font-mono">
-                  {new Date(event.timestamp).toLocaleString()}
+                  {formatDate(event.timestamp)}
                 </span>
               </div>
 
-              <p className="text-xs text-slate-600 mb-2">{event.description}</p>
+              <p className="text-xs text-slate-600 mb-2">{event.description || 'No additional details provided.'}</p>
 
-              <div className="flex items-center gap-3">
+              <div className="items-center gap-3 flex">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-wide border border-slate-200">
-                  {event.stage}
+                  {event.stage || 'STAGE'}
                 </span>
                 <div className="flex items-center gap-1 text-[10px] text-slate-400">
                   <User size={10} />
-                  {event.actor}
+                  {event.actor || 'System'}
                 </div>
               </div>
             </div>

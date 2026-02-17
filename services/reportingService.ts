@@ -7,8 +7,8 @@ export class ReportingService {
   /**
    * Generates a complete 360 system snapshot
    */
-  static getSystemSnapshot(): SystemSnapshot {
-    const candidates = CandidateService.getCandidates();
+  static async getSystemSnapshot(): Promise<SystemSnapshot> {
+    const candidates = await CandidateService.getCandidates();
 
     return {
       timestamp: new Date().toISOString(),
@@ -93,10 +93,10 @@ export class ReportingService {
   private static calculateStaffPerformance(candidates: Candidate[]): StaffPerformanceMetric[] {
     const staffMap: Record<string, { actions: number; lastActive: string; stages: Record<string, number> }> = {};
 
-    candidates.forEach(c => {
-      c.timelineEvents.forEach(evt => {
-        const actor = evt.actor;
-        if (actor === 'System' || (actor === 'Admin User' && false)) return; // Optional filter
+    (candidates || []).forEach(c => {
+      (c.timelineEvents || []).forEach(evt => {
+        const actor = evt.actor || 'System';
+        if (actor === 'System') return;
 
         if (!staffMap[actor]) {
           staffMap[actor] = { actions: 0, lastActive: evt.timestamp, stages: {} };
@@ -163,7 +163,7 @@ export class ReportingService {
       }
 
       // Pipeline (Total potential)
-      if (c.stage !== WorkflowStage.DEPARTED) {
+      if (c.stage && c.stage !== WorkflowStage.DEPARTED) {
         totalPipeline += REVENUE_PER_PLACEMENT;
       }
     });
@@ -208,8 +208,8 @@ export class ReportingService {
     ].join('\n');
 
     const eventsHeader = "\n\nTimeline History\nDate,Event,Actor,Description";
-    const events = candidate.timelineEvents.map(e =>
-      `${new Date(e.timestamp).toLocaleDateString()},${e.title},${e.actor},${e.description?.replace(/,/g, ' ')}`
+    const events = (candidate.timelineEvents || []).map(e =>
+      `${new Date(e.timestamp || Date.now()).toLocaleDateString()},${e.title || 'Event'},${e.actor || 'System'},${(e.description || '').replace(/,/g, ' ')}`
     ).join('\n');
 
     return headers + eventsHeader + events;
@@ -218,8 +218,8 @@ export class ReportingService {
   /**
    * Generates a full system report CSV for all candidates
    */
-  static generateFullSystemCSV(): string {
-    const candidates = CandidateService.getCandidates();
+  static async generateFullSystemCSV(): Promise<string> {
+    const candidates = await CandidateService.getCandidates();
     const header = [
       "Candidate ID",
       "Name",
@@ -238,10 +238,10 @@ export class ReportingService {
       "Last Active"
     ].join(",");
 
-    const rows = candidates.map(c => {
+    const rows = (candidates || []).map(c => {
       const sla = WorkflowEngine.calculateSLAStatus(c);
-      const totalPaid = c.stageData.paymentHistory?.reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0;
-      const lastEvent = c.timelineEvents[0]?.timestamp || c.stageEnteredAt;
+      const totalPaid = c.stageData?.paymentHistory?.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0) || 0;
+      const lastEvent = c.timelineEvents?.[0]?.timestamp || c.stageEnteredAt || new Date().toISOString();
 
       // Escape quotes in strings
       const safeName = `"${(c.name || 'Unknown').replace(/"/g, '""')}"`;
@@ -249,21 +249,21 @@ export class ReportingService {
       const safeLoc = `"${(c.location || 'N/A').replace(/"/g, '""')}"`;
 
       return [
-        c.id,
+        c.id || 'unknown',
         safeName,
         safeRole,
         safeLoc,
-        c.stage,
-        c.stageStatus,
-        sla.daysElapsed,
-        sla.status === 'OVERDUE' ? "OVERDUE" : "On Track",
+        c.stage || 'General',
+        c.stageStatus || 'Pending',
+        sla?.daysElapsed || 0,
+        sla?.status === 'OVERDUE' ? "OVERDUE" : "On Track",
         c.stageData?.employerStatus || "-",
         c.stageData?.medicalStatus || "-",
         c.stageData?.policeStatus || "-",
         c.stageData?.visaStatus || "-",
         c.stageData?.paymentStatus || "-",
-        totalPaid,
-        new Date(lastEvent).toLocaleDateString()
+        totalPaid || 0,
+        lastEvent ? new Date(lastEvent).toLocaleDateString() : '-'
       ].join(",");
     });
 

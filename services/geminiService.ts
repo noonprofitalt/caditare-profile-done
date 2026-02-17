@@ -218,8 +218,8 @@ Your goal is to provide precise, data-driven, and actionable insights to agency 
                 if (!context && (message.toLowerCase().includes('data') || message.toLowerCase().includes('stat') || message.toLowerCase().includes('candidate') || message.toLowerCase().includes('who') || message.toLowerCase().includes('how'))) {
                     const { ReportingService } = await import('./reportingService');
                     const { CandidateService } = await import('./candidateService');
-                    const snapshot = ReportingService.getSystemSnapshot();
-                    const candidates = CandidateService.getCandidates();
+                    const snapshot = await ReportingService.getSystemSnapshot();
+                    const candidates = await CandidateService.getCandidates();
 
                     activeContext = `SYSTEM SNAPSHOT (CURRENT LIVE DATA):
 - Total: ${snapshot.kpi.totalCandidates} candidates

@@ -21,7 +21,7 @@ export const MentionAutocomplete: React.FC<MentionAutocompleteProps> = ({
 
     // Extract unique roles from members and filter based on query
     const roles = Array.from(new Set(members.map(m => m.role)))
-        .filter(role => role && role.toLowerCase().includes(query.toLowerCase()))
+        .filter((role): role is string => !!role && role.toLowerCase().includes(query.toLowerCase()))
         .map(role => ({ type: 'role' as const, name: role, id: `role-${role}` }));
 
     const filteredMembers = members
@@ -48,7 +48,10 @@ export const MentionAutocomplete: React.FC<MentionAutocompleteProps> = ({
                 setSelectedIndex(prev => (prev - 1 + suggestions.length) % suggestions.length);
             } else if (e.key === 'Enter' || e.key === 'Tab') {
                 e.preventDefault();
-                onSelect(suggestions[selectedIndex].name);
+                const selected = suggestions[selectedIndex];
+                if (selected) {
+                    onSelect(selected.name);
+                }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 onClose();

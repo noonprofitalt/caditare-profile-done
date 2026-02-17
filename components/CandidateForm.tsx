@@ -193,7 +193,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
       name: `${formData.firstName} ${formData.middleName || ''}`.trim(),
       location: formData.city ? `${formData.city}, ${formData.address}` : formData.address,
 
-      skills: formData.skills.split(',').map(s => s.trim()).filter(s => s),
+      skills: formData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s),
       preferredCountries: formData.preferredCountries,
       jobRoles: jobRoles,
       stageData: stageDataUpdate,
@@ -238,8 +238,8 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 <input
                   name="firstName"
                   value={formData.firstName}
+                  // FRICTIONLESS: required removed
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 />
               </div>
@@ -261,8 +261,8 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 <input
                   name="nic"
                   value={formData.nic}
+                  // FRICTIONLESS: required removed
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 />
               </div>
@@ -274,7 +274,6 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                     type="date"
                     value={formData.dob}
                     onChange={handleChange}
-                    required
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                   />
                 </div>
@@ -296,8 +295,8 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 <select
                   name="gender"
                   value={formData.gender}
+                  // FRICTIONLESS: required removed
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                   <option value="">Select your gender</option>
@@ -316,8 +315,15 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                   <input
                     name="phone"
                     value={formData.phone}
-                    onChange={handleChange}
-                    required
+                    // FRICTIONLESS: required removed
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({ ...prev, phone: val }));
+                      // Auto-sync WhatsApp if it was matching phone
+                      if (formData.whatsapp === formData.phone) {
+                        setFormData(prev => ({ ...prev, whatsapp: val }));
+                      }
+                    }}
                     className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                   />
                   {!showSecondaryPhone && (
@@ -358,8 +364,8 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 <input
                   name="whatsapp"
                   value={formData.whatsapp}
+                  // FRICTIONLESS: required removed
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 />
               </div>
@@ -384,7 +390,6 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                required
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
               />
             </div>
@@ -396,7 +401,6 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
-                required
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
               />
             </div>
@@ -465,7 +469,6 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                   placeholder="e.g. Civil Engineer"
                 />
@@ -617,7 +620,6 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 name="targetCountry"
                 value={formData.targetCountry}
                 onChange={handleChange}
-                required
                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 {TemplateService.getCountries().map(country => (

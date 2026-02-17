@@ -42,13 +42,6 @@ const Dashboard: React.FC = () => {
          } finally {
             setIsLoading(false);
          }
-
-         // Check for critical tasks and notify if needed
-         // We need to regenerate tasks to check for critical ones, or use state? 
-         // Actually we can just use the data we just fetched.
-         const data = await CandidateService.getCandidates() || []; // fetching again is wasteful but safe, or better: use local var
-         // Wait, I can just use the 'data' variable from above if I structure it right.
-         // Let's rewrite the block cleanly.
       }, 800);
    }, []);
 
@@ -70,211 +63,190 @@ const Dashboard: React.FC = () => {
    const completeProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length;
 
    return (
-      <div className="p-6 max-w-[1600px] mx-auto space-y-6 relative h-[calc(100vh-4rem)] overflow-y-auto">
-
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 pb-24 lg:pb-8">
          {/* 1. Header Row: High-Level Status (KPIs) */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {isLoading ? (
                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between h-[116px]">
+                  <div key={i} className="glass-card p-5 flex items-center justify-between h-[116px]">
                      <div className="space-y-3 w-full">
                         <Skeleton className="h-3 w-24" />
                         <Skeleton className="h-8 w-16" />
                         <Skeleton className="h-3 w-32" />
                      </div>
-                     <Skeleton className="h-12 w-12 rounded-lg" />
+                     <Skeleton className="h-12 w-12 rounded-xl" />
                   </div>
                ))
             ) : (
                <>
                   <div
                      onClick={() => navigate('/candidates')}
-                     className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-xl shadow-xl flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative overflow-hidden"
+                     className="bg-slate-900 group relative overflow-hidden p-6 rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                     <div className="relative z-10">
-                        <p className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Active Workforce</p>
-                        <h3 className="text-4xl font-bold mb-1">{activeCandidates}</h3>
-                        <p className="text-xs text-slate-400 flex items-center gap-1"><Activity size={12} className="text-green-400" /> System Operational</p>
+                     <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                     <div className="flex items-center justify-between relative z-10">
+                        <div>
+                           <p className="text-slate-400 text-[10px] uppercase font-black tracking-widest mb-1">Workforce</p>
+                           <h3 className="text-4xl font-black text-white mb-1 tracking-tighter">{activeCandidates}</h3>
+                           <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 uppercase tracking-tight">
+                              <Activity size={10} /> Online
+                           </p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/10 text-blue-400 group-hover:scale-110 transition-premium">
+                           <Briefcase size={28} />
+                        </div>
                      </div>
-                     <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl border border-white/20 relative z-10"><Briefcase size={28} className="text-blue-400" /></div>
                   </div>
 
                   <div
                      onClick={() => navigate('/pipeline')}
-                     className="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-xl shadow-xl flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative overflow-hidden"
+                     className="bg-red-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-red-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-red-700/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                     <div className="relative z-10">
-                        <p className="text-red-100 text-xs uppercase font-bold tracking-wider mb-1">Critical Actions</p>
-                        <h3 className="text-4xl font-bold mb-1">{criticalIssues}</h3>
-                        <p className="text-xs text-red-100 font-medium">Immediate attention required</p>
+                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                     <div className="flex items-center justify-between relative z-10">
+                        <div>
+                           <p className="text-red-100 text-[10px] uppercase font-black tracking-widest mb-1">Actions</p>
+                           <h3 className="text-4xl font-black text-white mb-1 tracking-tighter">{criticalIssues}</h3>
+                           <p className="text-[10px] text-red-100 font-bold uppercase tracking-tight">Critical priority</p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:rotate-12 transition-premium">
+                           <Zap size={28} />
+                        </div>
                      </div>
-                     <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl border border-white/30 relative z-10"><Zap size={28} className="text-yellow-300" /></div>
                   </div>
 
                   <div
                      onClick={() => navigate('/finance')}
-                     className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 rounded-xl shadow-xl flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative overflow-hidden"
+                     className="bg-blue-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-blue-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                     <div className="relative z-10">
-                        <p className="text-blue-100 text-xs uppercase font-bold tracking-wider mb-1">Projected Revenue</p>
-                        <h3 className="text-4xl font-bold mb-1">${projectedRevenue.toLocaleString()}</h3>
-                        <p className="text-xs text-blue-100">Expected Pipeline Value</p>
+                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                     <div className="flex items-center justify-between relative z-10">
+                        <div>
+                           <p className="text-blue-100 text-[10px] uppercase font-black tracking-widest mb-1">Revenue</p>
+                           <h3 className="text-3xl font-black text-white mb-1 tracking-tighter">${projectedRevenue.toLocaleString()}</h3>
+                           <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight">Projected Value</p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:translate-y-[-4px] transition-premium">
+                           <TrendingUp size={28} />
+                        </div>
                      </div>
-                     <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl border border-white/30 relative z-10"><TrendingUp size={28} className="text-green-300" /></div>
                   </div>
 
                   <div
                      onClick={() => navigate('/candidates?stage=Departed')}
-                     className="bg-gradient-to-br from-green-600 to-green-700 text-white p-6 rounded-xl shadow-xl flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all duration-200 group relative overflow-hidden"
+                     className="bg-emerald-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-emerald-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-green-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                     <div className="relative z-10">
-                        <p className="text-green-100 text-xs uppercase font-bold tracking-wider mb-1">Departures</p>
-                        <h3 className="text-4xl font-bold mb-1">{candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length}</h3>
-                        <p className="text-xs text-green-100 font-medium flex items-center"><CheckCircle size={12} className="mr-1" /> Ready for Invoicing</p>
+                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                     <div className="flex items-center justify-between relative z-10">
+                        <div>
+                           <p className="text-emerald-100 text-[10px] uppercase font-black tracking-widest mb-1">Deployed</p>
+                           <h3 className="text-4xl font-black text-white mb-1 tracking-tighter">{candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length}</h3>
+                           <p className="text-[10px] text-emerald-100 font-bold uppercase tracking-tight">Ready for bill</p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium">
+                           <Calendar size={28} />
+                        </div>
                      </div>
-                     <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl border border-white/30 relative z-10"><Calendar size={28} className="text-yellow-300" /></div>
                   </div>
                </>
             )}
          </div>
 
          {/* Database Health Overview */}
-         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+         <div className="glass-card p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                <div>
-                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <h2 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tight">
                      <Activity className="text-blue-600" size={24} />
-                     Database Health
+                     Operational Integrity
                   </h2>
-                  <p className="text-sm text-slate-600 mt-1">Profile completion status across all candidates</p>
+                  <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Database Sync & Health Parameters</p>
                </div>
                <button
                   onClick={() => navigate('/candidates?status=quick')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  className="px-6 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-premium text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200"
                >
-                  View Incomplete
+                  Audit Incomplete
                </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-               {/* Radial Progress */}
-               <div className="flex items-center justify-center">
-                  <div className="relative w-32 h-32">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+               <div className="flex items-center justify-center p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                  <div className="relative w-32 h-32 animate-float">
                      <svg className="transform -rotate-90 w-32 h-32">
-                        <circle
-                           cx="64"
-                           cy="64"
-                           r="56"
-                           stroke="currentColor"
-                           strokeWidth="12"
-                           fill="transparent"
-                           className="text-slate-200"
-                        />
-                        <circle
-                           cx="64"
-                           cy="64"
-                           r="56"
-                           stroke="currentColor"
-                           strokeWidth="12"
-                           fill="transparent"
-                           strokeDasharray={`${2 * Math.PI * 56}`}
-                           strokeDashoffset={`${2 * Math.PI * 56 * (1 - (completeProfiles / activeCandidates || 0))}`}
-                           className="text-green-600 transition-all duration-1000"
-                           strokeLinecap="round"
-                        />
+                        <circle cx="64" cy="64" r="54" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100" />
+                        <circle cx="64" cy="64" r="54" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={`${2 * Math.PI * 54}`}
+                           strokeDashoffset={`${2 * Math.PI * 54 * (1 - (completeProfiles / activeCandidates || 0))}`}
+                           className="text-emerald-500 transition-all duration-1000 ease-out" strokeLinecap="round" />
                      </svg>
                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-bold text-slate-900">{activeCandidates > 0 ? Math.round((completeProfiles / activeCandidates) * 100) : 0}%</span>
-                        <span className="text-xs text-slate-500">Complete</span>
+                        <span className="text-3xl font-black text-slate-900 tracking-tighter">{activeCandidates > 0 ? Math.round((completeProfiles / activeCandidates) * 100) : 0}%</span>
+                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Healthy</span>
                      </div>
                   </div>
                </div>
 
-               {/* Quick Profiles */}
-               <div
-                  onClick={() => navigate('/candidates?status=quick')}
-                  className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl p-4 cursor-pointer hover:scale-[1.02] transition-all group"
-               >
-                  <div className="flex items-center gap-2 mb-2">
-                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                     <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Quick Add</h3>
+               <div onClick={() => navigate('/candidates?status=quick')} className="glass-card-interactive p-6 flex flex-col justify-between group">
+                  <div className="flex items-center gap-2 mb-4">
+                     <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></div>
+                     <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Fragile</h3>
                   </div>
-                  <p className="text-3xl font-bold text-red-600 mb-1">{quickProfiles}</p>
-                  <p className="text-xs text-slate-600">Pending full registration</p>
-                  <div className="mt-3 text-xs font-semibold text-red-700 group-hover:underline">Complete Now →</div>
+                  <p className="text-4xl font-black text-red-600 tracking-tighter mb-1">{quickProfiles}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Pending full Sync</p>
                </div>
 
-               {/* Partial Profiles */}
-               <div
-                  onClick={() => navigate('/candidates?status=partial')}
-                  className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-200 rounded-xl p-4 cursor-pointer hover:scale-[1.02] transition-all group"
-               >
-                  <div className="flex items-center gap-2 mb-2">
-                     <Clock size={14} className="text-yellow-600" />
-                     <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">In Progress</h3>
+               <div onClick={() => navigate('/candidates?status=partial')} className="glass-card-interactive p-6 flex flex-col justify-between group">
+                  <div className="flex items-center gap-2 mb-4">
+                     <Clock size={16} className="text-amber-500" />
+                     <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Staging</h3>
                   </div>
-                  <p className="text-3xl font-bold text-yellow-600 mb-1">{partialProfiles}</p>
-                  <p className="text-xs text-slate-600">Partially completed</p>
-                  <div className="mt-3 text-xs font-semibold text-yellow-700 group-hover:underline">Finish Registration →</div>
+                  <p className="text-4xl font-black text-amber-600 tracking-tighter mb-1">{partialProfiles}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Active Processing</p>
                </div>
 
-               {/* Complete Profiles */}
-               <div
-                  onClick={() => navigate('/candidates?status=complete')}
-                  className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-4 cursor-pointer hover:scale-[1.02] transition-all group"
-               >
-                  <div className="flex items-center gap-2 mb-2">
-                     <CheckCircle size={14} className="text-green-600" />
-                     <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Complete</h3>
+               <div onClick={() => navigate('/candidates?status=complete')} className="glass-card-interactive p-6 flex flex-col justify-between group">
+                  <div className="flex items-center gap-2 mb-4">
+                     <CheckCircle size={16} className="text-emerald-500" />
+                     <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Validated</h3>
                   </div>
-                  <p className="text-3xl font-bold text-green-600 mb-1">{completeProfiles}</p>
-                  <p className="text-xs text-slate-600">Ready for workflow</p>
-                  <div className="mt-3 text-xs font-semibold text-green-700">
-                     {completeProfiles > 0 ? `${((completeProfiles / activeCandidates) * 100).toFixed(0)}% of database` : 'No profiles yet'}
-                  </div>
+                  <p className="text-4xl font-black text-emerald-600 tracking-tighter mb-1">{completeProfiles}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Production Ready</p>
                </div>
             </div>
          </div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-
-            {/* 2. MAIN WORK QUEUE (Personal To-Do) */}
-            <div className="lg:col-span-2 space-y-4">
-               <div className="flex items-center justify-between">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                     <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                        <Zap className="text-yellow-500 fill-yellow-500" size={24} />
-                        My Priority Work Queue
+                     <h2 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tight">
+                        <Zap className="text-amber-400 fill-amber-400 animate-pulse" size={24} />
+                        Mission Critical Queue
                      </h2>
-                     <p className="text-sm text-slate-600 mt-1">Tasks requiring your attention, sorted by urgency</p>
+                     <p className="text-[10px] text-slate-500 mt-1 font-bold uppercase tracking-widest">Sorted by operational priority</p>
                   </div>
-                  <div className="flex gap-2 text-sm">
-                     <button className="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-medium text-xs hover:bg-blue-700 transition-colors">All</button>
-                     <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg font-medium text-xs hover:bg-slate-50 transition-colors">Critical</button>
-                     <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg font-medium text-xs hover:bg-slate-50 transition-colors">Approvals</button>
+                  <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+                     <button className="px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-200 shrink-0">Priority</button>
+                     <button className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 shrink-0">Alerts</button>
+                     <button className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 shrink-0">Compliance</button>
                   </div>
                </div>
 
-               <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px]">
+               <div className="glass-card overflow-hidden min-h-[500px]">
                   {isLoading ? (
-                     <div className="p-4 space-y-4">
+                     <div className="p-6 space-y-6">
                         {Array.from({ length: 5 }).map((_, i) => (
-                           <div key={i} className="flex gap-4 items-start">
-                              <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
-                              <div className="flex-1 space-y-2">
+                           <div key={i} className="flex gap-6 items-start animate-pulse">
+                              <Skeleton className="h-12 w-12 shrink-0 rounded-2xl" />
+                              <div className="flex-1 space-y-3">
                                  <div className="flex justify-between">
-                                    <Skeleton className="h-5 w-40" />
-                                    <Skeleton className="h-5 w-16 rounded-full" />
+                                    <Skeleton className="h-6 w-48 rounded-lg" />
+                                    <Skeleton className="h-6 w-20 rounded-xl" />
                                  </div>
-                                 <Skeleton className="h-4 w-full" />
-                                 <div className="flex gap-4">
-                                    <Skeleton className="h-3 w-20" />
-                                    <Skeleton className="h-3 w-16" />
-                                    <Skeleton className="h-3 w-20 ml-auto" />
+                                 <Skeleton className="h-4 w-full rounded-lg" />
+                                 <div className="flex gap-6">
+                                    <Skeleton className="h-4 w-32 rounded-lg" />
+                                    <Skeleton className="h-4 w-40 rounded-lg ml-auto" />
                                  </div>
                               </div>
                            </div>
@@ -286,155 +258,160 @@ const Dashboard: React.FC = () => {
                            <div
                               key={task.id}
                               onClick={() => navigate(`/candidates/${task.candidateId}`)}
-                              className={`p-5 hover:bg-slate-50 transition-all cursor-pointer group flex items-start gap-4 ${getPriorityColor(task.priority)}`}
+                              className={`p-6 hover:bg-slate-50/50 transition-premium cursor-pointer group flex items-start gap-5 border-l-4 transition-all duration-300 ${task.priority === 'Critical' ? 'border-red-500' :
+                                    task.priority === 'High' ? 'border-amber-500' : 'border-blue-500'
+                                 }`}
                            >
-                              <div className="pt-1 shrink-0">
-                                 {task.priority === 'Critical' ? <AlertTriangle className="text-red-500" size={24} /> :
-                                    task.priority === 'High' ? <Clock className="text-orange-500" size={24} /> :
-                                       <FileText className="text-blue-500" size={24} />}
+                              <div className="pt-1 shrink-0 group-hover:scale-110 transition-premium">
+                                 {task.priority === 'Critical' ? <AlertTriangle className="text-red-500" size={28} /> :
+                                    task.priority === 'High' ? <Clock className="text-amber-500" size={28} /> :
+                                       <FileText className="text-blue-500" size={28} />}
                               </div>
                               <div className="flex-1 min-w-0">
                                  <div className="flex justify-between items-start gap-3 mb-2">
-                                    <h4 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-base">{task.title}</h4>
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0 ${task.priority === 'Critical' ? 'bg-red-100 text-red-700' :
-                                       task.priority === 'High' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
+                                    <h4 className="font-black text-slate-900 group-hover:text-blue-600 transition-colors text-lg uppercase tracking-tight">{task.title}</h4>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 shadow-sm ${task.priority === 'Critical' ? 'bg-red-500 text-white shadow-red-100' :
+                                          task.priority === 'High' ? 'bg-amber-500 text-white shadow-amber-100' : 'bg-blue-600 text-white shadow-blue-100'
                                        }`}>
                                        {task.priority}
                                     </span>
                                  </div>
-                                 <p className="text-sm text-slate-600 mb-3">{task.description}</p>
-                                 <div className="flex items-center gap-4 text-xs">
-                                    <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                                       <UserPlus size={14} /> {task.candidateName}
+                                 <p className="text-sm text-slate-500 mb-4 font-medium leading-relaxed">{task.description}</p>
+                                 <div className="flex flex-wrap items-center gap-4 text-[10px]">
+                                    <span className="flex items-center gap-2 font-black text-slate-700 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                                       <UserPlus size={14} className="text-blue-500" /> {task.candidateName}
                                     </span>
-                                    <span className="bg-slate-100 px-2 py-1 rounded-md text-slate-600 font-medium">{task.stage}</span>
-                                    <span className="ml-auto text-orange-600 font-bold">Due: {task.dueDate}</span>
+                                    <span className="text-slate-400 font-black uppercase tracking-widest">{task.stage}</span>
+                                    <span className="ml-auto text-red-500 font-black uppercase tracking-widest flex items-center gap-1.5">
+                                       <Clock size={12} /> {task.dueDate}
+                                    </span>
                                  </div>
                               </div>
-                              <div className="self-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                 <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm">
-                                    {task.actionLabel}
-                                 </button>
+                              <div className="self-center hidden md:block opacity-0 group-hover:opacity-100 transition-premium shrink-0 translate-x-4 group-hover:translate-x-0">
+                                 <ArrowRight size={24} className="text-blue-600" />
                               </div>
                            </div>
                         ))}
                      </div>
                   ) : (
-                     <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                        <CheckCircle size={48} className="text-green-500 mb-4 opacity-50" />
-                        <p className="font-medium">All caught up! No pending tasks.</p>
+                     <div className="flex flex-col items-center justify-center p-20 text-slate-300">
+                        <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center border border-slate-100 mb-6 group-hover:scale-110 transition-premium">
+                           <CheckCircle size={40} className="text-emerald-400" />
+                        </div>
+                        <p className="font-black uppercase tracking-widest text-sm text-slate-400">Zero Pending Logic</p>
+                        <p className="text-xs font-bold text-slate-400 mt-2">The system is fully synchronized.</p>
                      </div>
                   )}
                </div>
             </div>
 
-            {/* 3. ALERTS & ACTIVITY FEED */}
-            <div className="space-y-6">
-               {/* Alerts */}
-               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                  <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                     <Bell size={18} className="text-slate-400" /> System Alerts
+            <div className="space-y-8">
+               <div className="glass-card p-6">
+                  <h3 className="font-black text-slate-900 mb-6 flex items-center gap-3 text-xs uppercase tracking-widest">
+                     <Bell size={18} className="text-blue-500" /> High-Level Signal Hub
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                      {isLoading ? (
                         Array.from({ length: 3 }).map((_, i) => (
-                           <div key={i} className="p-3 border border-slate-100 rounded-lg flex gap-3">
-                              <Skeleton className="h-8 w-8 shrink-0 rounded" />
+                           <div key={i} className="p-4 bg-slate-50 rounded-2xl flex gap-4">
+                              <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
                               <div className="flex-1 space-y-2">
-                                 <Skeleton className="h-4 w-full" />
-                                 <Skeleton className="h-3 w-20" />
+                                 <Skeleton className="h-4 w-full rounded" />
+                                 <Skeleton className="h-3 w-24 rounded" />
                               </div>
                            </div>
                         ))
                      ) : alerts.length > 0 ? alerts.map(alert => (
-                        <div key={alert.id} className={`p-3 rounded-lg text-sm border ${alert.type === 'DELAY' ? 'bg-red-50 border-red-100 text-red-800' :
-                           'bg-blue-50 border-blue-100 text-blue-800'
+                        <div key={alert.id} className={`p-4 rounded-2xl border transition-premium hover:scale-[1.02] shadow-sm ${alert.type === 'DELAY' ? 'bg-red-50 border-red-100 text-red-800 shadow-red-100' :
+                              'bg-blue-50 border-blue-100 text-blue-800 shadow-blue-100'
                            }`}>
-                           <div className="flex items-start gap-2">
-                              <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                           <div className="flex items-start gap-3">
+                              <div className={`p-2 rounded-xl border ${alert.type === 'DELAY' ? 'bg-white/50 border-red-200 text-red-600' : 'bg-white/50 border-blue-200 text-blue-600'
+                                 }`}>
+                                 <AlertTriangle size={18} />
+                              </div>
                               <div>
-                                 <p className="font-semibold">{alert.message}</p>
-                                 <p className="text-xs opacity-75 mt-1">{new Date(alert.timestamp).toLocaleTimeString()}</p>
+                                 <p className="font-black text-xs uppercase tracking-tight">{alert.message}</p>
+                                 <p className="text-[10px] font-bold opacity-60 mt-2 uppercase tracking-widest">{new Date(alert.timestamp).toLocaleTimeString()}</p>
                               </div>
                            </div>
                         </div>
                      )) : (
-                        <p className="text-sm text-slate-400 italic">No system alerts.</p>
+                        <div className="text-center py-10">
+                           <Activity size={32} className="mx-auto text-slate-200 mb-3" />
+                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No Active Signals</p>
+                        </div>
                      )}
                   </div>
                </div>
 
-               {/* Quick Stats */}
-               {isLoading ? (
-                  <div className="bg-white rounded-xl shadow-lg p-5 border border-slate-200">
-                     <Skeleton className="h-6 w-32 mb-4" />
-                     <div className="space-y-4">
-                        <Skeleton className="h-10 w-full rounded-lg" />
-                        <Skeleton className="h-10 w-full rounded-lg" />
-                     </div>
-                  </div>
-               ) : (
-                  <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl shadow-lg p-5 text-white">
-                     <h3 className="font-bold mb-4 opacity-90">Daily Targets</h3>
-                     <div className="space-y-4">
-                        <div>
-                           <div className="flex justify-between text-xs mb-1 opacity-80">
-                              <span>Verification Queue</span>
-                              <span>8/12</span>
-                           </div>
-                           <div className="w-full bg-blue-900/50 rounded-full h-2">
-                              <div className="bg-green-400 h-2 rounded-full" style={{ width: '66%' }}></div>
-                           </div>
+               <div className="bg-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-600/30 transition-premium"></div>
+                  <h3 className="font-black mb-8 opacity-90 text-xs uppercase tracking-widest flex items-center gap-3">
+                     <Activity size={16} className="text-blue-400" /> Efficiency Matrix
+                  </h3>
+                  <div className="space-y-8">
+                     <div>
+                        <div className="flex justify-between text-[10px] mb-3 font-black uppercase tracking-widest">
+                           <span className="text-slate-400">Verification Engine</span>
+                           <span className="text-blue-400">8/12 - 66%</span>
                         </div>
-                        <div>
-                           <div className="flex justify-between text-xs mb-1 opacity-80">
-                              <span>Visa Submissions</span>
-                              <span>3/5</span>
-                           </div>
-                           <div className="w-full bg-blue-900/50 rounded-full h-2">
-                              <div className="bg-yellow-400 h-2 rounded-full" style={{ width: '60%' }}></div>
-                           </div>
+                        <div className="w-full bg-slate-800 rounded-full h-2.5 border border-white/5 p-0.5">
+                           <div className="bg-gradient-to-r from-blue-600 to-emerald-400 h-full rounded-full shadow-[0_0_12px_rgba(52,211,153,0.4)]" style={{ width: '66%' }}></div>
+                        </div>
+                     </div>
+                     <div>
+                        <div className="flex justify-between text-[10px] mb-3 font-black uppercase tracking-widest">
+                           <span className="text-slate-400">Visa Protocol</span>
+                           <span className="text-amber-400">3/5 - 60%</span>
+                        </div>
+                        <div className="w-full bg-slate-800 rounded-full h-2.5 border border-white/5 p-0.5">
+                           <div className="bg-gradient-to-r from-amber-500 to-orange-400 h-full rounded-full shadow-[0_0_12px_rgba(251,191,36,0.3)]" style={{ width: '60%' }}></div>
                         </div>
                      </div>
                   </div>
-               )}
-            </div>
-         </div>
-
-         {/* 4. FLOATING ACTION PALETTE (Quick Actions) */}
-         <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 flex flex-col items-end gap-3 z-40">
-            <div className="group relative">
-               <button className="flex items-center gap-2 md:gap-3 bg-slate-900 text-white pl-4 pr-1 md:pl-5 md:pr-2 py-2.5 md:py-3 rounded-full shadow-2xl hover:scale-105 transition-all">
-                  <span className="font-bold text-xs md:text-sm">Quick Actions</span>
-                  <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                     <ArrowRight size={14} className="md:w-4 md:h-4" />
-                  </div>
-               </button>
-
-               {/* Pop-up Menu */}
-               <div className="absolute bottom-full right-0 mb-3 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-bottom-right scale-95 group-hover:scale-100">
-                  <div className="p-2 space-y-1">
-                     <button onClick={() => navigate('/candidates')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg text-left">
-                        <UserPlus size={16} /> Add Candidate
-                     </button>
-                     <button onClick={() => navigate('/jobs')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg text-left">
-                        <FilePlus size={16} /> Post New Job
-                     </button>
-                     <button onClick={() => navigate('/team-chat')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg text-left">
-                        <MessageCircle size={16} /> Team Chat
-                     </button>
-                     <button onClick={() => navigate('/pipeline')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg text-left">
-                        <Layout size={16} /> Pipeline View
-                     </button>
-                     <div className="h-px bg-slate-100 my-1"></div>
-                     <button onClick={() => navigate('/settings')} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg text-left">
-                        <SettingsIcon size={16} /> System Settings
+                  <div className="mt-10 pt-6 border-t border-white/5">
+                     <button className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-premium">
+                        Advanced Metrics Overview
                      </button>
                   </div>
                </div>
             </div>
          </div>
 
+         {/* 4. QUICK ACTIONS PALETTE */}
+         <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 flex flex-col items-end gap-3 z-40 lg:mr-0 mr-2">
+            <div className="group relative">
+               <button className="flex items-center gap-3 bg-slate-900 border border-slate-700 text-white pl-5 pr-2 py-2.5 rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-premium animate-float ring-4 ring-slate-900/10">
+                  <span className="font-black text-[10px] uppercase tracking-widest">Tactical Core</span>
+                  <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                     <Zap size={18} className="text-white fill-white" />
+                  </div>
+               </button>
+
+               {/* Pop-up Menu */}
+               <div className="absolute bottom-full right-0 mb-4 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-bottom-right scale-90 group-hover:scale-100 duration-300">
+                  <div className="p-2.5 space-y-1">
+                     <button onClick={() => navigate('/candidates')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
+                        <UserPlus size={16} /> Enroll Personnel
+                     </button>
+                     <button onClick={() => navigate('/jobs')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
+                        <FilePlus size={16} /> Deploy Job
+                     </button>
+                     <button onClick={() => navigate('/team-chat')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
+                        <MessageCircle size={16} /> Comms Hub
+                     </button>
+                     <button onClick={() => navigate('/pipeline')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
+                        <Layout size={16} /> Operation Map
+                     </button>
+                     <div className="h-px bg-slate-100 my-2"></div>
+                     <button onClick={() => navigate('/settings')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 rounded-xl text-left transition-premium">
+                        <SettingsIcon size={16} /> Core Settings
+                     </button>
+                  </div>
+               </div>
+            </div>
+         </div>
       </div>
    );
 };

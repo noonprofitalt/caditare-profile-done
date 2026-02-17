@@ -15,28 +15,36 @@ const PartnerManager: React.FC = () => {
     const { id } = useParams<{ id?: string }>();
     const navigate = useNavigate();
 
-    // Lazy load employers
     const [employers, setEmployers] = useState<Employer[]>([]);
     const [candidates, setCandidates] = useState<Candidate[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        setEmployers(PartnerService.getEmployers());
-        const loadCandidates = async () => {
-            const data = await CandidateService.getCandidates() || [];
-            setCandidates(data);
+        const loadInitialData = async () => {
+            setIsLoading(true);
+            try {
+                const employersData = PartnerService.getEmployers() || [];
+                const candidatesData = await CandidateService.getCandidates() || [];
+
+                setEmployers(employersData);
+                setCandidates(candidatesData);
+
+                // Update selected employer if ID is present
+                if (id) {
+                    const emp = employersData.find(e => e.id === id);
+                    if (emp) setSelectedEmployer(emp);
+                }
+            } catch (error) {
+                console.error("Failed to load partner data", error);
+            } finally {
+                setIsLoading(false);
+            }
         };
-        loadCandidates();
-    }, []);
+        loadInitialData();
+    }, [id]);
 
     const [searchQuery, setSearchQuery] = useState('');
-
-    // Initialize selectedEmployer based on ID if present, otherwise null
-    const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(() => {
-        if (id) {
-            return PartnerService.getEmployers()?.find(e => e.id === id) || null;
-        }
-        return null;
-    });
+    const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null);
 
     // Derive jobs and candidates using useMemo
     const employerJobs = useMemo(() => {
@@ -69,6 +77,11 @@ const PartnerManager: React.FC = () => {
             default: return 'bg-slate-100 text-slate-700';
         }
     };
+
+    if (isLoading) return <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center h-96 gap-4">
+        <Building2 size={48} className="text-blue-600 animate-pulse" />
+        <p className="font-bold">Loading Employer Dashboard...</p>
+    </div>;
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">

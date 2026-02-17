@@ -1,4 +1,4 @@
-import { Candidate, WorkflowStage, StageStatus, ProfileCompletionStatus, RegistrationSource, MedicalStatus, PassportStatus, PCCStatus, DocumentCategory, DocumentStatus } from '../types';
+import { Candidate, WorkflowStage, StageStatus, ProfileCompletionStatus, RegistrationSource, MedicalStatus, PassportStatus, PCCStatus, DocumentCategory, DocumentStatus, DocumentType } from '../types';
 
 /**
  * Test Data Generator for Dual-Form Candidate System
@@ -48,6 +48,7 @@ function generateQuickAddCandidate(index: number): Candidate {
 
     return {
         id: `quick-${Date.now()}-${index}`,
+        candidateCode: `GW-${new Date().getFullYear()}-${index.toString().padStart(4, '0')}`,
         name,
         phone,
         nic,
@@ -64,14 +65,51 @@ function generateQuickAddCandidate(index: number): Candidate {
         position: randomElement(positions),
 
         // Profile completion
+        profileType: 'QUICK',
         profileCompletionStatus: ProfileCompletionStatus.QUICK,
         profileCompletionPercentage: Math.floor(Math.random() * 10) + 20, // 20-30%
-        registrationSource: RegistrationSource.QUICK_ADD,
+        registrationSource: RegistrationSource.QUICK_FORM,
 
         // Workflow
-        stage: WorkflowStage.REGISTRATION,
+        stage: WorkflowStage.REGISTERED,
         stageStatus: StageStatus.PENDING,
         stageEnteredAt: randomDate(new Date(2024, 0, 1), new Date()),
+
+        // Normalized structures
+        personalInfo: {
+            fullName: name,
+            firstName,
+            lastName: lastName,
+            dob: '',
+            gender: Math.random() > 0.5 ? 'Male' : 'Female',
+            nic: nic,
+            passportNumber: '',
+            nationality: 'Sri Lankan',
+            maritalStatus: 'Single',
+            religion: 'Buddhist'
+        },
+        contactInfo: {
+            primaryPhone: phone,
+            email: '',
+            address: ''
+        },
+        professionalProfile: {
+            jobRoles: [],
+            experienceYears: 0,
+            skills: [],
+            education: []
+        },
+        medicalData: {
+            status: MedicalStatus.NOT_STARTED
+        },
+        stageData: {},
+        audit: {
+            createdAt: new Date().toISOString(),
+            createdBy: 'System',
+            updatedAt: new Date().toISOString(),
+            updatedBy: 'System',
+            version: 1
+        },
 
         // Empty arrays
         workflowLogs: [],
@@ -82,7 +120,7 @@ function generateQuickAddCandidate(index: number): Candidate {
             description: 'Candidate added via Quick Add form',
             timestamp: new Date().toISOString(),
             actor: 'Staff User',
-            stage: WorkflowStage.REGISTRATION
+            stage: WorkflowStage.REGISTERED
         }],
         comments: [],
         documents: [],
@@ -93,13 +131,12 @@ function generateQuickAddCandidate(index: number): Candidate {
         experienceYears: 0,
         preferredCountries: [],
         skills: [],
-        stageData: {},
 
         // Empty optional fields
         educationalQualifications: [],
         employmentHistory: [],
         children: []
-    };
+    } as Candidate;
 }
 
 /**
@@ -116,6 +153,7 @@ function generatePartialCandidate(index: number): Candidate {
 
     return {
         id: `partial-${Date.now()}-${index}`,
+        candidateCode: `GW-${new Date().getFullYear()}-${(index + 100).toString().padStart(4, '0')}`,
         name,
         phone,
         nic,
@@ -148,14 +186,51 @@ function generatePartialCandidate(index: number): Candidate {
         }],
 
         // Profile completion
+        profileType: 'QUICK',
         profileCompletionStatus: ProfileCompletionStatus.PARTIAL,
         profileCompletionPercentage: Math.floor(Math.random() * 30) + 40, // 40-70%
-        registrationSource: RegistrationSource.QUICK_ADD,
+        registrationSource: RegistrationSource.QUICK_FORM,
 
         // Workflow
-        stage: WorkflowStage.REGISTRATION,
+        stage: WorkflowStage.REGISTERED,
         stageStatus: StageStatus.IN_PROGRESS,
         stageEnteredAt: randomDate(new Date(2024, 0, 1), new Date()),
+
+        // Normalized structures
+        personalInfo: {
+            fullName: name,
+            firstName,
+            lastName: lastName,
+            dob: randomDate(new Date(1970, 0, 1), new Date(2000, 0, 1)),
+            gender: Math.random() > 0.5 ? 'Male' : 'Female',
+            nic: nic,
+            passportNumber: '',
+            nationality: 'Sri Lankan',
+            maritalStatus: randomElement(['Single', 'Married', 'Divorced']),
+            religion: randomElement(['Buddhist', 'Hindu', 'Christian', 'Islam'])
+        },
+        contactInfo: {
+            primaryPhone: phone,
+            email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            address: `${district}`
+        },
+        professionalProfile: {
+            jobRoles: [],
+            experienceYears: Math.floor(Math.random() * 5),
+            skills: [],
+            education: []
+        },
+        medicalData: {
+            status: MedicalStatus.NOT_STARTED
+        },
+        stageData: {},
+        audit: {
+            createdAt: new Date().toISOString(),
+            createdBy: 'System',
+            updatedAt: new Date().toISOString(),
+            updatedBy: 'System',
+            version: 1
+        },
 
         // Arrays
         workflowLogs: [],
@@ -167,7 +242,7 @@ function generatePartialCandidate(index: number): Candidate {
                 description: 'Candidate added via Quick Add form',
                 timestamp: new Date(Date.now() - 86400000).toISOString(),
                 actor: 'Staff User',
-                stage: WorkflowStage.REGISTRATION
+                stage: WorkflowStage.REGISTERED
             },
             {
                 id: `evt-${Date.now()}-2`,
@@ -176,7 +251,7 @@ function generatePartialCandidate(index: number): Candidate {
                 description: 'Additional information added',
                 timestamp: new Date().toISOString(),
                 actor: 'Staff User',
-                stage: WorkflowStage.REGISTRATION
+                stage: WorkflowStage.REGISTERED
             }
         ],
         comments: [],
@@ -188,10 +263,10 @@ function generatePartialCandidate(index: number): Candidate {
         experienceYears: Math.floor(Math.random() * 5),
         preferredCountries: [],
         skills: [],
-        stageData: {},
 
-        employmentHistory: []
-    };
+        employmentHistory: [],
+        children: []
+    } as Candidate;
 }
 
 /**
@@ -211,6 +286,7 @@ function generateCompleteCandidate(index: number): Candidate {
 
     return {
         id: `complete-${Date.now()}-${index}`,
+        candidateCode: `GW-${new Date().getFullYear()}-${(index + 200).toString().padStart(4, '0')}`,
         name,
         phone,
         nic,
@@ -267,6 +343,45 @@ function generateCompleteCandidate(index: number): Candidate {
             }
         ],
 
+        // Normalized structures
+        personalInfo: {
+            fullName: name,
+            firstName,
+            lastName: lastName,
+            dob: randomDate(new Date(1970, 0, 1), new Date(2000, 0, 1)),
+            gender: Math.random() > 0.5 ? 'Male' : 'Female',
+            nic: nic,
+            passportNumber: passportNumber,
+            nationality: 'Sri Lankan',
+            maritalStatus: randomElement(['Single', 'Married']),
+            religion: randomElement(['Buddhist', 'Hindu', 'Christian', 'Islam'])
+        },
+        contactInfo: {
+            primaryPhone: phone,
+            email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+            address: `${district}`
+        },
+        professionalProfile: {
+            jobRoles: [],
+            experienceYears: Math.floor(Math.random() * 10) + 1,
+            skills: ['Cooking', 'Cleaning', 'Child Care'],
+            education: ['Bachelor\'s Degree']
+        },
+        medicalData: {
+            status: MedicalStatus.COMPLETED
+        },
+        stageData: {
+            medicalStatus: MedicalStatus.COMPLETED,
+            medicalNotes: 'All tests passed'
+        },
+        audit: {
+            createdAt: new Date().toISOString(),
+            createdBy: 'System',
+            updatedAt: new Date().toISOString(),
+            updatedBy: 'System',
+            version: 1
+        },
+
         // Passport
         passportData: {
             passportNumber,
@@ -284,19 +399,14 @@ function generateCompleteCandidate(index: number): Candidate {
             ageDays: Math.floor(Math.random() * 180)
         },
 
-        // Medical
-        stageData: {
-            medicalStatus: MedicalStatus.COMPLETED,
-            medicalNotes: 'All tests passed'
-        },
-
         // Profile completion
+        profileType: 'FULL',
         profileCompletionStatus: ProfileCompletionStatus.COMPLETE,
         profileCompletionPercentage: 100,
         registrationSource: RegistrationSource.FULL_FORM,
 
         // Workflow - varied stages
-        stage: randomElement([WorkflowStage.REGISTRATION, WorkflowStage.INTERVIEW_SCHEDULED, WorkflowStage.TRAINING, WorkflowStage.JOB_MATCHING]),
+        stage: randomElement([WorkflowStage.REGISTERED, WorkflowStage.VERIFIED, WorkflowStage.APPLIED, WorkflowStage.OFFER_RECEIVED]),
         stageStatus: StageStatus.COMPLETED,
         stageEnteredAt: randomDate(new Date(2024, 0, 1), new Date()),
 
@@ -310,7 +420,7 @@ function generateCompleteCandidate(index: number): Candidate {
                 description: 'Candidate registered via Digital Application Form',
                 timestamp: new Date(Date.now() - 172800000).toISOString(),
                 actor: 'Staff User',
-                stage: WorkflowStage.REGISTRATION
+                stage: WorkflowStage.REGISTERED
             },
             {
                 id: `evt-${Date.now()}-2`,
@@ -319,34 +429,40 @@ function generateCompleteCandidate(index: number): Candidate {
                 description: 'All required information provided',
                 timestamp: new Date().toISOString(),
                 actor: 'System',
-                stage: WorkflowStage.REGISTRATION
+                stage: WorkflowStage.REGISTERED
             }
         ],
         comments: [],
         documents: [
             {
                 id: `doc-${Date.now()}-1`,
-                name: 'Passport Copy',
+                type: DocumentType.PASSPORT,
                 category: DocumentCategory.MANDATORY_REGISTRATION,
                 status: DocumentStatus.APPROVED,
                 uploadedAt: new Date().toISOString(),
-                url: '#'
+                url: '#',
+                version: 1,
+                logs: []
             },
             {
                 id: `doc-${Date.now()}-2`,
-                name: 'CV',
+                type: DocumentType.CV,
                 category: DocumentCategory.MANDATORY_REGISTRATION,
                 status: DocumentStatus.APPROVED,
                 uploadedAt: new Date().toISOString(),
-                url: '#'
+                url: '#',
+                version: 1,
+                logs: []
             },
             {
                 id: `doc-${Date.now()}-3`,
-                name: 'Passport Photos',
+                type: DocumentType.PASSPORT_PHOTOS,
                 category: DocumentCategory.MANDATORY_REGISTRATION,
                 status: DocumentStatus.APPROVED,
                 uploadedAt: new Date().toISOString(),
-                url: '#'
+                url: '#',
+                version: 1,
+                logs: []
             }
         ],
 
@@ -358,7 +474,7 @@ function generateCompleteCandidate(index: number): Candidate {
         skills: ['Cooking', 'Cleaning', 'Child Care'],
 
         children: []
-    };
+    } as Candidate;
 }
 
 /**

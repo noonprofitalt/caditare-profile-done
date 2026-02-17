@@ -21,7 +21,7 @@ const SLBFEStatusWidget: React.FC<SLBFEStatusWidgetProps> = ({ candidate }) => {
     const completedCount = report.checklist.filter(i => i.status === 'Complete').length;
     const totalCount = report.checklist.length;
 
-    const progress = Math.round((completedCount / totalCount) * 100);
+    const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">

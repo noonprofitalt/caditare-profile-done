@@ -26,40 +26,44 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
     const [isCreatingChannel, setIsCreatingChannel] = useState(false);
     const [newChanName, setNewChanName] = useState('');
 
-    const refreshChannels = () => {
-        setChannels(ChatService.getChannels('Admin'));
+    const refreshChannels = async () => {
+        const data = await ChatService.getChannels('Admin');
+        setChannels(data);
     };
 
     useEffect(() => {
         // Load channels with RBAC filter (mocking 'Admin' role for now)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         refreshChannels();
     }, []);
 
-    const handleQuickCreate = () => {
+    const handleQuickCreate = async () => {
         if (!newChanName.trim()) return;
-        const created = ChatService.createChannel(newChanName, 'public');
-        refreshChannels();
+        const created = await ChatService.createChannel(newChanName, 'public');
+        await refreshChannels();
         setActiveChannelId(created.id);
         setNewChanName('');
         setIsCreatingChannel(false);
     };
 
     useEffect(() => {
-        if (activeChannelId) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setMessages(ChatService.getMessages(activeChannelId));
-            setPendingContext(undefined); // Reset context on channel switch
-        }
+        const fetchMessages = async () => {
+            if (activeChannelId) {
+                // Fetch last 50 messages to prevent lag
+                const data = await ChatService.getMessages(activeChannelId, { limit: 50 });
+                setMessages(data.messages);
+                setPendingContext(undefined); // Reset context on channel switch
+            }
+        };
+        fetchMessages();
     }, [activeChannelId]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Handle Smart Input (# for Candidates)
+    // Debounced Smart Input (# for Candidates)
     useEffect(() => {
-        const handleInput = async () => {
+        const timeoutId = setTimeout(async () => {
             const lastWord = inputValue.split(' ').pop();
             if (lastWord && lastWord.startsWith('#') && lastWord.length > 1) {
                 const query = lastWord.substring(1).toLowerCase();
@@ -74,8 +78,9 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
             } else {
                 setShowSuggestions(false);
             }
-        };
-        handleInput();
+        }, 300); // 300ms debounce
+
+        return () => clearTimeout(timeoutId);
     }, [inputValue]);
 
     const handleSelectCandidate = (candidate: Candidate) => {
@@ -94,11 +99,12 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
         setShowSuggestions(false);
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!inputValue.trim()) return;
 
-        ChatService.sendMessage(activeChannelId, inputValue, pendingContext);
-        setMessages(ChatService.getMessages(activeChannelId));
+        await ChatService.sendMessage(activeChannelId, inputValue, pendingContext);
+        const data = await ChatService.getMessages(activeChannelId, { limit: 50 });
+        setMessages(data.messages);
         setInputValue('');
         setPendingContext(undefined);
     };
@@ -177,94 +183,96 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
 
             {/* Message Thread */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 relative">
-                {messages.length > 0 ? (
-                    messages.reduce((acc: React.ReactNode[], msg, idx, arr) => {
-                        const prevMsg = arr[idx - 1];
-                        const isSequence = prevMsg && prevMsg.senderId === msg.senderId && (new Date(msg.timestamp).getTime() - new Date(prevMsg.timestamp).getTime() < 60000);
-                        const isSystem = msg.senderName === 'System' || msg.senderName === 'System Engine' || msg.isSystem;
-                        const isMe = msg.isMe;
+                {React.useMemo(() => (
+                    messages.length > 0 ? (
+                        messages.reduce((acc: React.ReactNode[], msg, idx, arr) => {
+                            const prevMsg = arr[idx - 1];
+                            const isSequence = prevMsg && prevMsg.senderId === msg.senderId && (new Date(msg.timestamp).getTime() - new Date(prevMsg.timestamp).getTime() < 60000);
+                            const isSystem = msg.senderName === 'System' || msg.senderName === 'System Engine' || msg.isSystem;
+                            const isMe = msg.isMe;
 
-                        // Date Separator
-                        const showDate = !prevMsg || new Date(msg.timestamp).getDate() !== new Date(prevMsg.timestamp).getDate();
-                        if (showDate) {
-                            acc.push(
-                                <div key={`date-${msg.id}`} className="flex justify-center my-4">
-                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider">
-                                        {new Date(msg.timestamp).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-                                    </span>
-                                </div>
-                            );
-                        }
-
-                        acc.push(
-                            <div key={msg.id || idx} className={`flex flex-col ${isSystem ? 'items-center' : isMe ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 fade-in duration-300`}>
-                                {/* System Message Style */}
-                                {isSystem ? (
-                                    <div className="my-2 bg-slate-100 border border-slate-200 rounded-lg px-4 py-2 text-xs text-slate-600 flex items-center gap-2 max-w-[80%]">
-                                        <Bell size={14} className="text-blue-500" />
-                                        <span>{msg.text}</span>
-                                        {msg.context && (
-                                            <button
-                                                onClick={() => handleContextClick(msg.context!)}
-                                                className="ml-2 px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:border-blue-300 transition-colors uppercase tracking-wider"
-                                            >
-                                                View {msg.context.label}
-                                            </button>
-                                        )}
+                            // Date Separator
+                            const showDate = !prevMsg || new Date(msg.timestamp).getDate() !== new Date(prevMsg.timestamp).getDate();
+                            if (showDate) {
+                                acc.push(
+                                    <div key={`date-${msg.id}`} className="flex justify-center my-4">
+                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider">
+                                            {new Date(msg.timestamp).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                                        </span>
                                     </div>
-                                ) : (
-                                    /* User Message Style */
-                                    <>
-                                        {!isSequence && !isMe && (
-                                            <span className="ml-1 mb-1 text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                                                {msg.senderName} <span className="text-slate-300">•</span> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        )}
+                                );
+                            }
 
-                                        <div className={`px-4 py-2.5 max-w-[85%] text-sm shadow-sm leading-relaxed relative group ${isMe
-                                            ? 'bg-blue-600 text-white rounded-2xl rounded-tr-none'
-                                            : 'bg-white border border-slate-200 text-slate-700 rounded-2xl rounded-tl-none'
-                                            }`}>
-
-                                            {/* Context Chip (if linked) */}
+                            acc.push(
+                                <div key={msg.id || idx} className={`flex flex-col ${isSystem ? 'items-center' : isMe ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2 fade-in duration-300`}>
+                                    {/* System Message Style */}
+                                    {isSystem ? (
+                                        <div className="my-2 bg-slate-100 border border-slate-200 rounded-lg px-4 py-2 text-xs text-slate-600 flex items-center gap-2 max-w-[80%]">
+                                            <Bell size={14} className="text-blue-500" />
+                                            <span>{msg.text}</span>
                                             {msg.context && (
-                                                <div
+                                                <button
                                                     onClick={() => handleContextClick(msg.context!)}
-                                                    className={`mb-2 text-[10px] font-bold px-2 py-1 rounded cursor-pointer transition-all flex items-center gap-1.5 w-fit ${isMe
-                                                        ? 'bg-blue-700/50 text-blue-100 hover:bg-blue-700'
-                                                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                                                        }`}
+                                                    className="ml-2 px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:border-blue-300 transition-colors uppercase tracking-wider"
                                                 >
-                                                    {msg.context.type === 'CANDIDATE' && <UserCircle size={12} />}
-                                                    {msg.context.type === 'JOB' && <Briefcase size={12} />}
-                                                    Running Refcheck: {msg.context.label}
-                                                </div>
+                                                    View {msg.context.label}
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        /* User Message Style */
+                                        <>
+                                            {!isSequence && !isMe && (
+                                                <span className="ml-1 mb-1 text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                                                    {msg.senderName} <span className="text-slate-300">•</span> {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
                                             )}
 
-                                            {msg.text}
+                                            <div className={`px-4 py-2.5 max-w-[85%] text-sm shadow-sm leading-relaxed relative group ${isMe
+                                                ? 'bg-blue-600 text-white rounded-2xl rounded-tr-none'
+                                                : 'bg-white border border-slate-200 text-slate-700 rounded-2xl rounded-tl-none'
+                                                }`}>
 
-                                            {/* Timestamp overlay on hover */}
-                                            <span className={`absolute bottom-1 right-2 text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? 'text-blue-200' : 'text-slate-400'}`}>
-                                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                    </>
-                                )}
+                                                {/* Context Chip (if linked) */}
+                                                {msg.context && (
+                                                    <div
+                                                        onClick={() => handleContextClick(msg.context!)}
+                                                        className={`mb-2 text-[10px] font-bold px-2 py-1 rounded cursor-pointer transition-all flex items-center gap-1.5 w-fit ${isMe
+                                                            ? 'bg-blue-700/50 text-blue-100 hover:bg-blue-700'
+                                                            : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                                            }`}
+                                                    >
+                                                        {msg.context.type === 'CANDIDATE' && <UserCircle size={12} />}
+                                                        {msg.context.type === 'JOB' && <Briefcase size={12} />}
+                                                        Running Refcheck: {msg.context.label}
+                                                    </div>
+                                                )}
+
+                                                {msg.text}
+
+                                                {/* Timestamp overlay on hover */}
+                                                <span className={`absolute bottom-1 right-2 text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? 'text-blue-200' : 'text-slate-400'}`}>
+                                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            );
+                            return acc;
+                        }, [])
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-3 opacity-60">
+                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                                <MessageCircle size={32} className="text-slate-300" />
                             </div>
-                        );
-                        return acc;
-                    }, [])
-                ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-3 opacity-60">
-                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-                            <MessageCircle size={32} className="text-slate-300" />
+                            <div className="text-center">
+                                <p className="text-sm font-bold text-slate-600">No messages yet</p>
+                                <p className="text-xs">Be the first to say hello!</p>
+                            </div>
                         </div>
-                        <div className="text-center">
-                            <p className="text-sm font-bold text-slate-600">No messages yet</p>
-                            <p className="text-xs">Be the first to say hello!</p>
-                        </div>
-                    </div>
-                )}
+                    )
+                ), [messages])}
                 <div ref={messagesEndRef} />
             </div>
 

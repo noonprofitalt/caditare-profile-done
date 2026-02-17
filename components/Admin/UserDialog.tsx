@@ -16,7 +16,7 @@ const UserDialog: React.FC<UserDialogProps> = ({ isOpen, onClose, user, onSave }
         email: '',
         name: '',
         role: 'Viewer' as UserRole,
-        status: 'Active' as 'Active' | 'Inactive',
+        status: 'Active' as 'Active' | 'Inactive' | 'Pending',
         password: '' // Only for new users
     });
     const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ const UserDialog: React.FC<UserDialogProps> = ({ isOpen, onClose, user, onSave }
                 email: user.email,
                 name: user.name,
                 role: user.role,
-                status: user.status,
+                status: user.status as 'Active' | 'Inactive' | 'Pending',
                 password: ''
             });
         } else {
@@ -174,11 +174,12 @@ const UserDialog: React.FC<UserDialogProps> = ({ isOpen, onClose, user, onSave }
                             <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
                             <select
                                 value={formData.status}
-                                onChange={e => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' })}
+                                onChange={e => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' | 'Pending' })}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                             >
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
+                                <option value="Pending">Pending</option>
                             </select>
                         </div>
                     </div>

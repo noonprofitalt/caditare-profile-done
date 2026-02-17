@@ -16,8 +16,8 @@ interface TabNavigationProps {
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange, tabs }) => {
     return (
-        <div className="border-b border-slate-200 bg-white">
-            <div className="flex gap-1 px-6">
+        <div className="border-b border-slate-200 bg-white sticky top-0 z-20 backdrop-blur-xl bg-white/90">
+            <div className="flex gap-1 px-4 md:px-8 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -26,18 +26,18 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange, t
                         <button
                             key={tab.id}
                             onClick={() => onTabChange(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors font-medium text-sm ${isActive
-                                    ? 'border-blue-600 text-blue-700 bg-blue-50/50'
-                                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                            className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-premium font-black text-[10px] uppercase tracking-widest shrink-0 ${isActive
+                                ? 'border-blue-600 text-blue-700 bg-blue-50/50 shadow-[inset_0_-2px_0_0_rgba(37,99,235,1)]'
+                                : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                                 }`}
                         >
-                            <Icon size={18} />
+                            <Icon size={16} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
                             <span>{tab.label}</span>
                             {tab.count !== undefined && (
                                 <span
-                                    className={`px-2 py-0.5 rounded-full text-xs font-bold ${isActive
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-slate-200 text-slate-600'
+                                    className={`px-2 py-0.5 rounded-lg text-[9px] font-black tracking-tight ${isActive
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                                        : 'bg-slate-200 text-slate-500'
                                         }`}
                                 >
                                     {tab.count}

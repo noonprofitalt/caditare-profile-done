@@ -144,73 +144,76 @@ const DigitalApplicationForm: React.FC = () => {
 
     // Load existing candidate data if in upgrade mode
     useEffect(() => {
-        if (upgradeId) {
-            const candidate = CandidateService.getCandidateById(upgradeId);
-            if (candidate) {
-                setIsUpgradeMode(true);
-                setExistingCandidate(candidate);
+        const fetchCandidate = async () => {
+            if (upgradeId) {
+                const candidate = await CandidateService.getCandidateById(upgradeId);
+                if (candidate) {
+                    setIsUpgradeMode(true);
+                    setExistingCandidate(candidate);
 
-                // Pre-fill form data
-                setFormData({
-                    ...candidate,
-                    firstName: candidate.firstName || candidate.name.split(' ')[0],
-                    middleName: candidate.middleName || '',
-                    name: candidate.name, // Explicitly set Full Name
-                });
+                    // Pre-fill form data
+                    setFormData({
+                        ...candidate,
+                        firstName: candidate.firstName || candidate.name.split(' ')[0],
+                        middleName: candidate.middleName || '',
+                        name: candidate.name, // Explicitly set Full Name
+                    });
 
-                // Pre-fill additional states
-                if (candidate.education) setSelectedEducation(candidate.education);
-                if (candidate.preferredCountries) setPreferredCountries(candidate.preferredCountries);
-                if (candidate.jobRoles) {
-                    const mappedRoles: JobRole[] = candidate.jobRoles.map(r =>
-                        typeof r === 'string'
-                            ? { title: r, experienceYears: 0, skillLevel: 'Beginner' }
-                            : r
-                    );
-                    setJobRoles(mappedRoles);
-                }
-                if (candidate.additionalContactNumbers) setAdditionalContacts(candidate.additionalContactNumbers);
+                    // Pre-fill additional states
+                    if (candidate.education) setSelectedEducation(candidate.education);
+                    if (candidate.preferredCountries) setPreferredCountries(candidate.preferredCountries);
+                    if (candidate.jobRoles) {
+                        const mappedRoles: JobRole[] = candidate.jobRoles.map(r =>
+                            typeof r === 'string'
+                                ? { title: r, experienceYears: 0, skillLevel: 'Beginner' }
+                                : r
+                        );
+                        setJobRoles(mappedRoles);
+                    }
+                    if (candidate.additionalContactNumbers) setAdditionalContacts(candidate.additionalContactNumbers);
 
-                // Pre-fill medical status
-                if (candidate.stageData?.medicalStatus) {
-                    setMedicalStatus(candidate.stageData.medicalStatus);
-                    if (candidate.stageData.medicalScheduledDate) setMedicalScheduledDate(candidate.stageData.medicalScheduledDate);
-                    if (candidate.stageData.medicalCompletedDate) setMedicalCompletedDate(candidate.stageData.medicalCompletedDate);
-                    if (candidate.stageData.medicalNotes) setMedicalNotes(candidate.stageData.medicalNotes);
-                    if (candidate.medicalData?.bloodGroup) setMedicalBloodGroup(candidate.medicalData.bloodGroup);
-                    if (candidate.medicalData?.allergies) setMedicalAllergies(candidate.medicalData.allergies);
-                }
+                    // Pre-fill medical status
+                    if (candidate.stageData?.medicalStatus) {
+                        setMedicalStatus(candidate.stageData.medicalStatus);
+                        if (candidate.stageData.medicalScheduledDate) setMedicalScheduledDate(candidate.stageData.medicalScheduledDate);
+                        if (candidate.stageData.medicalCompletedDate) setMedicalCompletedDate(candidate.stageData.medicalCompletedDate);
+                        if (candidate.stageData.medicalNotes) setMedicalNotes(candidate.stageData.medicalNotes);
+                        if (candidate.medicalData?.bloodGroup) setMedicalBloodGroup(candidate.medicalData.bloodGroup);
+                        if (candidate.medicalData?.allergies) setMedicalAllergies(candidate.medicalData.allergies);
+                    }
 
-                // Pre-fill passport data
-                if (candidate.passports && candidate.passports.length > 0) {
-                    setPassports(candidate.passports);
-                } else if (candidate.passportData) {
-                    // Legacy migration
-                    setPassports([candidate.passportData]);
-                }
+                    // Pre-fill passport data
+                    if (candidate.passports && candidate.passports.length > 0) {
+                        setPassports(candidate.passports);
+                    } else if (candidate.passportData) {
+                        // Legacy migration
+                        setPassports([candidate.passportData]);
+                    }
 
-                // Pre-fill PCC data
-                if (candidate.pccData) {
-                    setPccIssuedDate(candidate.pccData.issuedDate || '');
-                    setPccLastInspectionDate(candidate.pccData.lastInspectionDate || '');
-                }
+                    // Pre-fill PCC data
+                    if (candidate.pccData) {
+                        setPccIssuedDate(candidate.pccData.issuedDate || '');
+                        setPccLastInspectionDate(candidate.pccData.lastInspectionDate || '');
+                    }
 
-                // Pre-fill dynamic rows
-                if (candidate.educationalQualifications && candidate.educationalQualifications.length > 0) {
-                    setEducationRows(candidate.educationalQualifications);
-                }
-                if (candidate.employmentHistory && candidate.employmentHistory.length > 0) {
-                    const local = candidate.employmentHistory.filter(e => e.type === 'Local');
-                    const foreign = candidate.employmentHistory
-                        .filter(e => e.type === 'Foreign')
-                        .map(e => ({ ...e, country: e.country || '' }));
-                    setEmploymentRows({ local, foreign });
-                }
-                if (candidate.children && candidate.children.length > 0) {
-                    setChildrenRows(candidate.children);
+                    // Pre-fill dynamic rows
+                    if (candidate.educationalQualifications && candidate.educationalQualifications.length > 0) {
+                        setEducationRows(candidate.educationalQualifications);
+                    }
+                    if (candidate.employmentHistory && candidate.employmentHistory.length > 0) {
+                        const local = candidate.employmentHistory.filter(e => e.type === 'Local');
+                        const foreign = candidate.employmentHistory
+                            .filter(e => e.type === 'Foreign')
+                            .map(e => ({ ...e, country: e.country || '' }));
+                        setEmploymentRows({ local, foreign });
+                    }
+                    if (candidate.children && candidate.children.length > 0) {
+                        setChildrenRows(candidate.children);
+                    }
                 }
             }
         }
+        fetchCandidate();
     }, [upgradeId]);
 
     // --- Workflow Guarding Helpers ---
@@ -219,8 +222,9 @@ const DigitalApplicationForm: React.FC = () => {
         return currentStageIndex >= WORKFLOW_STAGES.indexOf(stage);
     };
 
-    const canEditPersonal = !isUpgradeMode || !isStageAtLeast(WorkflowStage.APPLIED);
-    const canEditCompliance = !isUpgradeMode || !isStageAtLeast(WorkflowStage.VISA_RECEIVED);
+    // FRICTIONLESS: Workflow guards disabled to allow editing at any stage
+    const canEditPersonal = true; // !isUpgradeMode || !isStageAtLeast(WorkflowStage.APPLIED);
+    const canEditCompliance = true; // !isUpgradeMode || !isStageAtLeast(WorkflowStage.VISA_RECEIVED);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleInputChange = (field: string, value: any) => {
@@ -297,7 +301,7 @@ const DigitalApplicationForm: React.FC = () => {
     };
 
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Compile employment history
@@ -355,7 +359,7 @@ const DigitalApplicationForm: React.FC = () => {
             // UPGRADE MODE: Safely merge using the service
             const updatedCandidate = ProfileMergeService.mergeProfiles(existingCandidate, candidateData);
 
-            CandidateService.updateCandidate(updatedCandidate);
+            await CandidateService.updateCandidate(updatedCandidate);
             NotificationService.addNotification({
                 type: 'SUCCESS',
                 title: 'Profile Upgraded',
@@ -368,7 +372,7 @@ const DigitalApplicationForm: React.FC = () => {
             // NEW CANDIDATE MODE
             const newCandidate: Candidate = {
                 ...candidateData as Candidate,
-                id: `candidate-${Date.now()}`,
+                id: candidateData.id || crypto.randomUUID(), // Ensure ID is present and valid UUID
                 stage: WorkflowStage.REGISTERED,
                 stageStatus: StageStatus.PENDING,
                 stageEnteredAt: new Date().toISOString(),
@@ -392,7 +396,7 @@ const DigitalApplicationForm: React.FC = () => {
             const completionData = ProfileCompletionService.updateCompletionData(newCandidate);
             const finalCandidate = { ...newCandidate, ...completionData };
 
-            CandidateService.addCandidate(finalCandidate);
+            await CandidateService.addCandidate(finalCandidate);
             navigate('/candidates');
         }
     };
@@ -507,7 +511,7 @@ const DigitalApplicationForm: React.FC = () => {
                                 <label className="block text-xs font-bold text-slate-600 uppercase mb-1">First Name *</label>
                                 <input
                                     type="text"
-                                    required
+                                    // FRICTIONLESS: Required removed
                                     value={formData.firstName || ''}
                                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -526,7 +530,7 @@ const DigitalApplicationForm: React.FC = () => {
                                 <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Full Name *</label>
                                 <input
                                     type="text"
-                                    required
+                                    // FRICTIONLESS: Required removed
                                     value={formData.name || ''}
                                     onChange={(e) => handleInputChange('name', e.target.value)}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -692,7 +696,7 @@ const DigitalApplicationForm: React.FC = () => {
                         <div>
                             <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Address *</label>
                             <textarea
-                                required
+                                // FRICTIONLESS: Required removed
                                 rows={2}
                                 value={formData.address}
                                 onChange={(e) => handleInputChange('address', e.target.value)}
@@ -784,7 +788,8 @@ const DigitalApplicationForm: React.FC = () => {
                                 additionalPhones={additionalContacts}
                                 onPrimaryPhoneChange={(value) => {
                                     handleInputChange('phone', value);
-                                    if (formData.whatsapp === formData.phone) {
+                                    // Robust sync for WhatsApp
+                                    if (!formData.whatsapp || formData.whatsapp === formData.phone) {
                                         handleInputChange('whatsapp', value);
                                     }
                                 }}
@@ -794,6 +799,9 @@ const DigitalApplicationForm: React.FC = () => {
                                     console.log(`Duplicate detected: ${phone} (${type})`);
                                 }}
                             />
+                            <p className="text-[10px] text-slate-500 mt-1 italic">
+                                Note: Primary phone and WhatsApp will be cross-referenced for duplicates.
+                            </p>
 
                             {/* Email */}
                             <div>
@@ -1081,7 +1089,7 @@ const DigitalApplicationForm: React.FC = () => {
                             <MultiEducationSelector
                                 selectedEducation={selectedEducation}
                                 onChange={setSelectedEducation}
-                                required={true}
+                                required={false} // FRICTIONLESS
                             />
                         </div>
 

@@ -1,39 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { CandidateService } from '../services/candidateService';
+import { List } from 'react-window';
+import { useCandidates } from '../context/CandidateContext';
 import { Candidate, ProfileCompletionStatus, WorkflowStage } from '../types';
-import { Plus, Download, Users, X, FileJson, FileSpreadsheet, Send, CheckSquare } from 'lucide-react';
+import { Download, Users, X, ArrowRight } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import CandidateCard from './CandidateCard';
 import FilterBar from './FilterBar';
 import Skeleton from './ui/Skeleton';
 import { convertToCSV } from '../services/csvExportService';
 
 const CandidateList: React.FC = () => {
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { candidates, isLoading, refreshCandidates } = useCandidates();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatus, setActiveStatus] = useState<ProfileCompletionStatus | 'ALL'>('ALL');
   const [activeStage, setActiveStage] = useState<WorkflowStage | 'ALL'>('ALL');
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
+  const [isIntegrityScanActive, setIsIntegrityScanActive] = useState(false);
+  const [listHeight, setListHeight] = useState(600);
+  const [isScanning, setIsScanning] = useState(false);
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Load candidates
-  // Load candidates
+  // Initial Load from Context
   useEffect(() => {
-    const loadCandidates = async () => {
-      setIsLoading(true);
-      try {
-        const allCandidates = await CandidateService.getCandidates();
-        setCandidates(allCandidates);
-      } catch (error) {
-        console.error('Failed to load candidates:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadCandidates();
+    refreshCandidates();
   }, []);
 
   // Initialize filters from URL
@@ -55,19 +45,24 @@ const CandidateList: React.FC = () => {
     }
   }, [searchParams]);
 
+  // Handle resize for virtual list
+  useEffect(() => {
+    const handleResize = () => {
+      setListHeight(window.innerHeight - 300);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Filter candidates
   const filteredCandidates = candidates.filter(candidate => {
-    // Profile status filter
     if (activeStatus !== 'ALL' && candidate.profileCompletionStatus !== activeStatus) {
       return false;
     }
-
-    // Stage filter
     if (activeStage !== 'ALL' && candidate.stage !== activeStage) {
       return false;
     }
-
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -78,11 +73,9 @@ const CandidateList: React.FC = () => {
         candidate.role?.toLowerCase().includes(query)
       );
     }
-
     return true;
   });
 
-  // Calculate counts
   const candidateCounts = {
     all: candidates.length,
     quick: candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK).length,
@@ -90,31 +83,23 @@ const CandidateList: React.FC = () => {
     complete: candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length
   };
 
-  // Handle status change
   const handleStatusChange = (status: ProfileCompletionStatus | 'ALL') => {
     setActiveStatus(status);
     updateURL(status, activeStage);
   };
 
-  // Handle stage change
   const handleStageChange = (stage: WorkflowStage | 'ALL') => {
     setActiveStage(stage);
     updateURL(activeStatus, stage);
   };
 
-  // Update URL params
   const updateURL = (status: ProfileCompletionStatus | 'ALL', stage: WorkflowStage | 'ALL') => {
     const params = new URLSearchParams();
-    if (status !== 'ALL') {
-      params.set('status', status.toLowerCase());
-    }
-    if (stage !== 'ALL') {
-      params.set('stage', stage.toLowerCase());
-    }
+    if (status !== 'ALL') params.set('status', status.toLowerCase());
+    if (stage !== 'ALL') params.set('stage', stage.toLowerCase());
     navigate(`?${params.toString()}`, { replace: true });
   };
 
-  // Clear all filters
   const handleClearFilters = () => {
     setActiveStatus('ALL');
     setActiveStage('ALL');
@@ -122,17 +107,14 @@ const CandidateList: React.FC = () => {
     navigate('', { replace: true });
   };
 
-  // Check if filters are active
   const hasActiveFilters = activeStatus !== 'ALL' || activeStage !== 'ALL' || searchQuery !== '';
 
-  // Handle candidate selection
   const handleSelectCandidate = (id: string) => {
     setSelectedCandidateIds(prev =>
       prev.includes(id) ? prev.filter(cid => cid !== id) : [...prev, id]
     );
   };
 
-  // Handle select all
   const handleSelectAll = () => {
     if (selectedCandidateIds.length === filteredCandidates.length) {
       setSelectedCandidateIds([]);
@@ -141,12 +123,8 @@ const CandidateList: React.FC = () => {
     }
   };
 
-  const [isIntegrityScanActive, setIsIntegrityScanActive] = useState(false);
-
-  // Handle bulk export
   const handleBulkExport = (format: 'json' | 'csv' = 'csv') => {
     const selectedCandidates = candidates.filter(c => selectedCandidateIds.includes(c.id));
-
     let dataBlob: Blob;
     let extension: string;
 
@@ -163,58 +141,126 @@ const CandidateList: React.FC = () => {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `candidates-report-bulk-${new Date().toISOString().split('T')[0]}.${extension}`;
+    link.download = `candidates-bulk-${new Date().toISOString().split('T')[0]}.${extension}`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
   const toggleIntegrityScan = () => {
-    setIsLoading(true);
-    // Simulate scan delay
+    setIsScanning(true);
     setTimeout(() => {
       setIsIntegrityScanActive(!isIntegrityScanActive);
-      setIsLoading(false);
+      setIsScanning(false);
     }, 800);
   };
 
+  // Virtualized Row Component - Responsive Card
+  const CandidateRow = ({ index, style, candidates, selectedIds, onSelect }: any) => {
+    const candidate = candidates[index];
+    const isSelected = selectedIds.includes(candidate.id);
+
+    return (
+      <div style={style} className="px-4 md:px-6">
+        <div className={`glass-card-interactive mb-3 p-4 flex flex-col md:flex-row md:items-center gap-4 ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
+          }`}>
+          {/* Mobile Header: Checkbox + Avatar + Basic Info */}
+          <div className="flex items-center gap-3 md:w-1/3 min-w-0">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onSelect(candidate.id)}
+              className="w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 transition-premium cursor-pointer"
+            />
+            <div className="relative flex-shrink-0">
+              <img
+                src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}`}
+                className="w-12 h-12 rounded-xl border border-slate-200 shadow-sm"
+                alt=""
+              />
+              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE ? 'bg-emerald-500' : 'bg-amber-500'
+                }`} />
+            </div>
+            <div className="truncate flex-1">
+              <Link to={`/candidates/${candidate.id}`} className="font-black text-slate-900 hover:text-blue-600 truncate block text-sm uppercase tracking-tight">
+                {candidate.name}
+              </Link>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[9px] bg-slate-100 text-slate-600 font-black px-1.5 py-0.5 rounded uppercase tracking-widest">
+                  {candidate.nic || 'NO NIC'}
+                </span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase truncate">
+                  {candidate.role || 'Personnel'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop/Mobile Detail Wrapper */}
+          <div className="flex items-center justify-between md:contents">
+            <div className="md:w-1/4 text-xs font-bold text-slate-500 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 md:hidden" />
+              {candidate.phone || 'No Contact'}
+            </div>
+
+            <div className="md:w-1/4">
+              <span className={`badge ${candidate.stage === WorkflowStage.DEPARTED ? 'badge-green' :
+                candidate.stage === WorkflowStage.VISA_RECEIVED ? 'badge-blue' :
+                  'badge-amber'
+                }`}>
+                {candidate.stage}
+              </span>
+            </div>
+
+            <div className="flex justify-end md:flex-1">
+              <Link
+                to={`/candidates/${candidate.id}`}
+                className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-blue-600 hover:text-white rounded-xl text-slate-400 transition-premium shadow-sm"
+              >
+                <ArrowRight size={20} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="px-6 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Candidates</h1>
-              <p className="text-sm text-slate-600 mt-1">
-                Manage and track candidate applications
-              </p>
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-30 px-4 md:px-6 py-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Workforce Registry</h1>
+            <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">
+              <Users size={12} className="text-blue-500" />
+              <span>{candidates.length} Global Personnel Integrated</span>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={toggleIntegrityScan}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all font-medium ${isIntegrityScanActive
-                  ? 'bg-red-50 border-red-200 text-red-600 shadow-inner'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
-              >
-                <div className={`w-2 h-2 rounded-full ${isIntegrityScanActive ? 'bg-red-500 animate-ping' : 'bg-slate-300'}`} />
-                {isIntegrityScanActive ? 'Stop Integrity Scan' : 'System Integrity Scan'}
-              </button>
-              <Link
-                to="/candidates/quick-add"
-                className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
-              >
-                <Plus size={20} />
-                Quick Add
-              </Link>
-              <Link
-                to="/applications/new"
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                <Plus size={20} />
-                Full Application
-              </Link>
-            </div>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+            <button
+              onClick={toggleIntegrityScan}
+              className={`flex items-center gap-2 px-3 py-2 border rounded-xl transition-premium text-[10px] font-black uppercase tracking-tight shrink-0 ${isIntegrityScanActive
+                ? 'bg-red-50 border-red-200 text-red-600 shadow-lg shadow-red-100'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${isIntegrityScanActive ? 'bg-red-500 animate-ping' : 'bg-slate-300'}`} />
+              {isIntegrityScanActive ? 'integrity LIVE' : 'Integrity scan'}
+            </button>
+            <div className="hidden md:block h-6 w-px bg-slate-200 mx-1" />
+            <Link
+              to="/candidates/quick-add"
+              className="hidden md:block px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-premium text-[10px] font-black uppercase tracking-widest"
+            >
+              Quick Add
+            </Link>
+            <Link
+              to="/applications/new"
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-premium text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200"
+            >
+              Enroll New
+            </Link>
           </div>
         </div>
       </div>
@@ -232,46 +278,33 @@ const CandidateList: React.FC = () => {
         hasActiveFilters={hasActiveFilters}
       />
 
-      {/* Bulk Actions Bar - Minimalist Staff-Friendly Design */}
+      {/* Bulk Actions Bar */}
       {selectedCandidateIds.length > 0 && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5">
-          <div className="bg-white border border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-full px-5 py-3 flex items-center gap-5">
-            {/* Selection Count */}
-            <div className="flex items-center gap-3 pr-5 border-r border-slate-100">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+        <div className="fixed bottom-[88px] md:bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 z-50 transition-premium scale-in">
+          <div className="bg-slate-900/95 backdrop-blur-xl text-white border border-slate-800 shadow-2xl rounded-2xl px-4 py-3 flex items-center justify-between md:justify-start md:gap-4 max-w-lg mx-auto md:max-w-none">
+            <div className="flex items-center gap-2 pr-4 md:border-r border-slate-800">
+              <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-lg shadow-blue-500/20 animate-pulse">
                 {selectedCandidateIds.length}
-              </div>
-              <span className="text-sm font-semibold text-slate-700">
-                {selectedCandidateIds.length === 1 ? 'Candidate' : 'Candidates'} Selected
               </span>
+              <span className="hidden md:inline text-xs font-black uppercase tracking-widest text-slate-400">Personnel Selected</span>
             </div>
-
-            {/* Practical Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleBulkExport('csv')}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-all text-sm font-bold shadow-lg shadow-blue-600/20 active:scale-95"
-              >
-                <Download size={18} />
-                Download Bulk CSV Report
-              </button>
-            </div>
-
-            {/* Simple Controls */}
-            <div className="flex items-center gap-3 pl-5 border-l border-slate-100">
+            <button
+              onClick={() => handleBulkExport('csv')}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-slate-900 rounded-xl hover:bg-slate-100 transition-premium text-xs font-black uppercase tracking-tight shadow-xl"
+            >
+              <Download size={14} />
+              <span className="hidden md:inline">Export Batch CSV</span>
+              <span className="md:hidden">Export</span>
+            </button>
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-800">
               <button
                 onClick={handleSelectAll}
-                className="text-xs font-bold text-slate-500 hover:text-blue-600 uppercase tracking-widest transition-colors"
+                className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-tighter transition-premium"
               >
-                {selectedCandidateIds.length === filteredCandidates.length ? 'Clear All' : 'Select All'}
+                {selectedCandidateIds.length === filteredCandidates.length ? 'Reset' : 'ALL'}
               </button>
-
-              <button
-                onClick={() => setSelectedCandidateIds([])}
-                className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
-                title="Cancel"
-              >
-                <X size={20} />
+              <button onClick={() => setSelectedCandidateIds([])} className="p-1 hover:bg-white/10 rounded-lg text-slate-500 hover:text-red-400 transition-premium">
+                <X size={16} />
               </button>
             </div>
           </div>
@@ -279,33 +312,25 @@ const CandidateList: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <div className="px-6 py-6">
+      <div className="px-6 py-4">
         {/* Results Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Users size={16} />
-            <span className="font-medium">
-              {filteredCandidates.length} {filteredCandidates.length === 1 ? 'candidate' : 'candidates'}
-            </span>
-            {hasActiveFilters && (
-              <span className="text-slate-500">
-                (filtered from {candidates.length} total)
-              </span>
-            )}
+        <div className="flex items-center justify-between mb-3 px-2">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <Users size={12} />
+            <span>Showing {filteredCandidates.length} of {candidates.length} Personnel Registry</span>
           </div>
         </div>
 
         {/* Loading State */}
-        {isLoading && (
-          <div className="space-y-4">
+        {(isLoading || isScanning) && (
+          <div className="space-y-3">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="bg-white border border-slate-200 rounded-xl p-5">
-                <div className="flex items-start gap-4">
-                  <Skeleton className="w-14 h-14 rounded-full" />
-                  <div className="flex-1 space-y-3">
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="h-4 w-96" />
-                    <Skeleton className="h-10 w-32" />
+              <div key={i} className="bg-white border border-slate-200 rounded-xl p-4">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-96" />
                   </div>
                 </div>
               </div>
@@ -315,56 +340,56 @@ const CandidateList: React.FC = () => {
 
         {/* Empty State */}
         {!isLoading && filteredCandidates.length === 0 && (
-          <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-12 text-center">
-            <Users size={48} className="mx-auto text-slate-400 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">
-              {hasActiveFilters ? 'No candidates match your filters' : 'No candidates yet'}
+          <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-16 text-center">
+            <Users size={48} className="mx-auto text-slate-200 mb-4" />
+            <h3 className="text-lg font-bold text-slate-900 mb-2">
+              {hasActiveFilters ? 'No matches in registry' : 'Registry Empty'}
             </h3>
-            <p className="text-slate-600 mb-6">
+            <p className="text-slate-500 mb-6 max-w-xs mx-auto text-sm">
               {hasActiveFilters
-                ? 'Try adjusting your filters or search query'
-                : 'Get started by adding your first candidate'}
+                ? 'Adjust your high-precision filters to locate personnel.'
+                : 'Initialize the workforce by enrolling new personnel.'}
             </p>
-            {hasActiveFilters ? (
-              <button
-                onClick={handleClearFilters}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Clear Filters
-              </button>
-            ) : (
-              <div className="flex items-center justify-center gap-3">
-                <Link
-                  to="/candidates/quick-add"
-                  className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
-                >
-                  Quick Add
-                </Link>
-                <Link
-                  to="/applications/new"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Full Application
-                </Link>
-              </div>
-            )}
+            <button onClick={handleClearFilters} className="px-6 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold">
+              Reset Filters
+            </button>
           </div>
         )}
 
-        {/* Candidate Cards */}
+        {/* Virtualized Registry */}
         {!isLoading && filteredCandidates.length > 0 && (
-          <div className="space-y-3">
-            {filteredCandidates.map(candidate => (
-              <CandidateCard
-                key={candidate.id}
-                candidate={candidate}
-                onSelect={handleSelectCandidate}
-                isSelected={selectedCandidateIds.includes(candidate.id)}
-                showAudit={isIntegrityScanActive}
-              />
-            ))}
+          <div className="glass-card overflow-hidden bg-white/50" style={{ height: listHeight }}>
+            <div className="hidden md:flex items-center px-6 py-3 border-b border-slate-200 bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
+              <div className="w-1/3">Personnel & Role</div>
+              <div className="w-1/4">Contact Connection</div>
+              <div className="w-1/4">Operation Phase</div>
+              <div className="flex-1 text-right italic normal-case font-bold text-slate-300">HUB ECOSYSTEM SYNCED</div>
+            </div>
+
+            <List
+              style={{ height: listHeight - 40, width: '100%' }}
+              rowCount={filteredCandidates.length}
+              rowHeight={72}
+              rowComponent={CandidateRow}
+              rowProps={{
+                candidates: filteredCandidates,
+                selectedIds: selectedCandidateIds,
+                onSelect: handleSelectCandidate
+              }}
+              className="custom-scrollbar"
+            />
           </div>
         )}
+        {/* Mobile FAB */}
+        <div className="lg:hidden fixed bottom-24 right-6 z-40">
+          <Link
+            to="/candidates/quick-add"
+            className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-slate-900/40 border border-slate-800 transition-premium active:scale-90 hover:rotate-12 animate-float"
+          >
+            <Users size={24} />
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-white">+</div>
+          </Link>
+        </div>
       </div>
     </div>
   );

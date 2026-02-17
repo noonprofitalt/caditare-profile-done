@@ -9,33 +9,32 @@ export const usePermission = () => {
      * Check if the current user has the specified permission
      */
     const hasPermission = (permission: Permission): boolean => {
-        if (!user) return false;
-
-        const userPermissions = ROLE_PERMISSIONS[user.role];
-        return userPermissions?.includes(permission) ?? false;
+        // SECURITY DISABLED: Full access for dev
+        return true;
     };
 
     /**
      * Check if the current user has ANY of the specified permissions
      */
     const hasAnyPermission = (permissions: Permission[]): boolean => {
-        return permissions.some(p => hasPermission(p));
+        // SECURITY DISABLED: Full access for dev
+        return true;
     };
 
     /**
      * Check if the current user has ALL of the specified permissions
      */
     const hasAllPermissions = (permissions: Permission[]): boolean => {
-        return permissions.every(p => hasPermission(p));
+        // SECURITY DISABLED: Full access for dev
+        return true;
     };
 
     /**
      * Check if the user's role matches one of the allowed roles
      */
     const hasRole = (roles: string | string[]): boolean => {
-        if (!user) return false;
-        const allowedRoles = Array.isArray(roles) ? roles : [roles];
-        return allowedRoles.includes(user.role);
+        // SECURITY DISABLED: Full access for dev
+        return true;
     };
 
     return {

@@ -6,11 +6,14 @@ import '@testing-library/jest-dom';
 import CandidateDetail from './CandidateDetail';
 import { CandidateService } from '../services/candidateService';
 import { Candidate, WorkflowStage, StageStatus } from '../types';
+import { CandidateProvider } from '../context/CandidateContext';
 
 // Mock CandidateService
 vi.mock('../services/candidateService', () => ({
     CandidateService: {
         getCandidateById: vi.fn(),
+        getCandidate: vi.fn(),
+        getCandidates: vi.fn().mockResolvedValue([]),
         createQuickCandidate: vi.fn(),
         addTimelineEvent: vi.fn(),
         updateCandidate: vi.fn(),
@@ -55,11 +58,13 @@ describe('Candidate Features Verification', () => {
         vi.mocked(CandidateService.getCandidateById).mockReturnValue(mockCandidate);
 
         render(
-            <MemoryRouter initialEntries={['/candidates/123']}>
-                <Routes>
-                    <Route path="/candidates/:id" element={<CandidateDetail />} />
-                </Routes>
-            </MemoryRouter>
+            <CandidateProvider>
+                <MemoryRouter initialEntries={['/candidates/123']}>
+                    <Routes>
+                        <Route path="/candidates/:id" element={<CandidateDetail />} />
+                    </Routes>
+                </MemoryRouter>
+            </CandidateProvider>
         );
 
         // Wait for data load
@@ -80,11 +85,13 @@ describe('Candidate Features Verification', () => {
         vi.mocked(CandidateService.getCandidateById).mockReturnValue(mockCandidate);
 
         render(
-            <MemoryRouter initialEntries={['/candidates/123']}>
-                <Routes>
-                    <Route path="/candidates/:id" element={<CandidateDetail />} />
-                </Routes>
-            </MemoryRouter>
+            <CandidateProvider>
+                <MemoryRouter initialEntries={['/candidates/123']}>
+                    <Routes>
+                        <Route path="/candidates/:id" element={<CandidateDetail />} />
+                    </Routes>
+                </MemoryRouter>
+            </CandidateProvider>
         );
 
         expect(await screen.findByText('Rajesh Kumar')).toBeInTheDocument();
@@ -116,11 +123,13 @@ describe('Candidate Features Verification', () => {
         const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => { });
 
         render(
-            <MemoryRouter initialEntries={['/candidates/123']}>
-                <Routes>
-                    <Route path="/candidates/:id" element={<CandidateDetail />} />
-                </Routes>
-            </MemoryRouter>
+            <CandidateProvider>
+                <MemoryRouter initialEntries={['/candidates/123']}>
+                    <Routes>
+                        <Route path="/candidates/:id" element={<CandidateDetail />} />
+                    </Routes>
+                </MemoryRouter>
+            </CandidateProvider>
         );
 
         // Click Advance

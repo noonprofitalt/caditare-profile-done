@@ -17,18 +17,10 @@ const IntelligenceEngine: React.FC = () => {
 
    const refreshData = async () => {
       setIsLoading(true);
-      const data = ReportingService.getSystemSnapshot();
+      const data = await ReportingService.getSystemSnapshot();
       setSnapshot(data);
       setIsLoading(false);
 
-      // Trigger AI summary in background
-      try {
-         const { GeminiService } = await import('../services/geminiService');
-         const aiSummary = await GeminiService.getSystemAnalysis(data);
-         setSnapshot(prev => prev ? { ...prev, aiSummary } : null);
-      } catch (err) {
-         console.error("AI Refresh failed", err);
-      }
    };
 
    useEffect(() => {
@@ -36,8 +28,8 @@ const IntelligenceEngine: React.FC = () => {
       refreshData();
    }, []);
 
-   const handleExportReport = () => {
-      const csvContent = ReportingService.generateFullSystemCSV();
+   const handleExportReport = async () => {
+      const csvContent = await ReportingService.generateFullSystemCSV();
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
@@ -48,27 +40,10 @@ const IntelligenceEngine: React.FC = () => {
       document.body.removeChild(link);
    };
 
-   if (!snapshot) return <div className="p-8 text-center">Initializing Intelligence Engine...</div>;
+   if (!snapshot) return <div className="p-8 text-center">Initializing Operational Analytics...</div>;
 
    const renderDashboard = () => (
       <div className="space-y-6 animate-in fade-in duration-500">
-         {/* AI Executive Summary Block */}
-         {snapshot.aiSummary && (
-            <div className="bg-white border-l-4 border-blue-600 rounded-xl p-6 shadow-sm flex items-start gap-5 animate-in slide-in-from-left-4">
-               <div className="p-3 bg-blue-50 rounded-2xl text-blue-600 shrink-0">
-                  <BrainCircuit size={32} className="animate-pulse" />
-               </div>
-               <div>
-                  <h4 className="font-bold text-slate-800 text-sm mb-1 uppercase tracking-widest flex items-center gap-2">
-                     AI Executive Advisor
-                     <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] rounded animate-bounce">Live Insights</span>
-                  </h4>
-                  <p className="text-slate-600 leading-relaxed text-sm italic">
-                     "{snapshot.aiSummary}"
-                  </p>
-               </div>
-            </div>
-         )}
 
          {/* Top Level KPI Cards */}
          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -154,7 +129,7 @@ const IntelligenceEngine: React.FC = () => {
                      <TrendingUp size={18} /> Optimization Tip
                   </h4>
                   <p className="text-sm text-slate-300 leading-relaxed">
-                     Your <strong>{snapshot.bottlenecks.sort((a, b) => b.avgDays - a.avgDays)[0].stage}</strong> stage is currently slowing down the pipeline.
+                     Your <strong>{snapshot.bottlenecks?.length > 0 ? [...snapshot.bottlenecks].sort((a, b) => b.avgDays - a.avgDays)[0].stage : 'Workflow'}</strong> stage is currently slowing down the pipeline.
                      Resolving this could improve turnaround time by <span className="text-blue-400 font-bold">~15%</span>.
                   </p>
                </div>
@@ -313,12 +288,11 @@ const IntelligenceEngine: React.FC = () => {
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                <div className="flex items-center gap-2 text-blue-600 mb-1">
-                  <BrainCircuit size={20} />
-                  <span className="text-xs font-bold uppercase tracking-wider">Enterprise Edition</span>
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse mx-1" />
+                  <TrendingUp size={20} />
+                  <span className="text-xs font-bold uppercase tracking-wider">Operational Analytics Suite</span>
                </div>
-               <h2 className="text-3xl font-bold text-slate-900">Intelligence Engine</h2>
-               <p className="text-slate-500">System-wide reporting, financial aggregation, and predictive analytics.</p>
+               <h2 className="text-3xl font-bold text-slate-900">System Analytics Engine</h2>
+               <p className="text-slate-500">Global performance reporting, financial outlook, and process mapping.</p>
             </div>
             <div className="flex items-center gap-3">
                <span className="text-xs text-slate-400 font-mono">Last updated: {new Date(snapshot.timestamp).toLocaleTimeString()}</span>
@@ -345,7 +319,6 @@ const IntelligenceEngine: React.FC = () => {
                { id: 'workflow', label: 'Workflow Analytics', icon: Server },
                { id: 'staff', label: 'Staff Performance', icon: Users },
                { id: 'financial', label: 'Financials', icon: DollarSign },
-               { id: 'assistant', label: 'AI Assistant', icon: MessageSquare },
             ].map(tab => (
                <button
                   key={tab.id}
@@ -363,7 +336,6 @@ const IntelligenceEngine: React.FC = () => {
             {activeTab === 'dashboard' && renderDashboard()}
             {activeTab === 'workflow' && renderWorkflowAnalytics()}
             {activeTab === 'staff' && renderStaffMetrics()}
-            {activeTab === 'assistant' && <AIPlayground />}
             {activeTab === 'financial' && (
                <div className="space-y-6 animate-in fade-in duration-500">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

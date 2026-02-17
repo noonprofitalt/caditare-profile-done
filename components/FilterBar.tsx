@@ -39,11 +39,12 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
     const stageTabs = [
         { value: 'ALL' as const, label: 'All Stages' },
-        { value: WorkflowStage.REGISTRATION, label: 'Registration' },
-        { value: WorkflowStage.INTERVIEW, label: 'Interview' },
-        { value: WorkflowStage.MEDICAL, label: 'Medical' },
-        { value: WorkflowStage.TRAINING, label: 'Training' },
-        { value: WorkflowStage.DEPLOYMENT, label: 'Deployment' }
+        { value: WorkflowStage.REGISTERED, label: 'Registration' },
+        { value: WorkflowStage.VERIFIED, label: 'Verified' },
+        { value: WorkflowStage.APPLIED, label: 'Applied' },
+        { value: WorkflowStage.OFFER_RECEIVED, label: 'Offer Received' },
+        { value: WorkflowStage.VISA_RECEIVED, label: 'Visa Received' },
+        { value: WorkflowStage.DEPARTED, label: 'Departed' }
     ];
 
     const getTabColor = (color: string, isActive: boolean) => {
@@ -101,8 +102,8 @@ const FilterBar: React.FC<FilterBarProps> = ({
                         >
                             <span>{tab.label}</span>
                             <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeStatus === tab.value
-                                    ? 'bg-white/50'
-                                    : 'bg-slate-100'
+                                ? 'bg-white/50'
+                                : 'bg-slate-100'
                                 }`}>
                                 {tab.count}
                             </span>
@@ -118,8 +119,8 @@ const FilterBar: React.FC<FilterBarProps> = ({
                             key={tab.value}
                             onClick={() => onStageChange(tab.value)}
                             className={`px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap text-xs ${activeStage === tab.value
-                                    ? 'bg-blue-50 text-blue-700 border-blue-300 font-semibold'
-                                    : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
+                                ? 'bg-blue-50 text-blue-700 border-blue-300 font-semibold'
+                                : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                                 }`}
                         >
                             {tab.label}

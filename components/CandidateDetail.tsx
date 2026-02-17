@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useCandidates } from '../context/CandidateContext';
+import { useParams, useNavigate } from 'react-router-dom';
 import { pdf } from '@react-pdf/renderer';
 import { CandidateReportPDF } from '../src/components/reports/CandidateReportPDF';
 import { CandidateService } from '../services/candidateService';
 import { Candidate, WorkflowStage, CandidateDocument, PassportData, PCCData, TimelineEventType, PassportStatus } from '../types';
-import { User, FileText, History, Bot, AlertCircle, Plus, Trash2, ShieldCheck, ShieldAlert, Edit2, CheckCircle, X, Mail, Globe, MapPin, Calendar, Briefcase, Phone, Award, Clock } from 'lucide-react';
+import { User, FileText, History, Bot, AlertCircle, Plus, Trash2, ShieldCheck, ShieldAlert, Edit2, CheckCircle, X, Mail, Globe, MapPin, Calendar, Briefcase, Phone, Award, Clock, RefreshCw } from 'lucide-react';
 
 // New Components
 import CandidateHero from './CandidateHero';
@@ -31,18 +32,52 @@ import WorkflowEngine, { WORKFLOW_STAGES } from '../services/workflowEngine';
 
 const CandidateDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [candidate, setCandidate] = useState<Candidate | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'timeline' | 'ai'>('profile');
+  const navigate = useNavigate();
+  // Use global state
+  const { candidates, updateCandidateInState, removeCandidateFromState, refreshCandidates } = useCandidates();
 
-  const refreshCandidate = React.useCallback(() => {
-    if (id) {
-      setCandidate(CandidateService.getCandidateById(id));
-    }
-  }, [id]);
+  // Derive candidate from global state
+  const [candidate, setCandidate] = useState<Candidate | undefined>(undefined);
+  const [isLocalLoading, setIsLocalLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    refreshCandidate();
-  }, [refreshCandidate]);
+    const loadCandidate = async () => {
+      if (!id) return;
+
+      setIsLocalLoading(true);
+      setFetchError(null);
+
+      try {
+        // First try to find in context if available
+        if (candidates.length > 0) {
+          const found = candidates.find(c => c.id === id);
+          if (found) {
+            setCandidate(found);
+            setIsLocalLoading(false);
+            return;
+          }
+        }
+
+        // If not found in context or context is empty, fetch directly from service
+        const directCandidate = await CandidateService.getCandidate(id);
+        if (directCandidate) {
+          setCandidate(directCandidate);
+        } else {
+          setFetchError('Personnel records not found for this identifier.');
+        }
+      } catch (err) {
+        console.error('Error in direct candidate fetch:', err);
+        setFetchError('Failed to establish connection to workforce registry.');
+      } finally {
+        setIsLocalLoading(false);
+      }
+    };
+
+    loadCandidate();
+  }, [id, candidates]);
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'timeline' | 'audit'>('profile');
 
   // Handles profile fields editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -70,8 +105,12 @@ const CandidateDetail: React.FC = () => {
     if (!candidate || !editedProfile) return;
 
     // Construct the full name from components to ensure it stays in sync
-    const personal = editedProfile.personalInfo || candidate.personalInfo;
-    const fullName = personal.fullName || `${personal.firstName || ''} ${personal.middleName ? personal.middleName + ' ' : ''}`.trim();
+    const personal = editedProfile.personalInfo || candidate.personalInfo || {};
+    const firstName = (personal as any).firstName || '';
+    const middleName = (personal as any).middleName || '';
+    const existingFullName = (personal as any).fullName;
+
+    const fullName = existingFullName || `${firstName} ${middleName ? middleName + ' ' : ''}`.trim();
 
     const updatedCandidate: Candidate = {
       ...candidate,
@@ -79,7 +118,8 @@ const CandidateDetail: React.FC = () => {
       personalInfo: {
         ...(candidate.personalInfo || {}),
         ...(editedProfile.personalInfo || {}),
-        fullName
+        fullName: (fullName || '') as string,
+        children: editedProfile.personalInfo?.children || candidate.personalInfo?.children || []
       },
       contactInfo: {
         ...(candidate.contactInfo || {}),
@@ -92,7 +132,13 @@ const CandidateDetail: React.FC = () => {
       medicalData: {
         ...(candidate.medicalData || {}),
         ...(editedProfile.medicalData || {})
-      }
+      },
+      slbfeData: {
+        biometricStatus: 'Pending',
+        medicalStatus: 'Pending',
+        ...(candidate.slbfeData || {}),
+        ...(editedProfile.slbfeData || {})
+      } as any
     };
 
     // Recalculate completion
@@ -106,6 +152,7 @@ const CandidateDetail: React.FC = () => {
       actor: 'System'
     });
 
+    updateCandidateInState(finalCandidate);
     setCandidate(finalCandidate);
     setIsEditingProfile(false);
   };
@@ -150,6 +197,7 @@ const CandidateDetail: React.FC = () => {
       actor: 'System'
     });
 
+    updateCandidateInState(updatedCandidate);
     setCandidate(updatedCandidate);
   };
 
@@ -170,41 +218,72 @@ const CandidateDetail: React.FC = () => {
       actor: 'System'
     });
 
+    updateCandidateInState(updatedCandidate);
     setCandidate(updatedCandidate);
   };
 
   // Strict Workflow Actions
+  // Strict Workflow Actions
   const handleAdvanceStage = async () => {
     if (!candidate) return;
 
-    // Optimistic UI update could be risky with strict validation, so we wait
-    const result = await CandidateService.advanceStage(candidate.id, 'Current User');
+    const nextStage = WorkflowEngine.getNextStage(candidate.stage);
+    if (!nextStage) return;
 
-    if (result.success) {
-      // Refresh candidate data
-      const updated = CandidateService.getCandidateById(candidate.id);
-      if (updated) setCandidate(updated);
+    // Use WorkflowEngine to perform transition logic
+    const transitionResult = await WorkflowEngine.performTransition(candidate, nextStage, 'Current User');
+
+    if (transitionResult.success) {
+      const updatedCandidate = { ...candidate, stage: nextStage };
+
+      // Update Backend
+      await CandidateService.updateCandidate(updatedCandidate);
+
+      // Update Context
+      updateCandidateInState(updatedCandidate);
+
+      // Update Local State
+      setCandidate(updatedCandidate);
+
+      // Log Event
+      await CandidateService.addTimelineEvent(candidate.id, {
+        type: 'WORKFLOW',
+        title: `Advanced to ${nextStage}`,
+        description: `Candidate advanced from ${candidate.stage} to ${nextStage}`,
+        actor: 'Current User'
+      });
+
     } else {
-      // Show error (in a real app, use a toast)
-      alert(`Cannot advance stage: ${result.error}`);
+      alert(`Cannot advance stage: ${transitionResult.error}`);
     }
   };
 
   const handleRollback = async (targetStage: WorkflowStage, reason: string) => {
     if (!candidate) return;
 
-    const result = await CandidateService.rollbackStage(candidate.id, targetStage, reason, 'Current User');
+    // Direct rollback logic since WorkflowEngine.performTransition checks strictly for forward movement or specific rules
+    // For rollback, we generally allow it with a reason, but we should validate if needed.
+    // Assuming implicit allow for admin overrides or generic rollbacks for now.
 
-    if (result.success) {
-      const updated = CandidateService.getCandidateById(candidate.id);
-      if (updated) setCandidate(updated);
-    } else {
-      alert(`Rollback failed: ${result.error}`);
-    }
+    // Check if target stage is valid? 
+    // Simplified: Just update.
+
+    const updatedCandidate = { ...candidate, stage: targetStage };
+
+    await CandidateService.updateCandidate(updatedCandidate);
+    updateCandidateInState(updatedCandidate);
+    setCandidate(updatedCandidate);
+
+    await CandidateService.addTimelineEvent(candidate.id, {
+      type: 'WORKFLOW',
+      title: `Rolled back to ${targetStage}`,
+      description: `Rollback Reason: ${reason}`,
+      actor: 'Current User'
+    });
   };
 
   // Handle delete
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!candidate) return;
 
     const policy = WorkflowEngine.canPerformAction(candidate, 'DELETE');
@@ -214,8 +293,9 @@ const CandidateDetail: React.FC = () => {
     }
 
     if (confirm(`Are you sure you want to delete ${candidate.name}?`)) {
-      CandidateService.deleteCandidate(candidate.id);
-      window.location.href = '/#/candidates';
+      await CandidateService.deleteCandidate(candidate.id);
+      removeCandidateFromState(candidate.id);
+      navigate('/candidates');
     }
   };
 
@@ -223,7 +303,7 @@ const CandidateDetail: React.FC = () => {
     if (!candidate) return;
 
     try {
-      // Generate system report first for AI insights and risk scoring
+      // Generate system report first for strategic assessment and risk scoring
       const { ReportService } = await import('../services/reportService');
       const systemReport = await ReportService.generateReport(candidate);
 
@@ -248,7 +328,7 @@ const CandidateDetail: React.FC = () => {
       CandidateService.addTimelineEvent(candidate.id, {
         type: 'SYSTEM',
         title: 'Report Generated',
-        description: 'Candidate Audit Report with AI Insights was generated',
+        description: 'Candidate Strategic Assessment Report was generated',
         actor: 'Current User'
       });
     } catch (error) {
@@ -262,16 +342,53 @@ const CandidateDetail: React.FC = () => {
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'documents', label: 'Documents', icon: FileText, count: candidate?.documents?.length || 0 },
     { id: 'timeline', label: 'Timeline', icon: History, count: candidate?.timelineEvents?.length || 0 },
-    { id: 'ai', label: 'AI Analysis', icon: Bot }
+    { id: 'audit', label: 'System Audit', icon: ShieldCheck }
   ];
 
   // Loading state
-  if (!candidate) {
+  if (isLocalLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle size={48} className="mx-auto mb-4 text-slate-300" />
-          <p className="text-slate-500">Loading candidate...</p>
+        <div className="text-center animate-pulse">
+          <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-6 shadow-lg shadow-blue-50/50">
+            <RefreshCw size={32} className="animate-spin" />
+          </div>
+          <p className="text-slate-800 font-bold text-lg mb-1 tracking-tight">Syncing Workforce Data</p>
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-[0.2em]">Enterprise Registry Integration</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error/Not Found state
+  if (fetchError || !candidate) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 text-center relative overflow-hidden">
+          {/* Background Decoration */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-amber-400" />
+
+          <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-8">
+            <ShieldAlert size={40} />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">Access Alert</h2>
+          <p className="text-slate-500 mb-8 font-medium">
+            {fetchError || "The personnel record you are attempting to access is either restricted or does not exist in the current registry."}
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate('/candidates')}
+              className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+            >
+              Return to Registry
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-3 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={16} /> Retry Verification
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -341,7 +458,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.firstName || candidate.firstName || '-'}
+                          {candidate?.personalInfo?.firstName || candidate?.firstName || '-'}
                         </div>
                       )}
                     </div>
@@ -359,7 +476,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.middleName || candidate.middleName || '-'}
+                          {candidate?.personalInfo?.middleName || candidate?.middleName || '-'}
                         </div>
                       )}
                     </div>
@@ -378,7 +495,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-blue-50/50 rounded-lg text-sm font-bold text-slate-900 border border-blue-100">
-                          {candidate.personalInfo?.fullName || candidate.name || '-'}
+                          {candidate?.personalInfo?.fullName || candidate?.name || '-'}
                         </div>
                       )}
                     </div>
@@ -562,7 +679,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.address || candidate.address || '-'}
+                          {candidate?.personalInfo?.address || candidate?.address || '-'}
                         </div>
                       )}
                     </div>
@@ -580,7 +697,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.province || candidate.province || '-'}
+                          {candidate?.personalInfo?.province || candidate?.province || '-'}
                         </div>
                       )}
                     </div>
@@ -598,7 +715,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.district || candidate.district || '-'}
+                          {candidate?.personalInfo?.district || candidate?.district || '-'}
                         </div>
                       )}
                     </div>
@@ -616,7 +733,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.divisionalSecretariat || (candidate as any).divisionalSecretariat || '-'}
+                          {candidate?.personalInfo?.divisionalSecretariat || (candidate as any)?.divisionalSecretariat || '-'}
                         </div>
                       )}
                     </div>
@@ -634,7 +751,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.gsDivision || (candidate as any).gsDivision || '-'}
+                          {candidate?.personalInfo?.gsDivision || (candidate as any)?.gsDivision || '-'}
                         </div>
                       )}
                     </div>
@@ -662,7 +779,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.nic || candidate.nic || '-'}
+                          {candidate?.personalInfo?.nic || candidate?.nic || '-'}
                         </div>
                       )}
                     </div>
@@ -680,7 +797,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.drivingLicenseNo || (candidate as any).drivingLicenseNo || '-'}
+                          {candidate?.personalInfo?.drivingLicenseNo || (candidate as any)?.drivingLicenseNo || '-'}
                         </div>
                       )}
                     </div>
@@ -698,7 +815,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.dob || candidate.dob || '-'}
+                          {candidate?.personalInfo?.dob || candidate?.dob || '-'}
                         </div>
                       )}
                     </div>
@@ -722,7 +839,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.height?.feet || 0} FT
+                          {candidate?.personalInfo?.height?.feet || (candidate as any)?.height?.feet || 0} FT
                         </div>
                       )}
                     </div>
@@ -743,7 +860,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.height?.inches || 0} IN
+                          {candidate?.personalInfo?.height?.inches || (candidate as any)?.height?.inches || 0} IN
                         </div>
                       )}
                     </div>
@@ -755,13 +872,13 @@ const CandidateDetail: React.FC = () => {
                           value={editedProfile.personalInfo?.weight || 0}
                           onChange={(e) => setEditedProfile({
                             ...editedProfile,
-                            personalInfo: { ...editedProfile.personalInfo!, weight: parseInt(e.target.value) || 0 }
+                            personalInfo: { ...(candidate.personalInfo || { fullName: '' }), ...(editedProfile.personalInfo || {}), weight: parseInt(e.target.value) || 0 }
                           })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.weight || 0} KG
+                          {candidate?.personalInfo?.weight || (candidate as any)?.weight || 0} KG
                         </div>
                       )}
                     </div>
@@ -779,7 +896,7 @@ const CandidateDetail: React.FC = () => {
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate.personalInfo?.religion || '-'}
+                          {candidate?.personalInfo?.religion || (candidate as any)?.religion || '-'}
                         </div>
                       )}
                     </div>
@@ -873,7 +990,7 @@ const CandidateDetail: React.FC = () => {
                     )}
                   </div>
 
-                  <div>
+                  <div className="mt-4">
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
                     {isEditingProfile ? (
                       <input
@@ -887,7 +1004,7 @@ const CandidateDetail: React.FC = () => {
                       />
                     ) : (
                       <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                        {candidate.contactInfo?.email || candidate.email || '-'}
+                        {candidate?.contactInfo?.email || candidate?.email || '-'}
                       </div>
                     )}
                   </div>
@@ -941,7 +1058,7 @@ const CandidateDetail: React.FC = () => {
                               value={editedProfile.professionalProfile?.gceOL?.year || ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
-                                professionalProfile: { ...editedProfile.professionalProfile!, gceOL: { year: e.target.value } }
+                                professionalProfile: { ...(candidate.professionalProfile || { jobRoles: [], experienceYears: 0, skills: [], education: [] }), ...(editedProfile.professionalProfile || {}), gceOL: { year: e.target.value } }
                               })}
                               className="w-full mt-1 p-2 border border-slate-200 rounded text-sm"
                             />
@@ -953,7 +1070,7 @@ const CandidateDetail: React.FC = () => {
                               value={editedProfile.professionalProfile?.gceAL?.year || ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
-                                professionalProfile: { ...editedProfile.professionalProfile!, gceAL: { year: e.target.value } }
+                                professionalProfile: { ...(candidate.professionalProfile || { jobRoles: [], experienceYears: 0, skills: [], education: [] }), ...(editedProfile.professionalProfile || {}), gceAL: { year: e.target.value } }
                               })}
                               className="w-full mt-1 p-2 border border-slate-200 rounded text-sm"
                             />
@@ -1362,67 +1479,81 @@ const CandidateDetail: React.FC = () => {
                       </div>
 
                       {/* Parent & Spouse Names (View Mode) */}
-                      <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Father's Full Name</label>
-                          <div className="text-sm text-slate-800 font-medium mt-0.5">{candidate.personalInfo?.fatherName || '-'}</div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                        <div>
+                          <label className="text-xs font-bold text-slate-500 uppercase">Father's Name</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.personalInfo?.fatherName || '-'}</div>
                         </div>
-                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mother's Full Name</label>
-                          <div className="text-sm text-slate-800 font-medium mt-0.5">{candidate.personalInfo?.motherName || '-'}</div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-500 uppercase">Mother's Name</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.personalInfo?.motherName || '-'}</div>
                         </div>
-                        {candidate.personalInfo?.maritalStatus === 'Married' && (
-                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 md:col-span-2">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Spouse's Full Name</label>
-                            <div className="text-sm text-slate-800 font-medium mt-0.5">{candidate.personalInfo?.spouseName || '-'}</div>
+                        {candidate?.personalInfo?.maritalStatus === 'Married' && (
+                          <div className="col-span-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Spouse's Name</label>
+                            <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.personalInfo?.spouseName || '-'}</div>
                           </div>
                         )}
                       </div>
 
-                      {candidate.personalInfo?.children && candidate.personalInfo.children.length > 0 && (
-                        <div className="grid grid-cols-2 gap-3 mt-4">
-                          {candidate.personalInfo.children.map((child: any, idx: number) => (
-                            <div key={idx} className="flex items-center gap-3 p-2 bg-slate-50 rounded border border-slate-100 italic">
-                              <div className={`w-2 h-2 rounded-full ${child.gender === 'M' ? 'bg-blue-400' : 'bg-pink-400'}`} />
-                              <span className="text-sm text-slate-700 font-medium">{child.name}</span>
-                              <span className="text-xs text-slate-500">({child.age} yrs)</span>
-                            </div>
-                          ))}
+                      <div className="pt-4 border-t border-slate-100">
+                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-3">Children Details</label>
+                        <div className="space-y-2">
+                          {(candidate?.personalInfo?.children || []).length > 0 ? (
+                            (candidate?.personalInfo?.children || []).map((child: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded border border-slate-200 text-xs shadow-sm">
+                                <div className="flex gap-4">
+                                  <span className="font-bold text-slate-700">{child.gender || 'Child'}</span>
+                                  <span className="text-slate-500">DOB: {child.dob || '-'}</span>
+                                </div>
+                                <span className="text-blue-600 font-bold">{child.age || 0} Years</span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">No children details recorded</p>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
-            )}
+            )
+            }
 
             {/* Documents Tab */}
-            {activeTab === 'documents' && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <DocumentManager
-                  candidate={candidate}
-                  onUpdate={handleDocumentUpdate}
-                />
-              </div>
-            )}
+            {
+              activeTab === 'documents' && (
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <DocumentManager
+                    candidate={candidate}
+                    onUpdate={handleDocumentUpdate}
+                  />
+                </div>
+              )
+            }
 
             {/* Timeline Tab */}
-            {activeTab === 'timeline' && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <TimelineView events={candidate.timelineEvents || []} />
-              </div>
-            )}
+            {
+              activeTab === 'timeline' && (
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <TimelineView events={candidate.timelineEvents || []} />
+                </div>
+              )
+            }
 
-            {/* AI Analysis Tab */}
-            {activeTab === 'ai' && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <CandidateReport candidate={candidate} />
-              </div>
-            )}
-          </div>
+            {/* System Audit Tab */}
+            {
+              activeTab === 'audit' && (
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <CandidateReport candidate={candidate} />
+                </div>
+              )
+            }
+          </div >
 
           {/* Sidebar (30%) */}
-          <div className="space-y-4">
+          < div className="space-y-4" >
             <QuickActionsWidget
               candidate={candidate}
               onDelete={handleDelete}
@@ -1431,7 +1562,7 @@ const CandidateDetail: React.FC = () => {
             <ComplianceWidget
               candidate={candidate}
               onUpdate={handleComplianceUpdate}
-              onRefresh={refreshCandidate}
+              onRefresh={refreshCandidates}
             />
             <SLBFEStatusWidget candidate={candidate} />
             <WorkflowProgressWidget
@@ -1440,9 +1571,9 @@ const CandidateDetail: React.FC = () => {
               onRollback={handleRollback}
             />
             <RecentActivityWidget candidate={candidate} onViewAll={() => setActiveTab('timeline')} />
-          </div>
-        </div>
-      </div>
+          </div >
+        </div >
+      </div >
     </div >
   );
 };

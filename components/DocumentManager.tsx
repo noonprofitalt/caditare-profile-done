@@ -14,8 +14,41 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   const [viewMode, setViewMode] = useState<'list' | 'upload' | 'verify' | 'history'>('list');
   const [dragActive, setDragActive] = useState(false);
 
-  // Stats
-  const mandatoryDocs = candidate.documents?.filter(d => d.category === DocumentCategory.MANDATORY_REGISTRATION) || [];
+  // Document Type to Category Mapping
+  const docTypeToCategory: Record<DocType, DocumentCategory> = {
+    [DocType.PASSPORT]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.CV]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.PASSPORT_PHOTOS]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.FULL_PHOTO]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.EDU_OL]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.EDU_AL]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.EDU_LEARNING]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.EDU_PROFESSIONAL]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.MEDICAL_REPORT]: DocumentCategory.LATER_PROCESS,
+    [DocType.POLICE_CLEARANCE]: DocumentCategory.LATER_PROCESS,
+    [DocType.VISA_COPY]: DocumentCategory.LATER_PROCESS,
+    [DocType.AIR_TICKET]: DocumentCategory.LATER_PROCESS,
+  };
+
+  // Generate full document list with placeholders for missing ones
+  const allDocTypes = Object.values(DocType);
+  const fullDocumentList: CandidateDocument[] = allDocTypes.map(type => {
+    const existing = candidate.documents?.find(d => d.type === type);
+    if (existing) return existing;
+
+    // Create a virtual missing document
+    return {
+      id: `virtual-${type}`,
+      type: type as DocType,
+      category: docTypeToCategory[type as DocType] || DocumentCategory.LATER_PROCESS,
+      status: DocumentStatus.MISSING,
+      version: 0,
+      logs: []
+    } as CandidateDocument;
+  });
+
+  // Stats - use full list to count properly
+  const mandatoryDocs = fullDocumentList.filter(d => d.category === DocumentCategory.MANDATORY_REGISTRATION);
   const completedMandatory = mandatoryDocs.filter(d => d.status === DocumentStatus.APPROVED).length;
   const isWorkflowBlocked = completedMandatory < mandatoryDocs.length;
 
@@ -92,7 +125,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       NotificationService.addNotification({
         type: 'WARNING',
         title: `Document ${status === DocumentStatus.REJECTED ? 'Rejected' : 'Fix Required'}`,
-        message: `${doc.type} for ${candidate.name} has been ${status.toLowerCase()}. ${reason ? `Reason: ${reason}` : ''}`,
+        message: `${doc.type} for ${candidate.name} has been marked as ${status.toLowerCase().replace('_', ' ')}. ${reason ? `Reason: ${reason}` : ''}`,
         link: `/candidates/${candidate.id}?tab=documents`,
         candidateId: candidate.id
       });
@@ -104,7 +137,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
 
   const updateDocumentInList = (updatedDoc: CandidateDocument) => {
     const currentDocuments = candidate.documents || [];
-    const index = currentDocuments.findIndex(d => d.id === updatedDoc.id);
+    const index = currentDocuments.findIndex(d => d.id === updatedDoc.id || (d.id.startsWith('virtual-') && d.type === updatedDoc.type));
 
     let newDocs: CandidateDocument[];
     if (index !== -1) {
@@ -247,7 +280,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {candidate.documents?.filter(d => d.category === category).map((doc) => (
+              {fullDocumentList.filter(d => d.category === category).map((doc) => (
                 <div key={doc.id} className={`group relative flex items-start p-4 rounded-xl border transition-all ${getStatusColor(doc.status)} bg-opacity-30`}>
                   <div className={`p-2 rounded-lg mr-4 ${doc.status === DocumentStatus.MISSING ? 'bg-slate-200 text-slate-500' : 'bg-white shadow-sm'}`}>
                     {getStatusIcon(doc.status)}

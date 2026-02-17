@@ -146,8 +146,8 @@ export class FinanceService {
         const txs = this.getTransactions();
         if (!txs) return 0;
         return txs
-            .filter(tx => tx && tx.type === TransactionType.REVENUE && tx.status === 'Completed')
-            .reduce((sum, tx) => sum + tx.amount, 0);
+            .filter(tx => tx && tx.type === TransactionType.REVENUE && tx.status === 'Completed' && typeof tx.amount === 'number')
+            .reduce((sum, tx) => sum + (tx.amount || 0), 0);
     }
 
     /**
@@ -158,8 +158,8 @@ export class FinanceService {
         const txs = this.getTransactions();
         if (!txs) return 0;
         return txs
-            .filter(tx => tx && tx.type === TransactionType.EXPENSE && tx.status === 'Completed')
-            .reduce((sum, tx) => sum + tx.amount, 0);
+            .filter(tx => tx && tx.type === TransactionType.EXPENSE && tx.status === 'Completed' && typeof tx.amount === 'number')
+            .reduce((sum, tx) => sum + (tx.amount || 0), 0);
     }
 
     /**

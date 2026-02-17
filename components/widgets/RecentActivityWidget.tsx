@@ -8,7 +8,10 @@ interface RecentActivityWidgetProps {
 }
 
 const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({ candidate, onViewAll }) => {
-    const recentEvents = candidate.timelineEvents?.slice(-5).reverse() || [];
+    const recentEvents = (candidate?.timelineEvents || [])
+        .filter(e => e && e.timestamp)
+        .slice(-5)
+        .reverse();
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);

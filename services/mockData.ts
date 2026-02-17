@@ -170,12 +170,12 @@ export const MOCK_CANDIDATES: Candidate[] = [
     },
     workflowLogs: [],
     timelineEvents: [
-      { id: '1', type: 'STAGE_TRANSITION', title: 'Moved to Applied', timestamp: daysAgo(3), actor: 'System', stage: WorkflowStage.APPLIED },
+      { id: '1', type: 'STAGE_TRANSITION', title: 'Moved to Applied', description: 'Candidate was moved to Applied stage.', timestamp: daysAgo(3), actor: 'System', stage: WorkflowStage.APPLIED },
       { id: '2', type: 'DOCUMENT', title: 'Passport Verified', description: 'Document approved by verification team', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFIED },
-      { id: '3', type: 'STATUS_CHANGE', title: 'Verification Completed', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFIED },
-      { id: '4', type: 'STAGE_TRANSITION', title: 'Moved to Verification', timestamp: daysAgo(5), actor: 'System', stage: WorkflowStage.VERIFIED },
-      { id: '5', type: 'DOCUMENT', title: 'Passport Uploaded', timestamp: daysAgo(6), actor: 'Ahmed Hassan', stage: WorkflowStage.REGISTERED },
-      { id: '6', type: 'SYSTEM', title: 'Profile Created', timestamp: daysAgo(6), actor: 'System', stage: WorkflowStage.REGISTERED },
+      { id: '3', type: 'STATUS_CHANGE', title: 'Verification Completed', description: 'All verification checks passed.', timestamp: daysAgo(4), actor: 'Sarah Connor', stage: WorkflowStage.VERIFIED },
+      { id: '4', type: 'STAGE_TRANSITION', title: 'Moved to Verification', description: 'Candidate moved to Verification stage.', timestamp: daysAgo(5), actor: 'System', stage: WorkflowStage.VERIFIED },
+      { id: '5', type: 'DOCUMENT', title: 'Passport Uploaded', description: 'Passport document uploaded by candidate.', timestamp: daysAgo(6), actor: 'Ahmed Hassan', stage: WorkflowStage.REGISTERED },
+      { id: '6', type: 'SYSTEM', title: 'Profile Created', description: 'Initial profile created.', timestamp: daysAgo(6), actor: 'System', stage: WorkflowStage.REGISTERED },
     ],
     experienceYears: 8,
     skills: ['Project Management', 'AutoCAD', 'Structural Analysis'],
@@ -198,7 +198,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     // No Data yet (New Reg)
     workflowLogs: [],
     timelineEvents: [
-      { id: '1', type: 'SYSTEM', title: 'Profile Created', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.REGISTERED },
+      { id: '1', type: 'SYSTEM', title: 'Profile Created', description: 'Initial profile created.', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.REGISTERED },
     ],
     experienceYears: 5,
     skills: ['Patient Care', 'ICU', 'Emergency Response'],
@@ -240,7 +240,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     workflowLogs: [],
     timelineEvents: [
       { id: '1', type: 'ALERT', title: 'SLA Breach: Embassy Stage', description: 'Candidate has been in Embassy stage for 16 days (Limit: 1)', timestamp: hoursAgo(2), actor: 'System', stage: WorkflowStage.EMBASSY_APPLIED, metadata: { isCritical: true } },
-      { id: '3', type: 'STAGE_TRANSITION', title: 'Moved to Embassy Applied', timestamp: daysAgo(16), actor: 'System', stage: WorkflowStage.EMBASSY_APPLIED },
+      { id: '3', type: 'STAGE_TRANSITION', title: 'Moved to Embassy Applied', description: 'Candidate moved to Embassy Applied stage.', timestamp: daysAgo(16), actor: 'System', stage: WorkflowStage.EMBASSY_APPLIED },
     ],
     experienceYears: 12,
     skills: ['Continental Cuisine', 'Menu Planning', 'Kitchen Management'],
@@ -278,7 +278,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     timelineEvents: [
       { id: '1', type: 'ALERT', title: 'SLA Warning', description: 'Verification is taking longer than expected.', timestamp: daysAgo(1), actor: 'System', stage: WorkflowStage.VERIFIED, metadata: { isCritical: false } },
       { id: '2', type: 'NOTE', title: 'Correction Requested', description: 'Passport photo is blurry. Please re-upload.', timestamp: daysAgo(2), actor: 'Sarah Connor', stage: WorkflowStage.VERIFIED },
-      { id: '3', type: 'STAGE_TRANSITION', title: 'Moved to Verification', timestamp: daysAgo(4), actor: 'System', stage: WorkflowStage.VERIFIED },
+      { id: '3', type: 'STAGE_TRANSITION', title: 'Moved to Verification', description: 'Candidate moved to Verification stage.', timestamp: daysAgo(4), actor: 'System', stage: WorkflowStage.VERIFIED },
     ],
     experienceYears: 3,
     skills: ['Customer Service', 'Multi-lingual', 'Booking Systems'],

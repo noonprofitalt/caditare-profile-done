@@ -166,7 +166,7 @@ const UserManagement: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-slate-500 text-xs">
-                                            {new Date(u.lastLogin).toLocaleDateString()}
+                                            {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'Never'}
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             {u.email !== 'admin@suhara.com' && u.id !== currentUser?.id && (
@@ -268,7 +268,11 @@ const UserManagement: React.FC = () => {
                                     >
                                         <option value="Viewer">Viewer (Read Only)</option>
                                         <option value="Recruiter">Recruiter (Manage Candidates)</option>
+                                        <option value="Manager">Manager</option>
                                         <option value="Admin">Admin (Full Access)</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="Compliance">Compliance</option>
+                                        <option value="Operations">Operations</option>
                                     </select>
                                 </div>
                             </div>
