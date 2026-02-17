@@ -21,11 +21,11 @@ export const styles = StyleSheet.create({
   headerSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline', // Align logo bottom with text bottom
+    alignItems: 'flex-end', // Align bottoms
     marginBottom: 20,
     borderBottomWidth: 2,
     borderBottomColor: '#1e1b4b',
-    paddingBottom: 20,
+    paddingBottom: 15,
     width: '100%',
   },
   headerLeft: {
@@ -55,10 +55,10 @@ export const styles = StyleSheet.create({
     marginBottom: 6,
   },
   contactBox: {
-    fontSize: 9, // Readable
-    fontFamily: 'Times-Roman',
-    color: '#0f172a', // Black/Slate
-    lineHeight: 1.3,
+    fontSize: 8.5,
+    fontFamily: 'Helvetica',
+    color: '#334155',
+    lineHeight: 1.4,
   },
 
   // 4️⃣ DOCUMENT TITLE
@@ -90,7 +90,7 @@ export const styles = StyleSheet.create({
   metaText: {
     fontSize: 8,
     fontFamily: 'Helvetica',
-    color: '#64748b',
+    color: '#475569',
   },
 
   // 6️⃣ SECTION HEADERS
@@ -129,8 +129,8 @@ export const styles = StyleSheet.create({
     color: '#000000',
   },
   bold: { fontFamily: 'Times-Bold' },
-  label: { fontSize: 9, fontFamily: 'Helvetica-Bold', width: 90 },
-  value: { fontSize: 9, fontFamily: 'Times-Roman', flex: 1 },
+  label: { fontSize: 9, fontFamily: 'Helvetica-Bold', width: 110 },
+  value: { fontSize: 10, fontFamily: 'Times-Roman', flex: 1 },
 
   // 8️⃣ TABLES (Strict Grid)
   table: {
@@ -213,7 +213,7 @@ export const styles = StyleSheet.create({
   },
   watermarkImage: {
     width: 650,
-    opacity: 0.08,
+    opacity: 0.05,
     transform: 'rotate(-45deg)',
   },
   watermarkText: {

@@ -17,14 +17,14 @@ export const HeaderSection: React.FC<HeaderSectionProps> = ({ reportId, generate
                 <View style={styles.headerLeft}>
                     <Image
                         src={logo}
-                        style={{ width: 140, height: 'auto', objectFit: 'contain' }}
+                        style={{ width: 160, height: 'auto', objectFit: 'contain' }}
                         cache={false}
                     />
                 </View>
 
                 {/* 2. TEXT BLOCK - RIGHT ALIGNED  */}
                 <View style={styles.headerRight}>
-                    <View style={{ alignItems: 'flex-end', justifyContent: 'center' }}>
+                    <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end' }}>
                         <Text style={[styles.contactBox, { textAlign: 'right', fontFamily: 'Helvetica-Bold', marginBottom: 2 }]}>
                             No 138, 2nd Floor, Colombo Road, Kurunegala
                         </Text>
