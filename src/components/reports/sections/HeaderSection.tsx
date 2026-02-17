@@ -13,19 +13,18 @@ export const HeaderSection: React.FC<HeaderSectionProps> = ({ reportId, generate
     return (
         <View>
             <View style={styles.headerSection}>
-                {/* 1. LOGO BLOCK (40%) - LOT BIGGER */}
+                {/* 1. LOGO BLOCK */}
                 <View style={styles.headerLeft}>
                     <Image
                         src={logo}
-                        style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+                        style={{ width: 140, height: 'auto', objectFit: 'contain' }}
                         cache={false}
                     />
                 </View>
 
-                {/* 2. TEXT BLOCK (60%) - RIGHT ALIGNED  */}
+                {/* 2. TEXT BLOCK - RIGHT ALIGNED  */}
                 <View style={styles.headerRight}>
-                    {/* The agency name/license is now redundant since it's in the logo image */}
-                    <View style={{ alignItems: 'flex-end', justifyContent: 'center', height: '100%' }}>
+                    <View style={{ alignItems: 'flex-end', justifyContent: 'center' }}>
                         <Text style={[styles.contactBox, { textAlign: 'right', fontFamily: 'Helvetica-Bold', marginBottom: 2 }]}>
                             No 138, 2nd Floor, Colombo Road, Kurunegala
                         </Text>

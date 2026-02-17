@@ -20,25 +20,23 @@ export const styles = StyleSheet.create({
   // 2️⃣ CLEAN HEADER (NO DIVIDERS - 45/55 Split for BIG LOGO)
   headerSection: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center', // Vertically centered
-    marginBottom: 15,
-    borderBottomWidth: 1.5, // Stronger baseline
-    borderBottomColor: '#1e1b4b', // Deep Indigo
-    paddingBottom: 15,
+    justifyContent: 'space-between',
+    alignItems: 'baseline', // Align logo bottom with text bottom
+    marginBottom: 20,
+    borderBottomWidth: 2,
+    borderBottomColor: '#1e1b4b',
+    paddingBottom: 20,
     width: '100%',
   },
   headerLeft: {
-    width: '45%', // BIG LOGO Zone (Increased)
+    width: '35%',
     justifyContent: 'center',
-    alignItems: 'flex-start', // Left aligned
-    paddingRight: 10,
+    alignItems: 'flex-start',
   },
   headerRight: {
-    width: '55%', // Text Zone (Decreased)
-    height: 80, // Match typical logo height for centering
-    justifyContent: 'center', // Vertical Center
-    alignItems: 'flex-end', // Right Aligned Info
+    width: '65%',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
   },
 
   // 3️⃣ EMBASSY TYPOGRAPHY - HIERARCHY
@@ -71,26 +69,28 @@ export const styles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign: 'center',
     marginBottom: 10,
-    marginTop: 5,
-    letterSpacing: 0.5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    paddingBottom: 5,
+    marginTop: 10,
+    letterSpacing: 1,
+    borderTopWidth: 1.5,
+    borderTopColor: '#000000',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#000000',
+    paddingVertical: 8,
   },
 
   // 5️⃣ META DATA ROW
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0', // Faint divider
-    paddingBottom: 5,
+    borderBottomColor: '#f1f5f9', // Very light divider
+    paddingBottom: 8,
   },
   metaText: {
-    fontSize: 9,
-    fontFamily: 'Times-Roman',
-    color: '#475569',
+    fontSize: 8,
+    fontFamily: 'Helvetica',
+    color: '#64748b',
   },
 
   // 6️⃣ SECTION HEADERS
@@ -129,8 +129,8 @@ export const styles = StyleSheet.create({
     color: '#000000',
   },
   bold: { fontFamily: 'Times-Bold' },
-  label: { fontSize: 9, fontFamily: 'Helvetica-Bold', width: 120 },
-  value: { fontSize: 10, fontFamily: 'Times-Roman', flex: 1 },
+  label: { fontSize: 9, fontFamily: 'Helvetica-Bold', width: 90 },
+  value: { fontSize: 9, fontFamily: 'Times-Roman', flex: 1 },
 
   // 8️⃣ TABLES (Strict Grid)
   table: {
@@ -212,8 +212,8 @@ export const styles = StyleSheet.create({
     zIndex: -1, // Behind everything
   },
   watermarkImage: {
-    width: 500, // Large
-    opacity: 0.04, // Very faint
+    width: 650,
+    opacity: 0.08,
     transform: 'rotate(-45deg)',
   },
   watermarkText: {
