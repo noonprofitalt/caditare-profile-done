@@ -16,7 +16,7 @@ const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const CandidateList = React.lazy(() => import('./components/CandidateList'));
 const CandidateDetail = React.lazy(() => import('./components/CandidateDetail'));
 const JobBoard = React.lazy(() => import('./components/JobBoard'));
-const TeamChat = React.lazy(() => import('./components/TeamChat'));
+const TeamChat = React.lazy(() => import('./components/chat/ModernTeamChat'));
 const PipelineBoard = React.lazy(() => import('./components/PipelineBoard'));
 const IntelligenceEngine = React.lazy(() => import('./components/IntelligenceEngine'));
 const Settings = React.lazy(() => import('./components/Settings'));

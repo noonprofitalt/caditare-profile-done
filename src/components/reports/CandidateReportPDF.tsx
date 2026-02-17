@@ -15,7 +15,7 @@ import { BureauSection } from './sections/BureauSection';
 import { ComplianceSnapshot } from './sections/ComplianceSnapshot';
 
 import { SystemReport } from '../../../services/reportService';
-import logo from './logo_suhara.jpg';
+import { SUHARA_LOGO_BASE64 as logo } from './logoBase64';
 
 interface CandidateReportPDFProps {
     candidate: Candidate;

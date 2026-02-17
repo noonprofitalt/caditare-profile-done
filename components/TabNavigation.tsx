@@ -16,7 +16,7 @@ interface TabNavigationProps {
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange, tabs }) => {
     return (
-        <div className="border-b border-slate-200 bg-white sticky top-0 z-20 backdrop-blur-xl bg-white/90">
+        <div className="border-b border-slate-200 bg-white sticky top-0 lg:top-16 z-20 backdrop-blur-xl bg-white/90 pb-safe">
             <div className="flex gap-1 px-4 md:px-8 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;

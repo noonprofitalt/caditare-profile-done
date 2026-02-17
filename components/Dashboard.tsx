@@ -87,7 +87,7 @@ const Dashboard: React.FC = () => {
                      <div className="flex items-center justify-between relative z-10">
                         <div>
                            <p className="text-slate-400 text-[10px] uppercase font-black tracking-widest mb-1">Workforce</p>
-                           <h3 className="text-4xl font-black text-white mb-1 tracking-tighter">{activeCandidates}</h3>
+                           <h3 className="text-2xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{activeCandidates}</h3>
                            <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 uppercase tracking-tight">
                               <Activity size={10} /> Online
                            </p>
@@ -106,7 +106,7 @@ const Dashboard: React.FC = () => {
                      <div className="flex items-center justify-between relative z-10">
                         <div>
                            <p className="text-red-100 text-[10px] uppercase font-black tracking-widest mb-1">Actions</p>
-                           <h3 className="text-4xl font-black text-white mb-1 tracking-tighter">{criticalIssues}</h3>
+                           <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{criticalIssues}</h3>
                            <p className="text-[10px] text-red-100 font-bold uppercase tracking-tight">Critical priority</p>
                         </div>
                         <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:rotate-12 transition-premium">
@@ -123,7 +123,7 @@ const Dashboard: React.FC = () => {
                      <div className="flex items-center justify-between relative z-10">
                         <div>
                            <p className="text-blue-100 text-[10px] uppercase font-black tracking-widest mb-1">Revenue</p>
-                           <h3 className="text-3xl font-black text-white mb-1 tracking-tighter">${projectedRevenue.toLocaleString()}</h3>
+                           <h3 className="text-2xl sm:text-3xl font-black text-white mb-1 tracking-tighter">${projectedRevenue.toLocaleString()}</h3>
                            <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight">Projected Value</p>
                         </div>
                         <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:translate-y-[-4px] transition-premium">
@@ -140,7 +140,7 @@ const Dashboard: React.FC = () => {
                      <div className="flex items-center justify-between relative z-10">
                         <div>
                            <p className="text-emerald-100 text-[10px] uppercase font-black tracking-widest mb-1">Deployed</p>
-                           <h3 className="text-4xl font-black text-white mb-1 tracking-tighter">{candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length}</h3>
+                           <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length}</h3>
                            <p className="text-[10px] text-emerald-100 font-bold uppercase tracking-tight">Ready for bill</p>
                         </div>
                         <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium">
@@ -258,8 +258,8 @@ const Dashboard: React.FC = () => {
                            <div
                               key={task.id}
                               onClick={() => navigate(`/candidates/${task.candidateId}`)}
-                              className={`p-6 hover:bg-slate-50/50 transition-premium cursor-pointer group flex items-start gap-5 border-l-4 transition-all duration-300 ${task.priority === 'Critical' ? 'border-red-500' :
-                                    task.priority === 'High' ? 'border-amber-500' : 'border-blue-500'
+                              className={`p-4 md:p-6 hover:bg-slate-50/50 transition-premium cursor-pointer group flex items-start gap-4 md:gap-5 border-l-4 transition-all duration-300 ${task.priority === 'Critical' ? 'border-red-500' :
+                                 task.priority === 'High' ? 'border-amber-500' : 'border-blue-500'
                                  }`}
                            >
                               <div className="pt-1 shrink-0 group-hover:scale-110 transition-premium">
@@ -271,7 +271,7 @@ const Dashboard: React.FC = () => {
                                  <div className="flex justify-between items-start gap-3 mb-2">
                                     <h4 className="font-black text-slate-900 group-hover:text-blue-600 transition-colors text-lg uppercase tracking-tight">{task.title}</h4>
                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 shadow-sm ${task.priority === 'Critical' ? 'bg-red-500 text-white shadow-red-100' :
-                                          task.priority === 'High' ? 'bg-amber-500 text-white shadow-amber-100' : 'bg-blue-600 text-white shadow-blue-100'
+                                       task.priority === 'High' ? 'bg-amber-500 text-white shadow-amber-100' : 'bg-blue-600 text-white shadow-blue-100'
                                        }`}>
                                        {task.priority}
                                     </span>
@@ -323,7 +323,7 @@ const Dashboard: React.FC = () => {
                         ))
                      ) : alerts.length > 0 ? alerts.map(alert => (
                         <div key={alert.id} className={`p-4 rounded-2xl border transition-premium hover:scale-[1.02] shadow-sm ${alert.type === 'DELAY' ? 'bg-red-50 border-red-100 text-red-800 shadow-red-100' :
-                              'bg-blue-50 border-blue-100 text-blue-800 shadow-blue-100'
+                           'bg-blue-50 border-blue-100 text-blue-800 shadow-blue-100'
                            }`}>
                            <div className="flex items-start gap-3">
                               <div className={`p-2 rounded-xl border ${alert.type === 'DELAY' ? 'bg-white/50 border-red-200 text-red-600' : 'bg-white/50 border-blue-200 text-blue-600'

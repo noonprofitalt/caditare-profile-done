@@ -1,17 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Candidate, Job } from "../types";
+import { Candidate, Job, SystemSnapshot } from "../types";
+import { GEMINI_PROMPTS } from "./geminiPrompts";
+import { CacheEntry, GeminiMatchResult, GeminiReportInsightsResult } from "./geminiTypes";
 
 const API_KEY_STORAGE_KEY = 'globalworkforce_gemini_api_key';
 const CACHE_KEY_PREFIX = 'gemini_cache_';
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes
 
-interface CacheEntry<T> {
-    timestamp: number;
-    data: T;
-}
-
 export class GeminiService {
-    private static cache: Map<string, CacheEntry<any>> = new Map();
+    private static cache: Map<string, CacheEntry<unknown>> = new Map();
 
     private static getApiKey(): string | null {
         return localStorage.getItem(API_KEY_STORAGE_KEY);
@@ -66,72 +63,13 @@ export class GeminiService {
         }
     }
 
-    // --- Prompts ---
-
-    private static PROMPTS = {
-        ANALYZE: (c: Candidate) => `
-      Analyze this candidate for a recruitment ERP system:
-      Name: ${c.name}
-      Role: ${c.role}
-      Experience: ${c.experienceYears} years
-      Skills: ${c.professionalProfile?.skills?.join(", ") || 'None listed'}
-      Location: ${c.location}
-      Current Stage: ${c.stage}
-      
-      Provide a professional summary, assessment of their fit for the role, and recommended next steps.
-      Format the output in clean Markdown.
-    `,
-        MATCH: (c: Candidate, j: Job) => `
-      Match this candidate against the job requirements:
-      
-      CANDIDATE:
-      Name: ${c.name}
-      Role: ${c.role}
-      Skills: ${c.professionalProfile?.skills?.join(", ") || 'None listed'}
-      Experience: ${c.experienceYears} years
-      
-      JOB:
-      Title: ${j.title}
-      Requirements: ${j.requirements?.join(", ") || 'None listed'}
-      Description: ${j.description}
-      
-      Provide a match score between 0 and 100 and a brief reason (1-2 sentences).
-      Output ONLY a JSON object like this: {"score": 85, "reason": "Excellent match..."}
-    `,
-        REPORT_INSIGHTS: (c: Candidate, riskScore: string) => `
-      Generate executive recruitment insights for this candidate:
-      Name: ${c.name}
-      Current Stage: ${c.stage}
-      Calculated Risk Score: ${riskScore}
-      Skills: ${c.professionalProfile?.skills?.join(", ") || 'None listed'}
-      Experience: ${c.experienceYears} years
-      Target Job Roles: ${c.professionalProfile?.jobRoles?.map(r => typeof r === 'string' ? r : r.title).join(", ") || 'General Recruitment'}
-      
-      Provide the following in JSON format:
-      1. strengths: Array of 3 key professional strengths.
-      2. risks: Array of 2-3 potential recruitment or performance risks.
-      3. placementProbability: A number (0-100) representing the likelihood of successful deployment.
-      4. recommendedRoles: Array of 2 alternate or specific job roles they are qualified for.
-      
-      Return ONLY the JSON object.
-    `,
-        ANALYZE_SYSTEM: (snapshot: any) => `
-      Analyze this recruitment agency system snapshot and provide an executive summary:
-      KPIs: ${JSON.stringify(snapshot.kpi)}
-      Bottlenecks: ${JSON.stringify(snapshot.bottlenecks)}
-      Financials: ${JSON.stringify(snapshot.financials)}
-      
-      Provide a concise 3-4 sentence professional assessment of the system's operational health, identifying the most critical focus area for the management team.
-    `
-    };
-
     // --- Public Methods ---
 
-    static async getSystemAnalysis(snapshot: any): Promise<string> {
+    static async getSystemAnalysis(snapshot: SystemSnapshot): Promise<string> {
         try {
             const result = await this.withRetry(async () => {
                 const model = await this.getModel();
-                const response = await model.generateContent(this.PROMPTS.ANALYZE_SYSTEM(snapshot));
+                const response = await model.generateContent(GEMINI_PROMPTS.ANALYZE_SYSTEM(snapshot));
                 return await response.response.text();
             });
             return result;
@@ -141,9 +79,9 @@ export class GeminiService {
         }
     }
 
-    static async getReportInsights(candidate: Candidate, riskScore: string): Promise<any> {
+    static async getReportInsights(candidate: Candidate, riskScore: string): Promise<GeminiReportInsightsResult> {
         const cacheKey = this.getCacheKey('report_insights', candidate.id);
-        const cached = this.getFromCache<any>(cacheKey);
+        const cached = this.getFromCache<GeminiReportInsightsResult>(cacheKey);
         if (cached) {
             console.log('Gemini: Serving report insights from cache');
             return cached;
@@ -152,19 +90,20 @@ export class GeminiService {
         try {
             const result = await this.withRetry(async () => {
                 const model = await this.getModel();
-                const response = await model.generateContent(this.PROMPTS.REPORT_INSIGHTS(candidate, riskScore));
+                const response = await model.generateContent(GEMINI_PROMPTS.REPORT_INSIGHTS(candidate, riskScore));
                 const text = await response.response.text();
 
                 const jsonMatch = text.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) throw new Error("No JSON found in response");
 
-                return JSON.parse(jsonMatch[0]);
+                return JSON.parse(jsonMatch[0]) as GeminiReportInsightsResult;
             });
 
             this.setCache(cacheKey, result);
             return result;
         } catch (error: unknown) {
             console.error("Gemini Report Insights Error:", error);
+            // Fallback object matching the type
             return {
                 strengths: candidate.professionalProfile?.skills?.slice(0, 3) || ['Candidate', 'Profile', 'Ready'],
                 risks: riskScore === 'HIGH' ? ['High Risk Assessment', 'Documentation Gaps'] : ['None obvious'],
@@ -185,7 +124,7 @@ export class GeminiService {
         try {
             const result = await this.withRetry(async () => {
                 const model = await this.getModel();
-                const response = await model.generateContent(this.PROMPTS.ANALYZE(candidate));
+                const response = await model.generateContent(GEMINI_PROMPTS.ANALYZE(candidate));
                 const responseText = await response.response.text();
                 return responseText;
             });
@@ -198,19 +137,6 @@ export class GeminiService {
             return `AI Analysis Failed: ${errorMessage}. Please check your API key in Settings.`;
         }
     }
-
-    private static SYSTEM_INSTRUCTIONS = `
-You are the GlobalWorkforce Intelligence Advisor, a high-level recruitment data analyst and operational strategist. 
-Your goal is to provide precise, data-driven, and actionable insights to agency managers.
-
-- Maintain a professional, executive tone.
-- When provided with SYSTEM SNAPSHOT data, use it to justify your claims.
-- If a user asks about candidate health, refer to SLA compliance and data integrity.
-- If a user asks about financials, focus on collected vs. projected revenue.
-- Be proactive: if you see a bottleneck (e.g. medical stage delay), mention it.
-- Format your responses using clean Markdown with bold headers and bullet points for readability.
-- If you don't have enough data to answer a specific query, state what info is missing.
-`;
 
     static async chat(message: string, context?: string): Promise<string> {
         try {
@@ -235,7 +161,7 @@ Your goal is to provide precise, data-driven, and actionable insights to agency 
                 }
 
                 const prompt = `
-${this.SYSTEM_INSTRUCTIONS}
+${GEMINI_PROMPTS.SYSTEM_INSTRUCTIONS}
 
 USER CONTEXT/SYSTEM DATA:
 ${activeContext || "No specific system context provided for this query."}
@@ -256,9 +182,9 @@ RESPONSE:`;
         }
     }
 
-    static async getMatchScore(candidate: Candidate, job: Job): Promise<{ score: number, reason: string }> {
+    static async getMatchScore(candidate: Candidate, job: Job): Promise<GeminiMatchResult> {
         const cacheKey = this.getCacheKey('match', `${candidate.id}_${job.id}`);
-        const cached = this.getFromCache<{ score: number, reason: string }>(cacheKey);
+        const cached = this.getFromCache<GeminiMatchResult>(cacheKey);
         if (cached) {
             console.log('Gemini: Serving match score from cache');
             return cached;
@@ -267,14 +193,14 @@ RESPONSE:`;
         try {
             const result = await this.withRetry(async () => {
                 const model = await this.getModel();
-                const response = await model.generateContent(this.PROMPTS.MATCH(candidate, job));
+                const response = await model.generateContent(GEMINI_PROMPTS.MATCH(candidate, job));
                 const text = await response.response.text();
 
                 // Robust JSON extraction
                 const jsonMatch = text.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) throw new Error("No JSON found in response");
 
-                return JSON.parse(jsonMatch[0]);
+                return JSON.parse(jsonMatch[0]) as GeminiMatchResult;
             });
 
             this.setCache(cacheKey, result);

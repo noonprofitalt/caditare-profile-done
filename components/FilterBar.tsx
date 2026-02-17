@@ -66,7 +66,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
     };
 
     return (
-        <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="bg-white border-b border-slate-200 sticky top-16 lg:top-[64px] z-10">
             <div className="px-6 py-4 space-y-4">
                 {/* Search Bar */}
                 <div className="flex items-center gap-3">

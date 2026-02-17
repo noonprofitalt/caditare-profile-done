@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Hash, MessageCircle, Shield, X, Briefcase, UserCircle, Bell, Plus } from 'lucide-react';
 import { ChatService } from '../services/chatService';
+import { useAuth } from '../context/AuthContext';
 import { CandidateService } from '../services/candidateService';
 import { ChatChannel, ChatMessage, Candidate, ChatMessageContext } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ interface GlobalChatProps {
 
 const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
     const navigate = useNavigate();
+    const { user: currentUser } = useAuth();
     const [channels, setChannels] = useState<ChatChannel[]>([]);
     const [activeChannelId, setActiveChannelId] = useState<string>('c1');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -102,7 +104,15 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
     const handleSend = async () => {
         if (!inputValue.trim()) return;
 
-        await ChatService.sendMessage(activeChannelId, inputValue, pendingContext);
+        if (!currentUser) return;
+
+        await ChatService.sendMessage(
+            activeChannelId,
+            inputValue,
+            currentUser.id,
+            currentUser.name,
+            pendingContext
+        );
         const data = await ChatService.getMessages(activeChannelId, { limit: 50 });
         setMessages(data.messages);
         setInputValue('');

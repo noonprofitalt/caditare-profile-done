@@ -249,7 +249,7 @@ export const useSocketConnection = () => {
 /**
  * Hook for managing message reactions
  */
-export const useReactions = () => {
+export const useReactions = (channelId: string | null) => {
     const [messages, setMessages] = useState<Map<string, ChatMessage>>(new Map());
 
     useEffect(() => {
@@ -302,12 +302,14 @@ export const useReactions = () => {
     }, []);
 
     const addReaction = useCallback((messageId: string, emoji: string) => {
-        ChatService.addReaction(messageId, emoji);
-    }, []);
+        if (!channelId) return;
+        ChatService.addReaction(channelId, messageId, emoji);
+    }, [channelId]);
 
     const removeReaction = useCallback((messageId: string, emoji: string) => {
-        ChatService.removeReaction(messageId, emoji);
-    }, []);
+        if (!channelId) return;
+        ChatService.removeReaction(channelId, messageId, emoji);
+    }, [channelId]);
 
     return { addReaction, removeReaction };
 };

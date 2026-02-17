@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View, Image } from '@react-pdf/renderer';
 import { styles } from '../styles';
-import logo from '../logo_suhara.jpg';
+import { SUHARA_LOGO_BASE64 as logo } from '../logoBase64';
 
 interface HeaderSectionProps {
     reportId: string;

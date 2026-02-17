@@ -228,7 +228,7 @@ const CandidateList: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
-      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-30 px-4 md:px-6 py-4">
+      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-16 z-30 px-4 md:px-6 py-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Workforce Registry</h1>
@@ -369,7 +369,7 @@ const CandidateList: React.FC = () => {
             <List
               style={{ height: listHeight - 40, width: '100%' }}
               rowCount={filteredCandidates.length}
-              rowHeight={72}
+              rowHeight={window.innerWidth < 768 ? 160 : 72}
               rowComponent={CandidateRow}
               rowProps={{
                 candidates: filteredCandidates,

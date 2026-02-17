@@ -754,11 +754,21 @@ export interface MessageReaction {
   users: Array<{ id: string; name: string }>;
 }
 
+export interface ChatAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: 'image' | 'video' | 'file';
+  size?: string;
+  mimeType?: string;
+}
+
 export interface ChatMessageContext {
   type: 'candidate' | 'job' | 'finance' | 'system' | 'CANDIDATE' | 'JOB' | 'SYSTEM_EVENT';
   id: string;
   title?: string;
   label?: string;
+  icon?: string; // Added for icon support
   metadata?: Record<string, unknown>;
 }
 
@@ -776,6 +786,7 @@ export interface ChatMessage {
   isDeleted?: boolean;
   isEdited?: boolean;
   reactions?: MessageReaction[];
+  attachments?: ChatAttachment[]; // Added attachments
   parentMessageId?: string;
   replyCount?: number;
   context?: ChatMessageContext;
