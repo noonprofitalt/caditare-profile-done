@@ -11,35 +11,30 @@ interface PreferredCountriesSelectorProps {
     allowedRegions?: string[]; // New: Filter by specific regions (e.g., ['Europe'])
 }
 
-// Grouped by region for better UX
+// Grouped by region — Suhara target countries
 const COUNTRIES_BY_REGION = {
-    'Middle East (GCC)': [
-        { name: 'Saudi Arabia', flag: '🇸🇦', popular: true },
-        { name: 'United Arab Emirates', flag: '🇦🇪', popular: true },
-        { name: 'Qatar', flag: '🇶🇦', popular: true },
-        { name: 'Kuwait', flag: '🇰🇼', popular: true },
-        { name: 'Oman', flag: '🇴🇲', popular: true },
-        { name: 'Bahrain', flag: '🇧🇭', popular: true }
-    ],
-    'Asia Pacific': [
-        { name: 'Singapore', flag: '🇸🇬', popular: true },
-        { name: 'Malaysia', flag: '🇲🇾', popular: true },
-        { name: 'Hong Kong', flag: '🇭🇰', popular: false },
-        { name: 'Japan', flag: '🇯🇵', popular: false },
-        { name: 'South Korea', flag: '🇰🇷', popular: false },
-        { name: 'Maldives', flag: '🇲🇻', popular: false }
-    ],
     'Europe': [
         { name: 'Romania', flag: '🇷🇴', popular: true },
+        { name: 'Croatia', flag: '🇭🇷', popular: true },
+        { name: 'Malta', flag: '🇲🇹', popular: true },
         { name: 'Poland', flag: '🇵🇱', popular: true },
-        { name: 'Italy', flag: '🇮🇹', popular: false },
-        { name: 'Cyprus', flag: '🇨🇾', popular: false },
-        { name: 'Greece', flag: '🇬🇷', popular: false }
+        { name: 'Cyprus', flag: '🇨🇾', popular: true },
+        { name: 'Turkey', flag: '🇹🇷', popular: false },
+        { name: 'Serbia', flag: '🇷🇸', popular: false }
     ],
-    'Other': [
-        { name: 'Israel', flag: '🇮🇱', popular: false },
-        { name: 'Lebanon', flag: '🇱🇧', popular: false },
-        { name: 'Jordan', flag: '🇯🇴', popular: false }
+    'Middle East': [
+        { name: 'United Arab Emirates', flag: '🇦🇪', popular: true },
+        { name: 'Israel', flag: '🇮🇱', popular: true },
+        { name: 'Saudi Arabia', flag: '🇸🇦', popular: true },
+        { name: 'Kuwait', flag: '🇰🇼', popular: true },
+        { name: 'Qatar', flag: '🇶🇦', popular: true },
+        { name: 'Bahrain', flag: '🇧🇭', popular: true },
+        { name: 'Jordan', flag: '🇯🇴', popular: true },
+        { name: 'Oman', flag: '🇴🇲', popular: true }
+    ],
+    'Southeast Asia': [
+        { name: 'Malaysia', flag: '🇲🇾', popular: true },
+        { name: 'Singapore', flag: '🇸🇬', popular: true }
     ]
 };
 
@@ -108,8 +103,8 @@ const PreferredCountriesSelector: React.FC<PreferredCountriesSelectorProps> = ({
     const getBadgeColor = (countryName: string): string => {
         for (const [region, countries] of Object.entries(COUNTRIES_BY_REGION)) {
             if (countries.some(c => c.name === countryName)) {
-                if (region === 'Middle East (GCC)') return 'bg-amber-100 text-amber-700 border-amber-200';
-                if (region === 'Asia Pacific') return 'bg-blue-100 text-blue-700 border-blue-200';
+                if (region === 'Middle East') return 'bg-amber-100 text-amber-700 border-amber-200';
+                if (region === 'Southeast Asia') return 'bg-blue-100 text-blue-700 border-blue-200';
                 if (region === 'Europe') return 'bg-purple-100 text-purple-700 border-purple-200';
                 return 'bg-slate-100 text-slate-700 border-slate-200';
             }

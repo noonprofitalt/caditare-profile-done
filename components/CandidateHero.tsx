@@ -15,7 +15,7 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
                 return (
                     <div className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-300 rounded-lg backdrop-blur-sm">
                         <div className="w-2.5 h-2.5 bg-red-300 rounded-full animate-pulse" />
-                        <span className="text-sm font-bold text-white">QUICK ADD</span>
+                        <span className="text-sm font-bold text-white">QUICK FORM</span>
                     </div>
                 );
             case ProfileCompletionStatus.PARTIAL:
@@ -86,7 +86,7 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
         return (
             <button className="flex items-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-lg hover:bg-blue-50 transition-colors font-semibold shadow-lg">
                 <Calendar size={20} />
-                Schedule Interview
+                Schedule
             </button>
         );
     };
@@ -153,20 +153,20 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 pt-3 border-t border-white/5">
                             <div>
                                 <div className="text-lg font-bold tracking-tight text-blue-400">{candidate.profileCompletionPercentage}%</div>
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Integrity</div>
+                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Integrity Score</div>
                             </div>
                             <div>
                                 <div className="text-lg font-bold tracking-tight">{candidate.documents?.length || 0}</div>
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Repository</div>
+                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Documents</div>
                             </div>
                             <div>
                                 <div className="text-lg font-bold tracking-tight">{candidate.timelineEvents?.length || 0}</div>
-                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Operations</div>
+                                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Activity</div>
                             </div>
                             {candidate.experienceYears !== undefined && (
                                 <div>
                                     <div className="text-lg font-bold tracking-tight text-emerald-400">{candidate.experienceYears}Y</div>
-                                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Experience</div>
+                                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Years Exp.</div>
                                 </div>
                             )}
                         </div>
@@ -176,13 +176,13 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
                     <div className="flex flex-col gap-2 w-full md:w-auto self-center">
                         <button className="flex items-center justify-center gap-2 px-6 py-2 bg-white text-blue-700 rounded-lg hover:bg-blue-50 transition-colors font-bold text-xs shadow-md">
                             <Calendar size={16} />
-                            Schedule Interview
+                            Schedule
                         </button>
                         <Link
                             to={`/candidates`}
                             className="flex items-center justify-center gap-2 px-6 py-2 bg-white/5 text-white rounded-lg hover:bg-white/10 transition-premium font-bold text-[9px] uppercase tracking-widest border border-white/10 shadow-md"
                         >
-                            Return to Registry
+                            Back to Candidates
                         </Link>
                     </div>
                 </div>

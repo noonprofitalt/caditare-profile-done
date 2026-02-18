@@ -180,7 +180,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     experienceYears: 8,
     skills: ['Project Management', 'AutoCAD', 'Structural Analysis'],
     location: 'Cairo, Egypt',
-    preferredCountries: ['UAE', 'Qatar', 'Saudi Arabia'],
+    preferredCountries: ['United Arab Emirates', 'Qatar', 'Saudi Arabia'],
     avatarUrl: 'https://picsum.photos/150/150?random=1',
   }, 8),
 
@@ -203,7 +203,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     experienceYears: 5,
     skills: ['Patient Care', 'ICU', 'Emergency Response'],
     location: 'Manila, Philippines',
-    preferredCountries: ['UK', 'Canada', 'Australia'],
+    preferredCountries: ['Romania', 'Poland', 'Malta'],
     avatarUrl: 'https://picsum.photos/150/150?random=2',
   }, 2),
 
@@ -245,7 +245,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     experienceYears: 12,
     skills: ['Continental Cuisine', 'Menu Planning', 'Kitchen Management'],
     location: 'Mumbai, India',
-    preferredCountries: ['Europe', 'UAE'],
+    preferredCountries: ['Croatia', 'United Arab Emirates'],
     avatarUrl: 'https://picsum.photos/150/150?random=3',
   }, 12),
 
@@ -283,7 +283,7 @@ export const MOCK_CANDIDATES: Candidate[] = [
     experienceYears: 3,
     skills: ['Customer Service', 'Multi-lingual', 'Booking Systems'],
     location: 'Sofia, Bulgaria',
-    preferredCountries: ['Germany', 'Austria'],
+    preferredCountries: ['Cyprus', 'Romania'],
     avatarUrl: 'https://picsum.photos/150/150?random=4',
   }, 8),
 ];

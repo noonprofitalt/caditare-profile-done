@@ -186,10 +186,10 @@ const QuickAddForm: React.FC = () => {
                             <UserPlus className="text-white" size={24} />
                         </div>
                         <div>
-                            <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase text-slate-900 leading-none">Record Enrollment</h1>
+                            <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase text-slate-900 leading-none">Quick Form</h1>
                             <div className="flex items-center gap-2 text-[10px] text-blue-600 font-black uppercase tracking-[0.2em] mt-1">
                                 <TrendingUp size={12} className="animate-pulse" />
-                                <span>High Priority Lead Capture</span>
+                                <span>Add a new candidate</span>
                             </div>
                         </div>
                     </div>
@@ -207,9 +207,9 @@ const QuickAddForm: React.FC = () => {
                                 <AlertCircle size={20} />
                             </div>
                             <div>
-                                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-1">Suhara Fast-Track Protocol</h3>
+                                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-1">Quick Add</h3>
                                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                    Executing rapid lead capture. Technical profile details, documents, and biometric records can be appended post-validation.
+                                    Fill in the basic details. You can add documents, photos, and other info later.
                                 </p>
                             </div>
                         </div>
@@ -221,7 +221,7 @@ const QuickAddForm: React.FC = () => {
                             <section>
                                 <div className="flex items-center gap-3 mb-8">
                                     <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
-                                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">1. Core Identity</h2>
+                                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">1. Personal Details</h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2 space-y-6">
@@ -234,7 +234,7 @@ const QuickAddForm: React.FC = () => {
                                                     value={formData.firstName}
                                                     onChange={handleChange}
                                                     className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 ${errors.firstName ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
-                                                    placeholder="GIVEN NAME"
+                                                    placeholder="First name"
                                                 />
                                                 {errors.firstName && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-tight ml-1">{errors.firstName}</p>}
                                             </div>
@@ -246,7 +246,7 @@ const QuickAddForm: React.FC = () => {
                                                     value={formData.middleName}
                                                     onChange={handleChange}
                                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                                                    placeholder="PATRONYMIC"
+                                                    placeholder="Middle name"
                                                 />
                                             </div>
                                         </div>
@@ -258,14 +258,14 @@ const QuickAddForm: React.FC = () => {
                                                 value={formData.name}
                                                 onChange={handleChange}
                                                 className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 ${errors.name ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
-                                                placeholder="COMPLETE IDENTITY STRING"
+                                                placeholder="Full name"
                                             />
                                             {errors.name && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-tight ml-1">{errors.name}</p>}
                                         </div>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Identity Number (NIC)</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">NIC Number</label>
                                         <input
                                             type="text"
                                             name="nic"
@@ -273,7 +273,7 @@ const QuickAddForm: React.FC = () => {
                                             onChange={handleChange}
                                             onBlur={() => handleBlur('nic')}
                                             className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 ${errors.nic ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
-                                            placeholder="VERIFICATION CODE"
+                                            placeholder="NIC number"
                                         />
                                         {formData.dob && (
                                             <div className="flex items-center gap-2 mt-2 ml-1">
@@ -292,19 +292,19 @@ const QuickAddForm: React.FC = () => {
                                             value={formData.email}
                                             onChange={handleChange}
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                                            placeholder="COMMUNICATION ENDPOINT"
+                                            placeholder="Email address"
                                         />
                                     </div>
 
                                     <div className="md:col-span-2 space-y-1.5">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Residency</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
                                         <input
                                             type="text"
                                             name="address"
                                             value={formData.address}
                                             onChange={handleChange}
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                                            placeholder="GEOGRAPHIC COORDINATES"
+                                            placeholder="Address"
                                         />
                                     </div>
                                 </div>
@@ -314,7 +314,7 @@ const QuickAddForm: React.FC = () => {
                             <section>
                                 <div className="flex items-center gap-3 mb-8">
                                     <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
-                                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">2. Communication</h2>
+                                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">2. Contact Details</h2>
                                 </div>
                                 <div className="glass-card p-6 bg-slate-50/50 border-slate-100">
                                     <MultiPhoneInput
@@ -343,25 +343,25 @@ const QuickAddForm: React.FC = () => {
                             <section>
                                 <div className="flex items-center gap-3 mb-8">
                                     <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
-                                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">3. Deployment</h2>
+                                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">3. Job Preferences</h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1.5">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Designated Role</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Role</label>
                                         <input
                                             type="text"
                                             name="role"
                                             value={formData.role}
                                             onChange={handleChange}
                                             className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 ${errors.role ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
-                                            placeholder="SPECIALIZATION"
+                                            placeholder="e.g. Nurse, Driver, Chef"
                                         />
                                         {errors.role && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-tight ml-1">{errors.role}</p>}
                                     </div>
 
                                     <div className="md:col-span-2">
                                         <PreferredCountriesSelector
-                                            label="Target Territories"
+                                            label="Preferred Countries"
                                             selectedCountries={formData.preferredCountries}
                                             onChange={(countries) => {
                                                 setFormData(prev => ({ ...prev, preferredCountries: countries }));
@@ -378,14 +378,14 @@ const QuickAddForm: React.FC = () => {
                             {/* Notes */}
                             <section>
                                 <div className="space-y-1.5">
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Strategic Annotations</label>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes</label>
                                     <textarea
                                         name="notes"
                                         value={formData.notes}
                                         onChange={handleChange}
                                         rows={4}
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 resize-none"
-                                        placeholder="ADDITIONAL INTEL..."
+                                        placeholder="Add any notes..."
                                     />
                                 </div>
                             </section>
@@ -398,14 +398,14 @@ const QuickAddForm: React.FC = () => {
                                 onClick={() => navigate('/candidates')}
                                 className="w-full md:w-auto px-8 py-3.5 text-slate-500 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-premium font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95"
                             >
-                                Abandon Mission
+                                Cancel
                             </button>
                             <button
                                 type="submit"
                                 className="w-full md:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-premium font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-slate-900/40 active:scale-95 flex items-center justify-center gap-3"
                             >
                                 <Save size={18} className="text-blue-400" />
-                                Authorize Enrollment
+                                Save Candidate
                             </button>
                         </div>
                     </form>
@@ -426,8 +426,8 @@ const QuickAddForm: React.FC = () => {
                                             <TrendingUp size={18} />
                                         </div>
                                         <div>
-                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Integrity</h3>
-                                            <p className="text-[9px] font-bold text-slate-300 uppercase">Verification Level</p>
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Profile</h3>
+                                            <p className="text-[9px] font-bold text-slate-300 uppercase">Completion</p>
                                         </div>
                                     </div>
                                     <span className="text-3xl font-black tracking-tighter text-blue-600 leading-none">{completionPercentage}%</span>
@@ -443,11 +443,11 @@ const QuickAddForm: React.FC = () => {
                                         completionPercentage < 80 ? 'bg-amber-50 border-amber-100 text-amber-600' :
                                             'bg-emerald-50 border-emerald-100 text-emerald-600'
                                         }`}>
-                                        <span className="text-[10px] font-black uppercase tracking-widest leading-none block opacity-60">Status Assessment</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest leading-none block opacity-60">Status</span>
                                         <span className="text-sm font-black mt-2 block tracking-tight">
-                                            {completionPercentage < 40 ? 'INSUFFICIENT DATA' :
-                                                completionPercentage < 80 ? 'PARTIAL ENROLLMENT' :
-                                                    'REGISTRY READY'}
+                                            {completionPercentage < 40 ? 'NEEDS MORE INFO' :
+                                                completionPercentage < 80 ? 'ALMOST COMPLETE' :
+                                                    'COMPLETE'}
                                         </span>
                                     </div>
                                 </div>
@@ -459,10 +459,10 @@ const QuickAddForm: React.FC = () => {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
                         <div className="flex items-center gap-2 mb-4">
                             <AlertCircle size={14} className="text-blue-400" />
-                            <h4 className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Security Notice</h4>
+                            <h4 className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Note</h4>
                         </div>
                         <p className="text-xs text-slate-400 font-medium leading-relaxed relative z-10">
-                            Duplicate detection is active. Personnel records are cross-checked against NIC and mobile identifiers to ensure registry unique integrity.
+                            Duplicate detection is active. Records are checked against NIC and phone numbers to prevent duplicates.
                         </p>
                     </div>
                 </div>
@@ -477,16 +477,16 @@ const QuickAddForm: React.FC = () => {
                                 <AlertCircle size={32} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Identity Conflict</h3>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Duplicate Found</h3>
                                 <p className="text-sm text-slate-500 font-medium mt-1">
-                                    A candidate with matching {duplicateFields.join(', ')} already exists in the Suhara Registry.
+                                    A candidate with matching {duplicateFields.join(', ')} already exists.
                                 </p>
                             </div>
                         </div>
 
                         {duplicateMatches.length > 0 && (
                             <div className="bg-slate-50 rounded-2xl p-6 mb-8 border border-slate-100">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Collision Data</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Existing Record</p>
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-slate-100">
                                         <span className="text-[9px] font-black text-slate-400 uppercase">Name</span>
@@ -515,13 +515,13 @@ const QuickAddForm: React.FC = () => {
                                 onClick={handleContinueAnyway}
                                 className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-amber-500/20 transition-premium hover:shadow-2xl active:scale-95"
                             >
-                                Admin Override
+                                Continue Anyway
                             </button>
                             <button
                                 onClick={() => setShowDuplicateModal(false)}
                                 className="w-full py-4 text-slate-400 hover:text-slate-600 font-black text-[10px] uppercase tracking-widest transition-all"
                             >
-                                Cancel Operation
+                                Cancel
                             </button>
                         </div>
                     </div>

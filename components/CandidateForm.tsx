@@ -514,11 +514,23 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
 
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                 <h5 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                  <Globe size={14} className="text-amber-600" /> Middle East (GCC) Preferences
+                  <Globe size={14} className="text-amber-600" /> Middle East Preferences
                 </h5>
                 <PreferredCountriesSelector
                   label=""
-                  allowedRegions={['Middle East (GCC)']}
+                  allowedRegions={['Middle East']}
+                  selectedCountries={formData.preferredCountries}
+                  onChange={(countries) => setFormData(p => ({ ...p, preferredCountries: countries }))}
+                />
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <h5 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                  <Globe size={14} className="text-blue-600" /> Southeast Asia Preferences
+                </h5>
+                <PreferredCountriesSelector
+                  label=""
+                  allowedRegions={['Southeast Asia']}
                   selectedCountries={formData.preferredCountries}
                   onChange={(countries) => setFormData(p => ({ ...p, preferredCountries: countries }))}
                 />

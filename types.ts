@@ -19,16 +19,28 @@ export enum WorkflowStage {
 }
 
 export enum Country {
-  SAUDI_ARABIA = 'Saudi Arabia',
+  // Europe
+  ROMANIA = 'Romania',
+  CROATIA = 'Croatia',
+  MALTA = 'Malta',
+  POLAND = 'Poland',
+  CYPRUS = 'Cyprus',
+  TURKEY = 'Turkey',
+  SERBIA = 'Serbia',
+
+  // Middle East
   UAE = 'United Arab Emirates',
-  QATAR = 'Qatar',
+  ISRAEL = 'Israel',
+  SAUDI_ARABIA = 'Saudi Arabia',
   KUWAIT = 'Kuwait',
-  OMAN = 'Oman',
+  QATAR = 'Qatar',
   BAHRAIN = 'Bahrain',
+  JORDAN = 'Jordan',
+  OMAN = 'Oman',
+
+  // Southeast Asia
   MALAYSIA = 'Malaysia',
   SINGAPORE = 'Singapore',
-  ROMANIA = 'Romania',
-  POLAND = 'Poland',
 }
 
 export enum MedicalStatus {

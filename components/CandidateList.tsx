@@ -231,10 +231,10 @@ const CandidateList: React.FC = () => {
       <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-16 z-30 px-4 md:px-6 py-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Workforce Registry</h1>
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Candidates</h1>
             <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">
               <Users size={12} className="text-blue-500" />
-              <span>{candidates.length} Global Personnel Integrated</span>
+              <span>{candidates.length} Total Candidates</span>
             </div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
@@ -246,20 +246,20 @@ const CandidateList: React.FC = () => {
                 }`}
             >
               <div className={`w-1.5 h-1.5 rounded-full ${isIntegrityScanActive ? 'bg-red-500 animate-ping' : 'bg-slate-300'}`} />
-              {isIntegrityScanActive ? 'integrity LIVE' : 'Integrity scan'}
+              {isIntegrityScanActive ? 'Checking...' : 'Data Check'}
             </button>
             <div className="hidden md:block h-6 w-px bg-slate-200 mx-1" />
             <Link
               to="/candidates/quick-add"
               className="hidden md:block px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-premium text-[10px] font-black uppercase tracking-widest"
             >
-              Quick Add
+              Quick Create
             </Link>
             <Link
               to="/applications/new"
               className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-premium text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200"
             >
-              Enroll New
+              Full Form
             </Link>
           </div>
         </div>
@@ -286,14 +286,14 @@ const CandidateList: React.FC = () => {
               <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-lg shadow-blue-500/20 animate-pulse">
                 {selectedCandidateIds.length}
               </span>
-              <span className="hidden md:inline text-xs font-black uppercase tracking-widest text-slate-400">Personnel Selected</span>
+              <span className="hidden md:inline text-xs font-black uppercase tracking-widest text-slate-400">Candidates Selected</span>
             </div>
             <button
               onClick={() => handleBulkExport('csv')}
               className="flex items-center gap-2 px-4 py-2 bg-white text-slate-900 rounded-xl hover:bg-slate-100 transition-premium text-xs font-black uppercase tracking-tight shadow-xl"
             >
               <Download size={14} />
-              <span className="hidden md:inline">Export Batch CSV</span>
+              <span className="hidden md:inline">Export CSV</span>
               <span className="md:hidden">Export</span>
             </button>
             <div className="flex items-center gap-3 pl-4 border-l border-slate-800">
@@ -301,7 +301,7 @@ const CandidateList: React.FC = () => {
                 onClick={handleSelectAll}
                 className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-tighter transition-premium"
               >
-                {selectedCandidateIds.length === filteredCandidates.length ? 'Reset' : 'ALL'}
+                {selectedCandidateIds.length === filteredCandidates.length ? 'Reset' : 'Select All'}
               </button>
               <button onClick={() => setSelectedCandidateIds([])} className="p-1 hover:bg-white/10 rounded-lg text-slate-500 hover:text-red-400 transition-premium">
                 <X size={16} />
@@ -317,7 +317,7 @@ const CandidateList: React.FC = () => {
         <div className="flex items-center justify-between mb-3 px-2">
           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             <Users size={12} />
-            <span>Showing {filteredCandidates.length} of {candidates.length} Personnel Registry</span>
+            <span>Showing {filteredCandidates.length} of {candidates.length} Candidates</span>
           </div>
         </div>
 
@@ -360,10 +360,10 @@ const CandidateList: React.FC = () => {
         {!isLoading && filteredCandidates.length > 0 && (
           <div className="glass-card overflow-hidden bg-white/50" style={{ height: listHeight }}>
             <div className="hidden md:flex items-center px-6 py-3 border-b border-slate-200 bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
-              <div className="w-1/3">Personnel & Role</div>
-              <div className="w-1/4">Contact Connection</div>
-              <div className="w-1/4">Operation Phase</div>
-              <div className="flex-1 text-right italic normal-case font-bold text-slate-300">HUB ECOSYSTEM SYNCED</div>
+              <div className="w-1/3">Candidate</div>
+              <div className="w-1/4">Contact</div>
+              <div className="w-1/4">Status</div>
+              <div className="flex-1 text-right italic normal-case font-bold text-slate-300">Synced</div>
             </div>
 
             <List

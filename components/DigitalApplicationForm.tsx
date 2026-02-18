@@ -1058,8 +1058,14 @@ const DigitalApplicationForm: React.FC = () => {
                                 onChange={setPreferredCountries}
                             />
                             <PreferredCountriesSelector
-                                label="Middle East (GCC) Preferences"
-                                allowedRegions={['Middle East (GCC)']}
+                                label="Middle East Preferences"
+                                allowedRegions={['Middle East']}
+                                selectedCountries={preferredCountries}
+                                onChange={setPreferredCountries}
+                            />
+                            <PreferredCountriesSelector
+                                label="Southeast Asia Preferences"
+                                allowedRegions={['Southeast Asia']}
                                 selectedCountries={preferredCountries}
                                 onChange={setPreferredCountries}
                             />

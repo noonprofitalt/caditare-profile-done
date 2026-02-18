@@ -380,7 +380,7 @@ const CandidateDetail: React.FC = () => {
               onClick={() => navigate('/candidates')}
               className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
             >
-              Return to Registry
+              Back to Candidates
             </button>
             <button
               onClick={() => window.location.reload()}

@@ -86,7 +86,7 @@ const Dashboard: React.FC = () => {
                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
                         <div>
-                           <p className="text-slate-400 text-[10px] uppercase font-black tracking-widest mb-1">Workforce</p>
+                           <p className="text-slate-400 text-[10px] uppercase font-black tracking-widest mb-1">Total Candidates</p>
                            <h3 className="text-2xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{activeCandidates}</h3>
                            <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 uppercase tracking-tight">
                               <Activity size={10} /> Online
@@ -105,9 +105,9 @@ const Dashboard: React.FC = () => {
                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
                         <div>
-                           <p className="text-red-100 text-[10px] uppercase font-black tracking-widest mb-1">Actions</p>
+                           <p className="text-red-100 text-[10px] uppercase font-black tracking-widest mb-1">Pending Actions</p>
                            <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{criticalIssues}</h3>
-                           <p className="text-[10px] text-red-100 font-bold uppercase tracking-tight">Critical priority</p>
+                           <p className="text-[10px] text-red-100 font-bold uppercase tracking-tight">Critical</p>
                         </div>
                         <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:rotate-12 transition-premium">
                            <Zap size={28} />
@@ -122,9 +122,9 @@ const Dashboard: React.FC = () => {
                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
                         <div>
-                           <p className="text-blue-100 text-[10px] uppercase font-black tracking-widest mb-1">Revenue</p>
+                           <p className="text-blue-100 text-[10px] uppercase font-black tracking-widest mb-1">Projected Revenue</p>
                            <h3 className="text-2xl sm:text-3xl font-black text-white mb-1 tracking-tighter">${projectedRevenue.toLocaleString()}</h3>
-                           <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight">Projected Value</p>
+                           <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight">Projected Revenue</p>
                         </div>
                         <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:translate-y-[-4px] transition-premium">
                            <TrendingUp size={28} />
@@ -158,15 +158,15 @@ const Dashboard: React.FC = () => {
                <div>
                   <h2 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tight">
                      <Activity className="text-blue-600" size={24} />
-                     Operational Integrity
+                     System Status
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Database Sync & Health Parameters</p>
+                  <p className="text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">Database Health</p>
                </div>
                <button
                   onClick={() => navigate('/candidates?status=quick')}
                   className="px-6 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-premium text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200"
                >
-                  Audit Incomplete
+                  Action Required
                </button>
             </div>
 
@@ -221,9 +221,9 @@ const Dashboard: React.FC = () => {
                   <div>
                      <h2 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tight">
                         <Zap className="text-amber-400 fill-amber-400 animate-pulse" size={24} />
-                        Mission Critical Queue
+                        Priority Tasks
                      </h2>
-                     <p className="text-[10px] text-slate-500 mt-1 font-bold uppercase tracking-widest">Sorted by operational priority</p>
+                     <p className="text-[10px] text-slate-500 mt-1 font-bold uppercase tracking-widest">Sorted by priority</p>
                   </div>
                   <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                      <button className="px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-200 shrink-0">Priority</button>
@@ -298,8 +298,8 @@ const Dashboard: React.FC = () => {
                         <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center border border-slate-100 mb-6 group-hover:scale-110 transition-premium">
                            <CheckCircle size={40} className="text-emerald-400" />
                         </div>
-                        <p className="font-black uppercase tracking-widest text-sm text-slate-400">Zero Pending Logic</p>
-                        <p className="text-xs font-bold text-slate-400 mt-2">The system is fully synchronized.</p>
+                        <p className="font-black uppercase tracking-widest text-sm text-slate-400">All Caught Up</p>
+                        <p className="text-xs font-bold text-slate-400 mt-2">No pending tasks.</p>
                      </div>
                   )}
                </div>
@@ -308,7 +308,7 @@ const Dashboard: React.FC = () => {
             <div className="space-y-8">
                <div className="glass-card p-6">
                   <h3 className="font-black text-slate-900 mb-6 flex items-center gap-3 text-xs uppercase tracking-widest">
-                     <Bell size={18} className="text-blue-500" /> High-Level Signal Hub
+                     <Bell size={18} className="text-blue-500" /> Notifications
                   </h3>
                   <div className="space-y-4">
                      {isLoading ? (
@@ -348,12 +348,12 @@ const Dashboard: React.FC = () => {
                <div className="bg-slate-900 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-600/30 transition-premium"></div>
                   <h3 className="font-black mb-8 opacity-90 text-xs uppercase tracking-widest flex items-center gap-3">
-                     <Activity size={16} className="text-blue-400" /> Efficiency Matrix
+                     <Activity size={16} className="text-blue-400" /> Performance
                   </h3>
                   <div className="space-y-8">
                      <div>
                         <div className="flex justify-between text-[10px] mb-3 font-black uppercase tracking-widest">
-                           <span className="text-slate-400">Verification Engine</span>
+                           <span className="text-slate-400">Verification</span>
                            <span className="text-blue-400">8/12 - 66%</span>
                         </div>
                         <div className="w-full bg-slate-800 rounded-full h-2.5 border border-white/5 p-0.5">
@@ -362,7 +362,7 @@ const Dashboard: React.FC = () => {
                      </div>
                      <div>
                         <div className="flex justify-between text-[10px] mb-3 font-black uppercase tracking-widest">
-                           <span className="text-slate-400">Visa Protocol</span>
+                           <span className="text-slate-400">Visa Processing</span>
                            <span className="text-amber-400">3/5 - 60%</span>
                         </div>
                         <div className="w-full bg-slate-800 rounded-full h-2.5 border border-white/5 p-0.5">
@@ -383,7 +383,7 @@ const Dashboard: React.FC = () => {
          <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 flex flex-col items-end gap-3 z-40 lg:mr-0 mr-2">
             <div className="group relative">
                <button className="flex items-center gap-3 bg-slate-900 border border-slate-700 text-white pl-5 pr-2 py-2.5 rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-premium animate-float ring-4 ring-slate-900/10">
-                  <span className="font-black text-[10px] uppercase tracking-widest">Tactical Core</span>
+                  <span className="font-black text-[10px] uppercase tracking-widest">Actions</span>
                   <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                      <Zap size={18} className="text-white fill-white" />
                   </div>
@@ -393,20 +393,20 @@ const Dashboard: React.FC = () => {
                <div className="absolute bottom-full right-0 mb-4 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-bottom-right scale-90 group-hover:scale-100 duration-300">
                   <div className="p-2.5 space-y-1">
                      <button onClick={() => navigate('/candidates')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
-                        <UserPlus size={16} /> Enroll Personnel
+                        <UserPlus size={16} /> Add Candidate
                      </button>
                      <button onClick={() => navigate('/jobs')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
-                        <FilePlus size={16} /> Deploy Job
+                        <FilePlus size={16} /> Post Job
                      </button>
                      <button onClick={() => navigate('/team-chat')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
-                        <MessageCircle size={16} /> Comms Hub
+                        <MessageCircle size={16} /> Chat
                      </button>
                      <button onClick={() => navigate('/pipeline')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
-                        <Layout size={16} /> Operation Map
+                        <Layout size={16} /> Pipeline
                      </button>
                      <div className="h-px bg-slate-100 my-2"></div>
                      <button onClick={() => navigate('/settings')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 rounded-xl text-left transition-premium">
-                        <SettingsIcon size={16} /> Core Settings
+                        <SettingsIcon size={16} /> Settings
                      </button>
                   </div>
                </div>

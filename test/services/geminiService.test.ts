@@ -47,7 +47,7 @@ describe('GeminiService', () => {
                 comments: [],
                 email: 'john@example.com',
                 phone: '+1234567890',
-                preferredCountries: ['UAE'],
+                preferredCountries: ['United Arab Emirates'],
                 avatarUrl: '',
             } as any as Candidate;
 
@@ -72,7 +72,7 @@ describe('GeminiService', () => {
                 comments: [],
                 email: 'john@example.com',
                 phone: '+1234567890',
-                preferredCountries: ['UAE'],
+                preferredCountries: ['United Arab Emirates'],
                 avatarUrl: '',
                 documents: [],
             } as any as Candidate;
@@ -102,7 +102,7 @@ describe('GeminiService', () => {
                 comments: [],
                 email: 'john@example.com',
                 phone: '+1234567890',
-                preferredCountries: ['UAE'],
+                preferredCountries: ['United Arab Emirates'],
                 avatarUrl: '',
                 documents: [],
             } as any as Candidate;
