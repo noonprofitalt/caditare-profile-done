@@ -355,7 +355,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           {isNotificationOpen && (
             <div className="absolute right-0 mt-3 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 origin-top-right z-50">
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 backdrop-blur-sm">
-                <h3 className="font-black text-slate-900 text-xs uppercase tracking-tight">Intelligence Feed</h3>
+                <h3 className="font-black text-slate-900 text-xs uppercase tracking-tight">Notifications</h3>
                 <button
                   onClick={() => {
                     NotificationService.markAllAsRead();
@@ -383,7 +383,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                           <React.Fragment key={notif.id}>
                             {showHeader && (
                               <div className="px-4 py-1.5 bg-slate-50/80 text-[9px] font-black text-slate-400 uppercase tracking-widest sticky top-0 z-10 border-b border-slate-100 backdrop-blur-xs">
-                                {isToday ? 'Operational Highlights' : notifDate}
+                                {isToday ? 'Recent Updates' : notifDate}
                               </div>
                             )}
                             <div
@@ -479,13 +479,13 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   onClick={() => { setShowUserMenu(false); navigate('/settings'); }}
                   className="w-full text-left px-4 py-2.5 text-xs text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-xl font-black uppercase tracking-widest flex items-center gap-3 transition-premium"
                 >
-                  <SettingsIcon size={16} /> Account Hub
+                  <SettingsIcon size={16} /> Profile
                 </button>
                 <button
                   onClick={() => { setShowUserMenu(false); logout(); }}
                   className="w-full text-left px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 rounded-xl font-black uppercase tracking-widest flex items-center gap-3 transition-premium mt-1"
                 >
-                  <LogOut size={16} /> Decommission
+                  <LogOut size={16} /> Log Out
                 </button>
               </div>
             </div>
@@ -504,8 +504,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   <MessageSquare size={20} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">Tactical Comms</h2>
-                  <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">Encrypted Hub</p>
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">Team Chat</h2>
+                  <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest">Secure</p>
                 </div>
               </div>
               <button

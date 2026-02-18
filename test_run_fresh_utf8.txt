@@ -1,0 +1,72 @@
+﻿
+> globalworkforce-erp@0.0.0 test
+> vitest --run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/user/Downloads/Antigravity Projects/caditare-profile-done[39m
+
+ [31mΓ¥»[39m __tests__/integration/chat-flow.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m server/__tests__/routes/channels.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m server/__tests__/routes/messages.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m e2e/candidate-profile.spec.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m e2e/workflows.spec.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m server/__tests__/socket/chatSocket.test.ts [2m([22m[2m0 test[22m[2m)[22m
+[90mstdout[2m | test/services/geminiService.test.ts[2m > [22m[2mGeminiService[2m > [22m[2manalyzeCandidate[2m > [22m[2mshould use cache for repeated requests
+[22m[39mGemini: Serving analysis from cache
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould render the chat layout
+[22m[39m[Chat] Subscribing to channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould render the chat layout
+[22m[39m[Chat] Unsubscribing from channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould display channels list
+[22m[39m[Chat] Subscribing to channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould display channels list
+[22m[39m[Chat] Unsubscribing from channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould show unread count badge
+[22m[39m[Chat] Subscribing to channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould show unread count badge
+[22m[39m[Chat] Unsubscribing from channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould allow sending a message
+[22m[39m[Chat] Subscribing to channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould allow sending a message
+[22m[39m[Chat] Unsubscribing from channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould show channel creation modal
+[22m[39m[Chat] Subscribing to channel: c1
+
+[90mstdout[2m | components/chat/__tests__/ModernTeamChat.test.tsx[2m > [22m[2mModernTeamChat Component[2m > [22m[2mshould show channel creation modal
+[22m[39m[Chat] Unsubscribing from channel: c1
+
+ [32mΓ£ô[39m components/chat/__tests__/ModernTeamChat.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 742[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m should allow sending a message [33m 325[2mms[22m[39m
+ [32mΓ£ô[39m test/services/geminiService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 2026[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should throw error when API key is missing [33m 2017[2mms[22m[39m
+ [32mΓ£ô[39m components/chat/__tests__/ErrorBoundary.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 530[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m should show retry button [33m 345[2mms[22m[39m
+ [32mΓ£ô[39m tests/CandidateCardVerification.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 119[2mms[22m[39m
+ [32mΓ£ô[39m components/Verification.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1324[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m CandidateDetail: Should display all 5 Digital Form Sections in View Mode [33m 469[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m CandidateDetail: Should allow editing School, Height, Weight in Edit Mode [33m 448[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m CandidateDetail: Should block stage advance if requirements not met [33m 405[2mms[22m[39m
+ [32mΓ£ô[39m hooks/__tests__/useMediaQuery.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32mΓ£ô[39m components/Sidebar.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 62[2mms[22m[39m
+ [32mΓ£ô[39m hooks/__tests__/usePermission.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32mΓ£ô[39m tests/ComplianceFlags.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32mΓ£ô[39m utils/__tests__/sanitization.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32mΓ£ô[39m tests/TaskEngine.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32mΓ£ô[39m services/workflowIntegration.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32mΓ£ô[39m test/services/complianceService.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32mΓ£ô[39m services/analyticsService.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m14 passed[39m[22m[90m (20)[39m
+[2m      Tests [22m [1m[32m75 passed[39m[22m[90m (75)[39m
+[2m   Start at [22m 08:50:42
+[2m   Duration [22m 31.18s[2m (transform 1.54s, setup 6.32s, import 7.61s, tests 4.93s, environment 47.24s)[22m
+

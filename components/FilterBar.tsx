@@ -32,7 +32,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
     const statusTabs = [
         { value: 'ALL' as const, label: 'All Candidates', count: candidateCounts.all, color: 'slate' },
-        { value: ProfileCompletionStatus.QUICK, label: 'Quick Add', count: candidateCounts.quick, color: 'red' },
+        { value: ProfileCompletionStatus.QUICK, label: 'Quick Create', count: candidateCounts.quick, color: 'red' },
         { value: ProfileCompletionStatus.PARTIAL, label: 'Partial', count: candidateCounts.partial, color: 'yellow' },
         { value: ProfileCompletionStatus.COMPLETE, label: 'Complete', count: candidateCounts.complete, color: 'green' }
     ];
@@ -73,7 +73,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                     <div className="flex-1 relative">
                         <input
                             type="text"
-                            placeholder="Search by name, phone, NIC, or email..."
+                            placeholder="Search candidates..."
                             value={searchQuery}
                             onChange={(e) => onSearchChange(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"

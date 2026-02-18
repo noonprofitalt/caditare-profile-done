@@ -141,14 +141,14 @@ const Settings: React.FC = () => {
                            <label className="block text-sm font-medium text-slate-700 mb-2">Agency Name</label>
                            <div className="relative">
                               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                              <input type="text" defaultValue="GlobalWorkforce Solutions" className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                              <input type="text" defaultValue="Suhara Foreign Employment Agency" className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                            </div>
                         </div>
                         <div>
                            <label className="block text-sm font-medium text-slate-700 mb-2">License Number</label>
                            <div className="relative">
                               <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                              <input type="text" defaultValue="FEA-2024-8892" className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                              <input type="text" defaultValue="2185" className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                            </div>
                         </div>
                      </div>
@@ -158,21 +158,21 @@ const Settings: React.FC = () => {
                            <label className="block text-sm font-medium text-slate-700 mb-2">Contact Email</label>
                            <div className="relative">
                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                              <input type="email" defaultValue="admin@globalworkforce.com" className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                              <input type="email" defaultValue="info@suharaagency.com | cv@suharaagency.com, suharainternal@gmail.com" className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                            </div>
                         </div>
                         <div>
                            <label className="block text-sm font-medium text-slate-700 mb-2">Support Phone</label>
                            <div className="relative">
                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                              <input type="text" defaultValue="+1 (555) 123-4567" className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                              <input type="text" defaultValue="037 223 1333" className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                            </div>
                         </div>
                      </div>
 
                      <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Headquarters Address</label>
-                        <textarea rows={3} defaultValue="123 Business Bay, Tower A, Dubai, UAE" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                        <textarea rows={3} defaultValue="138, 2nd Floor, Colombo Road, Kurunegala, Sri Lanka" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
                      </div>
                   </div>
                )}

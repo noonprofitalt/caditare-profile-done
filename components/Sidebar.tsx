@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight uppercase">Suhara ERP CORE</h1>
-            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Command Center</p>
+            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Dashboard</p>
           </div>
         </div>
       </div>
@@ -49,35 +49,35 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <nav className="flex-1 px-4 py-6 space-y-1">
         <NavLink to="/" className={linkClass}>
           <LayoutDashboard size={20} />
-          <span>Command Center</span>
+          <span>Dashboard</span>
         </NavLink>
         <NavLink to="/analytics" className={linkClass}>
           <TrendingUp size={20} />
-          <span>Operational Analytics</span>
+          <span>Analytics</span>
         </NavLink>
         <NavLink to="/pipeline" className={linkClass}>
           <KanbanSquare size={20} />
-          <span>Processing Pipeline</span>
+          <span>Pipeline</span>
         </NavLink>
         <NavLink to="/candidates" className={linkClass}>
           <Users size={20} />
-          <span>Workforce Registry</span>
+          <span>Candidates</span>
         </NavLink>
         <NavLink to="/jobs" className={linkClass}>
           <Briefcase size={20} />
-          <span>Job Board</span>
+          <span>Jobs</span>
         </NavLink>
         <NavLink to="/partners" className={linkClass}>
           <Target size={20} />
-          <span>Recruitment Partners</span>
+          <span>Partners</span>
         </NavLink>
         <NavLink to="/finance" className={linkClass}>
           <DollarSign size={20} />
-          <span>Finance Hub</span>
+          <span>Finance</span>
         </NavLink>
         <NavLink to="/team-chat" className={linkClass}>
           <MessageSquare size={20} />
-          <span>Team Comms</span>
+          <span>Chat</span>
         </NavLink>
       </nav>
 

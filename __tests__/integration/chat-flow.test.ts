@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { Server } from 'http';
-import app from '../../server';
+import { app } from '../../server/server';
 
 describe('Integration Tests - Chat Flow', () => {
     let server: Server;
