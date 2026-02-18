@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useCandidates } from '../context/CandidateContext';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { pdf } from '@react-pdf/renderer';
 import { CandidateReportPDF } from '../src/components/reports/CandidateReportPDF';
 import { CandidateService } from '../services/candidateService';
+import { JobService } from '../services/jobService';
+import { PartnerService } from '../services/partnerService';
 import { Candidate, WorkflowStage, CandidateDocument, PassportData, PCCData, TimelineEventType, PassportStatus } from '../types';
 import { User, FileText, History, Bot, AlertCircle, Plus, Trash2, ShieldCheck, ShieldAlert, Edit2, CheckCircle, X, Mail, Globe, MapPin, Calendar, Briefcase, Phone, Award, Clock, RefreshCw } from 'lucide-react';
 
@@ -1569,6 +1571,48 @@ const CandidateDetail: React.FC = () => {
               onRefresh={refreshCandidates}
             />
             <SLBFEStatusWidget candidate={candidate} />
+
+            {/* Matched Jobs Widget */}
+            {(() => {
+              const matchedJobs = JobService.getJobs().filter(j => j.matchedCandidateIds?.includes(candidate.id));
+              if (matchedJobs.length === 0) return null;
+              return (
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <Briefcase size={14} className="text-blue-500" />
+                    Matched Jobs ({matchedJobs.length})
+                  </h4>
+                  <div className="space-y-2.5">
+                    {matchedJobs.map(job => {
+                      const employer = job.employerId ? PartnerService.getEmployerById(job.employerId) : null;
+                      return (
+                        <div key={job.id} className="p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-all">
+                          <Link to={`/jobs?highlight=${job.id}`} className="text-sm font-bold text-slate-800 hover:text-blue-600 transition-colors">
+                            {job.title}
+                          </Link>
+                          <div className="flex items-center gap-2 mt-1">
+                            {employer && (
+                              <Link to={`/partners/${employer.id}`} className="text-[10px] text-blue-500 hover:underline font-semibold">
+                                {employer.companyName}
+                              </Link>
+                            )}
+                            <span className="text-[10px] text-slate-400">•</span>
+                            <span className="text-[10px] text-slate-500">{job.location}</span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1.5">
+                            <span className="text-[10px] text-green-600 font-bold">{job.salaryRange}</span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${job.status === 'Open' ? 'bg-green-50 text-green-600' :
+                                job.status === 'Filled' ? 'bg-blue-50 text-blue-600' :
+                                  'bg-slate-100 text-slate-500'
+                              }`}>{job.status}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
             <WorkflowProgressWidget
               candidate={candidate}
               onAdvance={handleAdvanceStage}

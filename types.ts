@@ -1,6 +1,7 @@
 export enum JobStatus {
   OPEN = 'Open',
   CLOSED = 'Closed',
+  FILLED = 'Filled',
   PENDING = 'Pending Approval',
 }
 
@@ -183,6 +184,13 @@ export interface Job {
   requirements: string[];
   matchedCandidateIds?: string[]; // IDs of candidates specifically matched/selected for this job
   employerId?: string; // ID of the partner/employer offering this job
+  category?: string;        // e.g. Construction, Hospitality, Healthcare
+  positions?: number;       // number of openings
+  filledPositions?: number; // how many have been filled
+  deadline?: string;        // application deadline
+  demandOrderId?: string;   // linked demand order from Employer CRM
+  contactPerson?: string;   // point of contact
+  benefits?: string[];      // e.g. Housing, Transport, Insurance
 }
 
 export interface CandidateComment {
@@ -616,6 +624,66 @@ export interface Employer {
   paymentTermDays?: number;
   selectionRatio?: number; // Calculated internally: Interviews / Hires
   activityLog: EmployerActivity[];
+}
+
+// --- DEMAND ORDER & CANDIDATE SELECTION TYPES ---
+
+export enum DemandOrderStatus {
+  DRAFT = 'Draft',
+  OPEN = 'Open',
+  PARTIALLY_FILLED = 'Partially Filled',
+  FILLED = 'Filled',
+  CLOSED = 'Closed',
+  CANCELLED = 'Cancelled',
+}
+
+export interface DemandOrder {
+  id: string;
+  employerId: string;
+  title: string;                // "20x Construction Workers"
+  jobCategory: string;          // "Construction", "Hospitality", etc.
+  country: string;
+  location: string;             // City
+  positionsRequired: number;
+  positionsFilled: number;
+  salaryRange: string;
+  contractDuration: string;     // "2 years"
+  benefits: string[];           // "Accommodation", "Food", "Transport"
+  requirements: string[];
+  status: DemandOrderStatus;
+  createdAt: string;
+  deadline?: string;            // When employer needs candidates by
+  notes?: string;
+}
+
+export enum SelectionStage {
+  MATCHED = 'Matched',
+  CV_SUBMITTED = 'CV Submitted',
+  SHORTLISTED = 'Shortlisted',
+  INTERVIEW_SCHEDULED = 'Interview Scheduled',
+  INTERVIEWED = 'Interviewed',
+  SELECTED = 'Selected',
+  OFFER_ISSUED = 'Offer Issued',
+  OFFER_ACCEPTED = 'Offer Accepted',
+  REJECTED = 'Rejected',
+}
+
+export interface CandidateSelection {
+  id: string;
+  demandOrderId: string;
+  candidateId: string;
+  candidateName: string;        // Denormalized for display
+  stage: SelectionStage;
+  interviewDate?: string;
+  interviewType?: 'Video' | 'In-Person' | 'Phone';
+  interviewNotes?: string;
+  employerFeedback?: string;
+  offerSalary?: string;
+  offerDate?: string;
+  rejectionReason?: string;
+  matchScore?: number;          // 0-100 skill match
+  createdAt: string;
+  updatedAt: string;
 }
 
 // --- FINANCE SYSTEM TYPES ---

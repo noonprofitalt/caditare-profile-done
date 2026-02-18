@@ -4,12 +4,15 @@ import { CandidateService } from '../services/candidateService';
 import { NotificationService } from '../services/notificationService';
 import { FinanceService } from '../services/financeService';
 import { PartnerService } from '../services/partnerService';
-import { WorkTask, SystemAlert, Candidate, WorkflowStage, ProfileCompletionStatus } from '../types';
+import { JobService } from '../services/jobService';
+import { DemandOrderService } from '../services/demandOrderService';
+import { WorkTask, SystemAlert, Candidate, WorkflowStage, ProfileCompletionStatus, JobStatus, DemandOrderStatus } from '../types';
 import { useNavigate } from 'react-router-dom';
 import {
    CheckCircle, AlertTriangle, Clock, Activity, ArrowRight,
    Calendar, Zap, Bell, FileText, UserPlus,
-   Briefcase, TrendingUp, MessageCircle, Layout, Settings as SettingsIcon, FilePlus
+   Briefcase, TrendingUp, MessageCircle, Layout, Settings as SettingsIcon, FilePlus,
+   Package, Building2
 } from 'lucide-react';
 import Skeleton from './ui/Skeleton';
 
@@ -18,6 +21,8 @@ const Dashboard: React.FC = () => {
    const [tasks, setTasks] = useState<WorkTask[]>([]);
    const [alerts, setAlerts] = useState<SystemAlert[]>([]);
    const [projectedRevenue, setProjectedRevenue] = useState(0);
+   const [openJobsCount, setOpenJobsCount] = useState(0);
+   const [activeDemands, setActiveDemands] = useState(0);
    const [isLoading, setIsLoading] = useState(true);
    const navigate = useNavigate();
 
@@ -37,6 +42,11 @@ const Dashboard: React.FC = () => {
             // Let's check PartnerService.
             const employers = PartnerService.getEmployers();
             setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
+            // Jobs & Demand Orders
+            const jobs = JobService.getJobs();
+            setOpenJobsCount(jobs.filter(j => j.status === JobStatus.OPEN).length);
+            const orders = DemandOrderService.getAll();
+            setActiveDemands(orders.filter(o => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
          } catch (error) {
             console.error('Failed to load dashboard data:', error);
          } finally {
@@ -65,7 +75,7 @@ const Dashboard: React.FC = () => {
    return (
       <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 pb-24 lg:pb-8">
          {/* 1. Header Row: High-Level Status (KPIs) */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-5">
             {isLoading ? (
                Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="glass-card p-5 flex items-center justify-between h-[116px]">
@@ -145,6 +155,40 @@ const Dashboard: React.FC = () => {
                         </div>
                         <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium">
                            <Calendar size={28} />
+                        </div>
+                     </div>
+                  </div>
+
+                  <div
+                     onClick={() => navigate('/jobs')}
+                     className="bg-purple-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-purple-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
+                  >
+                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                     <div className="flex items-center justify-between relative z-10">
+                        <div>
+                           <p className="text-purple-100 text-[10px] uppercase font-black tracking-widest mb-1">Open Jobs</p>
+                           <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{openJobsCount}</h3>
+                           <p className="text-[10px] text-purple-100 font-bold uppercase tracking-tight">Hiring Now</p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium">
+                           <Briefcase size={28} />
+                        </div>
+                     </div>
+                  </div>
+
+                  <div
+                     onClick={() => navigate('/partners')}
+                     className="bg-indigo-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
+                  >
+                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                     <div className="flex items-center justify-between relative z-10">
+                        <div>
+                           <p className="text-indigo-100 text-[10px] uppercase font-black tracking-widest mb-1">Active Demands</p>
+                           <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{activeDemands}</h3>
+                           <p className="text-[10px] text-indigo-100 font-bold uppercase tracking-tight">Orders Open</p>
+                        </div>
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-cyan-300 group-hover:rotate-12 transition-premium">
+                           <Package size={28} />
                         </div>
                      </div>
                   </div>
