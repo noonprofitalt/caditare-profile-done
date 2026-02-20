@@ -9,7 +9,8 @@ import {
     DragStartEvent,
     DragEndEvent,
     DragOverEvent,
-    defaultAnnouncements
+    defaultAnnouncements,
+    useDroppable
 } from '@dnd-kit/core';
 import { useCandidates } from '../context/CandidateContext';
 import {
@@ -33,6 +34,7 @@ import {
     ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 
 // --- Types ---
 interface Column {
@@ -102,8 +104,14 @@ const PipelineCard = ({ candidate, isDragging }: { candidate: Candidate; isDragg
 
 // --- Column Component ---
 const PipelineColumn = ({ column }: { column: Column }) => {
+    const { setNodeRef, isOver } = useDroppable({
+        id: `column-${column.id}`,
+        data: { type: 'column', columnId: column.id }
+    });
+
     return (
-        <div className="flex-shrink-0 w-72 md:w-80 flex flex-col bg-slate-100/50 rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className={`flex-shrink-0 w-72 md:w-80 flex flex-col rounded-2xl border overflow-hidden shadow-sm transition-colors duration-200 ${isOver ? 'bg-blue-50/70 border-blue-300 ring-2 ring-blue-200' : 'bg-slate-100/50 border-slate-200'
+            }`}>
             <div className="p-4 border-b border-slate-200 bg-white flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${column.id === WorkflowStage.DEPARTED ? 'bg-emerald-500 animate-pulse' :
@@ -117,7 +125,7 @@ const PipelineColumn = ({ column }: { column: Column }) => {
                 </span>
             </div>
 
-            <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto custom-scrollbar min-h-[500px]">
+            <div ref={setNodeRef} className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto custom-scrollbar min-h-[500px]">
                 <SortableContext
                     items={column.candidates.map(c => c.id)}
                     strategy={verticalListSortingStrategy}
@@ -153,6 +161,7 @@ const PipelineBoard: React.FC = () => {
     // Let's rely on context.
     const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const toast = useToast();
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -193,23 +202,36 @@ const PipelineBoard: React.FC = () => {
         const activeId = active.id as string;
         const overId = over.id as string;
 
-        // Check if we dropped over a different column
-        const overColumn = columns.find(col => col.id === overId || col.candidates.some(c => c.id === overId));
+        // Determine the target column
+        let targetColumnId: WorkflowStage | null = null;
 
-        if (overColumn) {
+        // Check if dropped directly on a column droppable (id = "column-STAGE_NAME")
+        if (overId.startsWith('column-')) {
+            targetColumnId = overId.replace('column-', '') as WorkflowStage;
+        } else {
+            // Check if dropped on a card — find which column that card belongs to
+            const overColumn = columns.find(col => col.candidates.some(c => c.id === overId));
+            if (overColumn) {
+                targetColumnId = overColumn.id;
+            }
+        }
+
+        if (targetColumnId) {
             const candidate = candidates.find(c => c.id === activeId);
-            if (candidate && candidate.stage !== overColumn.id) {
+            if (candidate && candidate.stage !== targetColumnId) {
                 // Update stage in database
                 try {
-                    const updatedCandidate = { ...candidate, stage: overColumn.id as WorkflowStage };
+                    const updatedCandidate = { ...candidate, stage: targetColumnId };
 
                     // Optimistic update via Context
                     updateCandidateInState(updatedCandidate);
 
                     // API Call
                     await CandidateService.updateCandidate(updatedCandidate);
+                    toast.success(`Moved to ${targetColumnId}`);
                 } catch (error) {
                     console.error('Failed to update stage:', error);
+                    toast.error('Failed to move candidate. Reverting...');
                     refreshCandidates(); // Revert on failure
                 }
             }

@@ -8,11 +8,13 @@ import { Save, X, AlertCircle, UserPlus, Phone, Briefcase, TrendingUp } from 'lu
 import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
 import MultiPhoneInput from './ui/MultiPhoneInput';
 import { useCandidates } from '../context/CandidateContext';
+import { useToast } from '../context/ToastContext';
 
 
 const QuickAddForm: React.FC = () => {
     const navigate = useNavigate();
     const { candidates } = useCandidates();
+    const toast = useToast();
     const [showDuplicateModal, setShowDuplicateModal] = useState(false);
     const [duplicateMatches, setDuplicateMatches] = useState<any[]>([]);
     const [duplicateFields, setDuplicateFields] = useState<string[]>([]);
@@ -135,7 +137,7 @@ const QuickAddForm: React.FC = () => {
             }
         } catch (error) {
             console.error('Error creating quick candidate:', error);
-            alert('Failed to create candidate. Please try again.');
+            toast.error('Failed to create candidate. Please try again.');
         }
     };
 
@@ -172,7 +174,7 @@ const QuickAddForm: React.FC = () => {
             }
         } catch (error) {
             console.error('Error creating quick candidate:', error);
-            alert('Failed to create candidate. Please try again.');
+            toast.error('Failed to create candidate. Please try again.');
         }
     };
 
