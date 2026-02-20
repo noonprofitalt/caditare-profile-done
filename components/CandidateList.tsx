@@ -48,7 +48,9 @@ const CandidateList: React.FC = () => {
   // Handle resize for virtual list
   useEffect(() => {
     const handleResize = () => {
-      setListHeight(window.innerHeight - 300);
+      const isMobile = window.innerWidth < 768;
+      // On mobile, we need more space at the bottom for the fixed nav bar
+      setListHeight(window.innerHeight - (isMobile ? 360 : 300));
     };
     handleResize();
     window.addEventListener('resize', handleResize);

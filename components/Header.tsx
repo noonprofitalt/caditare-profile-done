@@ -332,10 +332,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         </div>
       </div>
 
-      <div className={`flex items-center gap-3 md:gap-4 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex items-center gap-1.5 sm:gap-3 md:gap-4 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
         <button
           onClick={() => setIsMobileSearchOpen(true)}
-          className="p-2 text-slate-500 hover:bg-slate-50 rounded-full md:hidden transition-premium active:scale-90"
+          className="p-1.5 sm:p-2 text-slate-500 hover:bg-slate-50 rounded-full md:hidden transition-premium active:scale-90"
         >
           <Search size={20} />
         </button>

@@ -212,7 +212,7 @@ const JobBoard: React.FC = () => {
             onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto whitespace-nowrap scrollbar-none snap-x">
           {([
             { key: 'all' as FilterTab, label: 'All', count: stats.total },
             { key: 'open' as FilterTab, label: 'Open', count: stats.open },
@@ -222,7 +222,7 @@ const JobBoard: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveFilter(tab.key)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeFilter === tab.key
+              className={`flex shrink-0 snap-start px-4 py-2 rounded-xl text-xs font-bold transition-all items-center gap-1.5 ${activeFilter === tab.key
                 ? 'bg-white text-slate-800 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
                 }`}
@@ -236,9 +236,9 @@ const JobBoard: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Job Cards Grid */}
-        <div className={`${selectedJob ? 'w-[55%]' : 'w-full'} transition-all duration-300`}>
+        <div className={`${selectedJob ? 'w-full lg:w-[55%]' : 'w-full'} transition-all duration-300`}>
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -342,7 +342,7 @@ const JobBoard: React.FC = () => {
 
         {/* Detail Panel */}
         {selectedJob && (
-          <div className="w-[45%] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-4 max-h-[calc(100vh-180px)] overflow-y-auto">
+          <div className="w-full lg:w-[45%] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-4 max-h-[calc(100vh-180px)] overflow-y-auto">
             {/* Detail Header */}
             <div className="bg-slate-900 text-white p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-3xl rounded-full" />

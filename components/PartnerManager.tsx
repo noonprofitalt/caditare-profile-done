@@ -214,9 +214,9 @@ const PartnerManager: React.FC = () => {
                 ))}
             </div>
 
-            <div className="flex gap-8">
+            <div className="flex flex-col lg:flex-row gap-8">
                 {/* PARTNER LIST */}
-                <div className="w-[380px] shrink-0 space-y-4">
+                <div className="w-full lg:w-[380px] shrink-0 space-y-4">
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input

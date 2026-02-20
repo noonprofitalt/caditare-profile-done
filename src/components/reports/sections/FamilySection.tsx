@@ -9,8 +9,8 @@ interface FamilySectionProps {
 }
 
 export const FamilySection: React.FC<FamilySectionProps> = ({ candidate }) => {
-    const { personalInfo } = candidate;
-    const childrenCount = personalInfo.children?.length || candidate.numberOfChildren || 0;
+    const personalInfo = candidate.personalInfo || {} as any;
+    const childrenCount = personalInfo.children?.length || candidate.children?.length || candidate.numberOfChildren || 0;
 
     return (
         <View style={styles.section}>

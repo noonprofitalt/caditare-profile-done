@@ -423,11 +423,11 @@ const Dashboard: React.FC = () => {
          </div>
 
          {/* 4. QUICK ACTIONS PALETTE */}
-         <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 flex flex-col items-end gap-3 z-40 lg:mr-0 mr-2">
+         <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 flex flex-col items-end gap-3 z-40">
             <div className="group relative">
-               <button className="flex items-center gap-3 bg-slate-900 border border-slate-700 text-white pl-5 pr-2 py-2.5 rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-premium animate-float ring-4 ring-slate-900/10">
-                  <span className="font-black text-[10px] uppercase tracking-widest">Actions</span>
-                  <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+               <button className="flex items-center gap-0 md:gap-3 bg-slate-900 border border-slate-700 text-white pl-2 md:pl-5 pr-2 py-2 md:py-2.5 rounded-2xl md:rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-105 active:scale-95 transition-premium md:animate-float ring-4 ring-slate-900/10">
+                  <span className="hidden md:block font-black text-[10px] uppercase tracking-widest pl-2">Actions</span>
+                  <div className="w-10 h-10 md:w-9 md:h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                      <Zap size={18} className="text-white fill-white" />
                   </div>
                </button>
