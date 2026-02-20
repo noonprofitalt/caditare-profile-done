@@ -211,8 +211,8 @@ const IntelligenceEngine: React.FC = () => {
             </ResponsiveContainer>
          </div>
 
-         <div className="mt-8">
-            <table className="w-full text-left border-collapse">
+         <div className="mt-8 overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[600px]">
                <thead>
                   <tr className="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
                      <th className="py-3">Stage Name</th>
@@ -255,35 +255,38 @@ const IntelligenceEngine: React.FC = () => {
    const renderStaffMetrics = () => (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
          {snapshot.staffMetrics.map((staff, idx) => (
-            <div key={staff.name} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-               <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-xl font-bold text-slate-500">
-                  {staff.name.charAt(0)}
+            <div key={staff.name} className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
+               <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-100 flex shrink-0 items-center justify-center text-lg md:text-xl font-bold text-slate-500">
+                     {staff.name.charAt(0)}
+                  </div>
+                  <div className="text-2xl font-bold text-slate-200 sm:hidden ml-auto">#{idx + 1}</div>
                </div>
-               <div className="flex-1">
-                  <h4 className="font-bold text-lg text-slate-800">{staff.name}</h4>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-slate-600">
+               <div className="flex-1 min-w-0 w-full">
+                  <h4 className="font-bold text-base md:text-lg text-slate-800 truncate">{staff.name}</h4>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-xs md:text-sm text-slate-600">
                      <div>
-                        <p className="text-xs text-slate-400 uppercase">Actions</p>
+                        <p className="text-[10px] md:text-xs text-slate-400 uppercase">Actions</p>
                         <p className="font-bold">{staff.actionsPerformed}</p>
                      </div>
                      <div>
-                        <p className="text-xs text-slate-400 uppercase">Focus Area</p>
+                        <p className="text-[10px] md:text-xs text-slate-400 uppercase">Focus Area</p>
                         <p className="font-bold text-blue-600">{staff.mostActiveStage}</p>
                      </div>
                      <div>
-                        <p className="text-xs text-slate-400 uppercase">Last Active</p>
-                        <p className="font-mono text-xs">{new Date(staff.lastActive).toLocaleDateString()}</p>
+                        <p className="text-[10px] md:text-xs text-slate-400 uppercase">Last Active</p>
+                        <p className="font-mono text-[10px] md:text-xs">{new Date(staff.lastActive).toLocaleDateString()}</p>
                      </div>
                   </div>
                </div>
-               <div className="text-2xl font-bold text-slate-200">#{idx + 1}</div>
+               <div className="text-2xl font-bold text-slate-200 hidden sm:block shrink-0">#{idx + 1}</div>
             </div>
          ))}
       </div>
    );
 
    return (
-      <div className="p-8 max-w-7xl mx-auto space-y-8">
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8">
          {/* Header */}
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>

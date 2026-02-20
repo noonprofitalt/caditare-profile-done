@@ -178,7 +178,7 @@ const PartnerManager: React.FC = () => {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in pb-24 md:pb-8 duration-500">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-bold text-slate-900">Employer CRM</h2>

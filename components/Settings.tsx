@@ -81,8 +81,8 @@ const Settings: React.FC = () => {
    };
 
    return (
-      <div className="p-8 max-w-5xl mx-auto">
-         <div className="mb-8">
+      <div className="p-4 md:p-8 max-w-5xl mx-auto pb-24 md:pb-8">
+         <div className="mb-6 md:mb-8">
             <h2 className="text-2xl font-bold text-slate-800">Settings & Configuration</h2>
             <p className="text-slate-500">Manage agency profile, system preferences, and data backups.</p>
          </div>
