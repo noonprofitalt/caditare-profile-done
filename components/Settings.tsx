@@ -52,8 +52,8 @@ const Settings: React.FC = () => {
       setTimeout(async () => {
          const issues: string[] = [];
          const candidates = await CandidateService.getCandidates();
-         const jobs = JobService.getJobs(); // Assuming JobService is still sync or needs similar fix?
-         const employers = PartnerService.getEmployers();
+         const jobs = await JobService.getJobs();
+         const employers = await PartnerService.getEmployers();
          const employerIds = new Set(employers.map(e => e.id));
 
          // Check 1: Orphaned Jobs

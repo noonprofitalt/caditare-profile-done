@@ -3,7 +3,7 @@ import { Candidate, CandidateDocument, DocumentStatus, DocumentCategory, Documen
 import { NotificationService } from '../services/notificationService';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, Clock, XCircle, Eye, Download, History, Lock, ShieldCheck, Maximize2 } from 'lucide-react';
 import DocumentPreviewer from './ui/DocumentPreviewer';
-
+import { DocumentService } from '../services/documentService';
 interface DocumentManagerProps {
   candidate: Candidate;
   onUpdate: (updatedDocs: CandidateDocument[]) => void;
@@ -71,8 +71,16 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     }
   };
 
-  const handleFileUpload = (type: DocType, category: DocumentCategory, file: File) => {
+  const handleFileUpload = async (type: DocType, category: DocumentCategory, file: File) => {
     const existingDoc = candidate.documents?.find(d => d.type === type);
+
+    // Upload to Supabase Storage
+    const { path, url, error } = await DocumentService.uploadDocument(file, candidate.id, type);
+
+    if (error) {
+      alert(`Failed to upload document: ${error.message}`);
+      return;
+    }
 
     const newLog: DocumentLog = {
       id: `log-${Date.now()}`,
@@ -87,7 +95,8 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       type,
       category,
       status: DocumentStatus.PENDING,
-      url: URL.createObjectURL(file),
+      url, // Use the persistent public URL
+      storagePath: path, // Store the storage path for future deletion
       uploadedAt: new Date().toISOString(),
       uploadedBy: 'Current User',
       fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,

@@ -25,6 +25,7 @@ const FinanceLedger: React.FC = () => {
     const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [candidateNames, setCandidateNames] = useState<Record<string, string>>({});
+    const [employerNames, setEmployerNames] = useState<Record<string, string>>({});
     const [projection, setProjection] = useState(0);
     const [actualRevenue, setActualRevenue] = useState(0);
     const [expenses, setExpenses] = useState(0);
@@ -44,8 +45,8 @@ const FinanceLedger: React.FC = () => {
 
             setTransactions(txData);
             setInvoices(invData);
-            setActualRevenue(FinanceService.getTotalActualRevenue() || 0);
-            setExpenses(FinanceService.getTotalExpenses() || 0);
+            setActualRevenue(FinanceService.calculateTotalActualRevenue(txData) || 0);
+            setExpenses(FinanceService.calculateTotalExpenses(txData) || 0);
 
             // Fetch candidate names for the ledger
             const uniqueCandIds = Array.from(new Set([
@@ -66,7 +67,16 @@ const FinanceLedger: React.FC = () => {
 
             // Fetch projection (Needs candidates and employers)
             const allCandidates = await CandidateService.getCandidates();
-            setProjection(FinanceService.getProjectedRevenue(allCandidates) || 0);
+            const allEmployers = await PartnerService.getEmployers();
+
+            // Map employers
+            const empMap: Record<string, string> = {};
+            allEmployers.forEach(e => {
+                empMap[e.id] = e.companyName;
+            });
+            setEmployerNames(empMap);
+
+            setProjection(FinanceService.getProjectedRevenue(allCandidates, allEmployers) || 0);
 
         } catch (error) {
             console.error("Failed to load finance data", error);
@@ -79,11 +89,11 @@ const FinanceLedger: React.FC = () => {
         refreshFinanceData();
     }, []);
 
-    const handleAddTransaction = (e: React.FormEvent) => {
+    const handleAddTransaction = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTxAmount || !newTxDescription) return;
 
-        FinanceService.addTransaction({
+        await FinanceService.addTransaction({
             type: newTxType,
             amount: parseFloat(newTxAmount),
             description: newTxDescription,
@@ -277,7 +287,7 @@ const FinanceLedger: React.FC = () => {
                                                             <Link to={`/candidates/${tx.candidateId}`} className="text-blue-600 hover:underline">Cnv: {candidateNames[tx.candidateId] || tx.candidateId}</Link>
                                                             <span>•</span>
                                                             <Link to={`/partners/${tx.employerId}`} className="text-blue-600 hover:underline">
-                                                                Emp: {PartnerService.getEmployerById(tx.employerId)?.companyName?.split(' ')[0] || 'System'}
+                                                                Emp: {employerNames[tx.employerId]?.split(' ')[0] || 'System'}
                                                             </Link>
                                                         </div>
                                                     </td>
@@ -324,7 +334,7 @@ const FinanceLedger: React.FC = () => {
                                                     <td className="px-4 py-4 font-bold text-blue-600">{inv.id}</td>
                                                     <td className="px-4 py-4">
                                                         <Link to={`/partners/${inv.employerId}`} className="font-bold text-blue-800 hover:underline">
-                                                            {PartnerService.getEmployerById(inv.employerId)?.companyName || `Employer: ${inv.employerId}`}
+                                                            {employerNames[inv.employerId] || `Employer: ${inv.employerId}`}
                                                         </Link>
                                                         <Link to={`/candidates/${inv.candidateId}`} className="block text-[10px] text-slate-400 hover:text-blue-600 hover:underline mt-1">
                                                             Candidate: {candidateNames[inv.candidateId] || inv.candidateId}

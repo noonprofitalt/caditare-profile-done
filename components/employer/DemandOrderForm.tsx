@@ -59,7 +59,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
         return Object.keys(errs).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validate()) return;
 
@@ -82,35 +82,39 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
             notes: form.notes || undefined,
         };
 
-        if (isEditing) {
-            DemandOrderService.update(order);
-        } else {
-            DemandOrderService.add(order);
-            // Auto-create a companion Job on the job board
-            const employer = PartnerService.getEmployerById(employerId);
-            JobService.addJob({
-                id: `job-${Date.now()}`,
-                title: form.title,
-                company: employer?.companyName || 'Unknown',
-                location: `${form.location}, ${form.country}`,
-                salaryRange: form.salaryRange,
-                type: 'Full-time',
-                description: `Auto-created from Demand Order: ${form.title}. ${form.notes || ''}`.trim(),
-                status: JobStatus.OPEN,
-                postedDate: new Date().toISOString().split('T')[0],
-                requirements: form.requirements.split(',').map(r => r.trim()).filter(Boolean),
-                matchedCandidateIds: [],
-                employerId,
-                demandOrderId: order.id,
-                category: form.jobCategory || undefined,
-                positions: form.positionsRequired,
-                filledPositions: 0,
-                deadline: form.deadline || undefined,
-                contactPerson: employer?.contactPerson || undefined,
-                benefits: form.benefits,
-            });
+        try {
+            if (isEditing) {
+                await DemandOrderService.update(order);
+            } else {
+                await DemandOrderService.add(order);
+                // Auto-create a companion Job on the job board
+                const employer = await PartnerService.getEmployerById(employerId);
+                await JobService.addJob({
+                    id: `job-${Date.now()}`,
+                    title: form.title,
+                    company: employer?.companyName || 'Unknown',
+                    location: `${form.location}, ${form.country}`,
+                    salaryRange: form.salaryRange,
+                    type: 'Full-time',
+                    description: `Auto-created from Demand Order: ${form.title}. ${form.notes || ''}`.trim(),
+                    status: JobStatus.OPEN,
+                    postedDate: new Date().toISOString().split('T')[0],
+                    requirements: form.requirements.split(',').map(r => r.trim()).filter(Boolean),
+                    matchedCandidateIds: [],
+                    employerId,
+                    demandOrderId: order.id,
+                    category: form.jobCategory || undefined,
+                    positions: form.positionsRequired,
+                    filledPositions: 0,
+                    deadline: form.deadline || undefined,
+                    contactPerson: employer?.contactPerson || undefined,
+                    benefits: form.benefits,
+                });
+            }
+            onSaved();
+        } catch (error) {
+            console.error("Failed to save demand order:", error);
         }
-        onSaved();
     };
 
     const toggleBenefit = (benefit: string) => {

@@ -164,6 +164,7 @@ export class CandidateService {
             preferredCountries: Array.isArray(json.preferredCountries) ? json.preferredCountries : [],
             jobRoles: Array.isArray(json.jobRoles) ? json.jobRoles : [],
             documents: Array.isArray(json.documents) ? json.documents : [],
+            avatarUrl: json.avatarUrl || (Array.isArray(json.documents) ? json.documents.find((d: any) => d.type === 'Full Photo (1)' && d.status === 'Approved')?.url : undefined) || '',
             timelineEvents: Array.isArray(json.timelineEvents) ? json.timelineEvents : [],
 
             // Reconstruct nested stageData if missing

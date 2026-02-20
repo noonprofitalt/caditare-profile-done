@@ -7,7 +7,7 @@ import { DemandOrderService } from '../services/demandOrderService';
 import { SelectionService } from '../services/selectionService';
 import {
     Employer, EmployerStatus, Candidate, DemandOrder,
-    DemandOrderStatus, SelectionStage
+    DemandOrderStatus, SelectionStage, Job
 } from '../types';
 import {
     Building2, Users, MapPin, Mail,
@@ -30,8 +30,13 @@ const PartnerManager: React.FC = () => {
 
     const [employers, setEmployers] = useState<Employer[]>([]);
     const [candidates, setCandidates] = useState<Candidate[]>([]);
+    const [allOrders, setAllOrders] = useState<DemandOrder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshKey, setRefreshKey] = useState(0);
+
+    // Filtered Data State
+    const [employerJobs, setEmployerJobs] = useState<Job[]>([]);
+    const [employerDemandOrders, setEmployerDemandOrders] = useState<DemandOrder[]>([]);
 
     // UI State
     const [searchQuery, setSearchQuery] = useState('');
@@ -45,15 +50,20 @@ const PartnerManager: React.FC = () => {
     const [selectedOrder, setSelectedOrder] = useState<DemandOrder | null>(null);
     const [showMatchModal, setShowMatchModal] = useState(false);
 
-    // Load data
+    // Load initial data
     useEffect(() => {
         const loadInitialData = async () => {
             setIsLoading(true);
             try {
-                const employersData = PartnerService.getEmployers() || [];
-                const candidatesData = await CandidateService.getCandidates() || [];
-                setEmployers(employersData);
-                setCandidates(candidatesData);
+                const [employersData, candidatesData, ordersData] = await Promise.all([
+                    PartnerService.getEmployers(),
+                    CandidateService.getCandidates(),
+                    DemandOrderService.getAll()
+                ]);
+
+                setEmployers(employersData || []);
+                setCandidates(candidatesData || []);
+                setAllOrders(ordersData || []);
 
                 if (id) {
                     const emp = employersData.find(e => e.id === id);
@@ -66,7 +76,8 @@ const PartnerManager: React.FC = () => {
                         }
                         const orderParam = searchParams.get('order');
                         if (orderParam) {
-                            const order = DemandOrderService.getById(orderParam);
+                            // Since we fetched all orders, we can find it here
+                            const order = ordersData.find(o => o.id === orderParam);
                             if (order) {
                                 setSelectedOrder(order);
                                 setActiveTab('demands');
@@ -83,23 +94,46 @@ const PartnerManager: React.FC = () => {
         loadInitialData();
     }, [id, refreshKey]);
 
-    // Derived data
-    const employerJobs = useMemo(() => {
-        if (!selectedEmployer) return [];
-        return JobService.getJobsByEmployerId(selectedEmployer.id);
-    }, [selectedEmployer]);
+    // Load employer-specific data when selectedEmployer changes
+    useEffect(() => {
+        const loadEmployerData = async () => {
+            if (!selectedEmployer) {
+                setEmployerJobs([]);
+                setEmployerDemandOrders([]);
+                return;
+            }
+
+            try {
+                const [jobs, orders] = await Promise.all([
+                    JobService.getJobsByEmployerId(selectedEmployer.id),
+                    DemandOrderService.getByEmployerId(selectedEmployer.id)
+                ]);
+                setEmployerJobs(jobs || []);
+                setEmployerDemandOrders(orders || []);
+            } catch (error) {
+                console.error("Failed to load employer specific data", error);
+            }
+        };
+
+        loadEmployerData();
+    }, [selectedEmployer, refreshKey]);
+
+    // Sync selectedOrder with latest data from allOrders
+    useEffect(() => {
+        if (selectedOrder) {
+            const updated = allOrders.find(o => o.id === selectedOrder.id);
+            if (updated && updated !== selectedOrder) {
+                setSelectedOrder(updated);
+            }
+        }
+    }, [allOrders, selectedOrder]);
 
     const employerCandidates = useMemo(() => {
         if (!selectedEmployer) return [];
-        const jobs = JobService.getJobsByEmployerId(selectedEmployer.id);
-        const jobIds = jobs.map(j => j.id);
+        // We rely on employerJobs having been fetched
+        const jobIds = employerJobs.map(j => j.id);
         return candidates.filter(c => c.jobId && jobIds.includes(c.jobId));
-    }, [selectedEmployer, candidates]);
-
-    const employerDemandOrders = useMemo(() => {
-        if (!selectedEmployer) return [];
-        return DemandOrderService.getByEmployerId(selectedEmployer.id);
-    }, [selectedEmployer, refreshKey]);
+    }, [selectedEmployer, candidates, employerJobs]);
 
     const filteredEmployers = employers.filter(e => {
         const query = searchQuery.toLowerCase();
@@ -135,8 +169,7 @@ const PartnerManager: React.FC = () => {
         </div>
     );
 
-    // Compute global stats
-    const allOrders = DemandOrderService.getAll();
+    // Compute global stats using state data
     const globalStats = {
         totalPartners: employers.length,
         activeAgreements: employers.filter(e => e.status === EmployerStatus.ACTIVE).length,
@@ -198,7 +231,9 @@ const PartnerManager: React.FC = () => {
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden max-h-[calc(100vh-360px)] overflow-y-auto">
                         {filteredEmployers.map(employer => {
                             const quotaPercent = employer.quotaTotal ? Math.round((employer.quotaUsed || 0) / employer.quotaTotal * 100) : 0;
-                            const demandCount = DemandOrderService.getByEmployerId(employer.id).length;
+                            // Need to count orders from allOrders since we can't fetch per employer in list efficiently without N+1
+                            // Or we filter appropriately
+                            const demandCount = allOrders.filter(o => o.employerId === employer.id).length;
                             const isSelected = selectedEmployer?.id === employer.id;
 
                             return (
@@ -463,6 +498,7 @@ const PartnerManager: React.FC = () => {
 
                             {activeTab === 'demands' && (
                                 <DemandOrderList
+                                    key={refreshKey}
                                     employerId={selectedEmployer.id}
                                     onSelectOrder={(order) => {
                                         setSelectedOrder(order);
@@ -479,6 +515,7 @@ const PartnerManager: React.FC = () => {
                             {activeTab === 'selection' && (
                                 selectedOrder ? (
                                     <SelectionBoard
+                                        key={refreshKey}
                                         demandOrder={selectedOrder}
                                         onBack={() => {
                                             setSelectedOrder(null);

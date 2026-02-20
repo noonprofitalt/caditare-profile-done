@@ -38,14 +38,13 @@ const Dashboard: React.FC = () => {
             setTasks(generatedTasks);
             setAlerts(generatedAlerts);
             // Finance service needs employers too, but for now we might mock it or fetch it
-            // Assuming PartnerService is still sync or we need to fetch it.
             // Let's check PartnerService.
-            const employers = PartnerService.getEmployers();
+            const employers = await PartnerService.getEmployers();
             setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
             // Jobs & Demand Orders
-            const jobs = JobService.getJobs();
+            const jobs = await JobService.getJobs();
             setOpenJobsCount(jobs.filter(j => j.status === JobStatus.OPEN).length);
-            const orders = DemandOrderService.getAll();
+            const orders = await DemandOrderService.getAll();
             setActiveDemands(orders.filter(o => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
          } catch (error) {
             console.error('Failed to load dashboard data:', error);

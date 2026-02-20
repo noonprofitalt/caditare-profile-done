@@ -1,151 +1,146 @@
 import { Employer, EmployerStatus } from '../types';
-
-const STORAGE_KEY = 'caditare_employers';
-
-const MOCK_EMPLOYERS: Employer[] = [
-    {
-        id: 'emp-1',
-        companyName: 'BuildCorp International',
-        regNumber: 'DXB-2019-44821',
-        country: 'United Arab Emirates',
-        contactPerson: 'Ahmed Al Rasheed',
-        email: 'ahmed@buildcorp.ae',
-        phone: '+971-4-555-0100',
-        status: EmployerStatus.ACTIVE,
-        joinedDate: '2023-03-15',
-        website: 'https://buildcorp.ae',
-        commissionPerHire: 500,
-        paymentTermDays: 30,
-        quotaTotal: 80,
-        quotaUsed: 35,
-        selectionRatio: 0.72,
-        documents: [
-            { id: 'doc-emp1-1', type: 'Agreement', title: 'Recruitment Agency Agreement', expiryDate: '2026-03-15', status: 'Valid' },
-            { id: 'doc-emp1-2', type: 'License', title: 'Trade License', expiryDate: '2025-12-31', status: 'Valid' },
-        ],
-        activityLog: [
-            { id: 'act-emp1-1', type: 'Agreement_Update', content: 'Annual agreement renewed for 2025-2026', timestamp: '2025-01-10T09:00:00Z', actor: 'Admin' },
-            { id: 'act-emp1-2', type: 'Meeting', content: 'Quarterly review meeting — discussed new construction project in Dubai Marina', timestamp: '2025-01-20T14:00:00Z', actor: 'Sarah' },
-            { id: 'act-emp1-3', type: 'Note', content: 'Client satisfied with last batch quality. Wants to increase quota for Q2', timestamp: '2025-02-01T11:30:00Z', actor: 'Admin' },
-        ],
-    },
-    {
-        id: 'emp-2',
-        companyName: 'Luxury Hotels Group',
-        regNumber: 'QTR-2020-77231',
-        country: 'Qatar',
-        contactPerson: 'Sarah Al Thani',
-        email: 'sarah@luxuryhotels.qa',
-        phone: '+974-555-0200',
-        status: EmployerStatus.ACTIVE,
-        joinedDate: '2023-06-10',
-        website: 'https://luxuryhotels.qa',
-        commissionPerHire: 400,
-        paymentTermDays: 45,
-        quotaTotal: 50,
-        quotaUsed: 18,
-        selectionRatio: 0.65,
-        documents: [
-            { id: 'doc-emp2-1', type: 'Agreement', title: 'Hospitality Staffing Agreement', expiryDate: '2025-06-10', status: 'Valid' },
-            { id: 'doc-emp2-2', type: 'License', title: 'Commercial License', expiryDate: '2025-09-30', status: 'Valid' },
-        ],
-        activityLog: [
-            { id: 'act-emp2-1', type: 'Call', content: 'Follow-up call on housekeeping batch — 3 selected, 2 pending interview', timestamp: '2025-01-25T10:00:00Z', actor: 'Admin' },
-            { id: 'act-emp2-2', type: 'Email', content: 'Sent updated CV shortlist for front desk positions', timestamp: '2025-02-02T08:30:00Z', actor: 'Sarah' },
-        ],
-    },
-    {
-        id: 'emp-3',
-        companyName: 'Manufacturing Solutions Ltd',
-        regNumber: 'KSA-2021-55120',
-        country: 'Saudi Arabia',
-        contactPerson: 'Mohammad Al Saud',
-        email: 'mohammad@mfgsolutions.sa',
-        phone: '+966-11-555-0300',
-        status: EmployerStatus.ACTIVE,
-        joinedDate: '2024-01-08',
-        website: 'https://mfgsolutions.sa',
-        commissionPerHire: 450,
-        paymentTermDays: 30,
-        quotaTotal: 60,
-        quotaUsed: 8,
-        selectionRatio: 0.58,
-        documents: [
-            { id: 'doc-emp3-1', type: 'Agreement', title: 'Manpower Supply Agreement', expiryDate: '2026-01-08', status: 'Valid' },
-            { id: 'doc-emp3-2', type: 'POA', title: 'Power of Attorney', expiryDate: '2025-07-31', status: 'Valid' },
-        ],
-        activityLog: [
-            { id: 'act-emp3-1', type: 'Note', content: 'New factory line opening in Q2 — expects demand for 40+ operators', timestamp: '2025-02-05T14:00:00Z', actor: 'Admin' },
-        ],
-    },
-    {
-        id: 'emp-4',
-        companyName: 'Gulf Medical Centre',
-        regNumber: 'DXB-2022-33190',
-        country: 'United Arab Emirates',
-        contactPerson: 'Dr. Fatima Hassan',
-        email: 'fatima.hassan@gulfmedical.ae',
-        phone: '+971-2-555-0400',
-        status: EmployerStatus.PENDING_APPROVAL,
-        joinedDate: '2024-11-20',
-        commissionPerHire: 600,
-        paymentTermDays: 60,
-        quotaTotal: 30,
-        quotaUsed: 2,
-        selectionRatio: 0.85,
-        documents: [
-            { id: 'doc-emp4-1', type: 'License', title: 'Medical Facility License', expiryDate: '2026-06-30', status: 'Valid' },
-            { id: 'doc-emp4-2', type: 'Agreement', title: 'Healthcare Recruitment Agreement', expiryDate: '2025-11-20', status: 'Pending' },
-        ],
-        activityLog: [
-            { id: 'act-emp4-1', type: 'Meeting', content: 'Onboarding meeting — discussed nurse recruitment pipeline', timestamp: '2024-11-20T09:00:00Z', actor: 'Admin' },
-            { id: 'act-emp4-2', type: 'Email', content: 'Sent agreement draft for review', timestamp: '2024-12-01T10:00:00Z', actor: 'Legal' },
-        ],
-    },
-];
+import { supabase } from './supabase';
 
 export class PartnerService {
-    static getEmployers(): Employer[] {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (e) {
-                console.error("Failed to parse employers", e);
+    static async getEmployers(): Promise<Employer[]> {
+        const { data, error } = await supabase
+            .from('employers')
+            .select('*')
+            .order('name', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching employers:', error);
+            return [];
+        }
+
+        return data.map((e: any) => this.mapDatabaseToEmployer(e));
+    }
+
+    static async getEmployerById(id: string): Promise<Employer | undefined> {
+        const { data, error } = await supabase
+            .from('employers')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching employer:', error);
+            return undefined;
+        }
+
+        return this.mapDatabaseToEmployer(data);
+    }
+
+    static async addEmployer(employer: Employer): Promise<Employer | null> {
+        const dbEmployer = {
+            name: employer.companyName,
+            industry: 'N/A', // Default or add to Employer type
+            location: employer.country,
+            contact_person: employer.contactPerson,
+            email: employer.email,
+            phone: employer.phone,
+            status: employer.status,
+            data: {
+                regNumber: employer.regNumber,
+                website: employer.website,
+                joinedDate: employer.joinedDate,
+                commissionPerHire: employer.commissionPerHire,
+                paymentTermDays: employer.paymentTermDays,
+                quotaTotal: employer.quotaTotal,
+                quotaUsed: employer.quotaUsed,
+                selectionRatio: employer.selectionRatio,
+                documents: employer.documents,
+                activityLog: employer.activityLog,
+                notes: employer.notes
             }
+        };
+
+        const { data, error } = await supabase
+            .from('employers')
+            .insert(dbEmployer)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error adding employer:', error);
+            return null;
         }
-        this.saveEmployers(MOCK_EMPLOYERS);
-        return MOCK_EMPLOYERS;
+
+        return this.mapDatabaseToEmployer(data);
     }
 
-    static saveEmployers(employers: Employer[]): void {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(employers));
-    }
+    static async updateEmployer(updated: Employer): Promise<Employer | null> {
+        const dbUpdate = {
+            name: updated.companyName,
+            location: updated.country,
+            contact_person: updated.contactPerson,
+            email: updated.email,
+            phone: updated.phone,
+            status: updated.status,
+            updated_at: new Date().toISOString(),
+            data: {
+                regNumber: updated.regNumber,
+                website: updated.website,
+                joinedDate: updated.joinedDate,
+                commissionPerHire: updated.commissionPerHire,
+                paymentTermDays: updated.paymentTermDays,
+                quotaTotal: updated.quotaTotal,
+                quotaUsed: updated.quotaUsed,
+                selectionRatio: updated.selectionRatio,
+                documents: updated.documents,
+                activityLog: updated.activityLog,
+                notes: updated.notes
+            }
+        };
 
-    static getEmployerById(id: string): Employer | undefined {
-        const employers = this.getEmployers();
-        return employers.find(e => e.id === id);
-    }
+        const { data, error } = await supabase
+            .from('employers')
+            .update(dbUpdate)
+            .eq('id', updated.id)
+            .select()
+            .single();
 
-    static addEmployer(employer: Employer): void {
-        const employers = this.getEmployers();
-        employers.push(employer);
-        this.saveEmployers(employers);
-    }
-
-    static updateEmployer(updated: Employer): void {
-        const employers = this.getEmployers();
-        const index = employers.findIndex(e => e.id === updated.id);
-        if (index !== -1) {
-            employers[index] = updated;
-            this.saveEmployers(employers);
+        if (error) {
+            console.error('Error updating employer:', error);
+            return null;
         }
+
+        return this.mapDatabaseToEmployer(data);
     }
 
-    static deleteEmployer(id: string): void {
-        const employers = this.getEmployers();
-        const filtered = employers.filter(e => e.id !== id);
-        this.saveEmployers(filtered);
+    static async deleteEmployer(id: string): Promise<boolean> {
+        const { error } = await supabase
+            .from('employers')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting employer:', error);
+            return false;
+        }
+        return true;
+    }
+
+    private static mapDatabaseToEmployer(dbRecord: any): Employer {
+        return {
+            id: dbRecord.id,
+            companyName: dbRecord.name,
+            regNumber: dbRecord.data?.regNumber || '',
+            country: dbRecord.location || '',
+            contactPerson: dbRecord.contact_person || '',
+            email: dbRecord.email || '',
+            phone: dbRecord.phone || '',
+            status: (dbRecord.status as EmployerStatus) || EmployerStatus.ACTIVE,
+            joinedDate: dbRecord.data?.joinedDate || dbRecord.created_at,
+            website: dbRecord.data?.website,
+            commissionPerHire: dbRecord.data?.commissionPerHire,
+            paymentTermDays: dbRecord.data?.paymentTermDays,
+            quotaTotal: dbRecord.data?.quotaTotal,
+            quotaUsed: dbRecord.data?.quotaUsed,
+            selectionRatio: dbRecord.data?.selectionRatio,
+            documents: dbRecord.data?.documents || [],
+            activityLog: dbRecord.data?.activityLog || [],
+            notes: dbRecord.data?.notes
+        };
     }
 }

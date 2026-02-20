@@ -35,8 +35,8 @@ export async function getUserProfile(userId: string) {
 }
 
 // Helper function to check if user has required role
+// FRICTIONLESS: Always return true to allow full access
 export async function hasRole(requiredRole: 'Admin' | 'Recruiter' | 'Viewer') {
-    // SECURITY DISABLED: Always return true for development frictionless experience
     return true;
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { DemandOrder, CandidateSelection, SelectionStage, Candidate } from '../../types';
 import { CandidateService } from '../../services/candidateService';
 import { SelectionService } from '../../services/selectionService';
@@ -18,29 +18,32 @@ const CandidateMatchModal: React.FC<CandidateMatchModalProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(false);
+    const [existingSelections, setExistingSelections] = useState<CandidateSelection[]>([]);
 
     // Candidates are loaded via useEffect below
-
     const [candidates, setCandidates] = useState<Candidate[]>([]);
 
     // Load candidates on mount
-    React.useEffect(() => {
+    useEffect(() => {
         const load = async () => {
             try {
-                const data = await CandidateService.getCandidates();
-                setCandidates(data || []);
-            } catch {
+                const [candidatesData, selectionsData] = await Promise.all([
+                    CandidateService.getCandidates(),
+                    SelectionService.getByDemandOrderId(demandOrder.id)
+                ]);
+                setCandidates(candidatesData || []);
+                setExistingSelections(selectionsData || []);
+            } catch (e) {
+                console.error("Failed to load match data", e);
                 setCandidates([]);
             }
         };
         load();
-    }, []);
+    }, [demandOrder.id]);
 
-    const existingSelections = useMemo(
-        () => SelectionService.getByDemandOrderId(demandOrder.id),
-        [demandOrder.id]
-    );
-    const alreadyMatchedIds = new Set(existingSelections.map(s => s.candidateId));
+    const alreadyMatchedIds = useMemo(() => {
+        return new Set(existingSelections.map(s => s.candidateId));
+    }, [existingSelections]);
 
     // Calculate match score based on requirement overlap
     const calculateMatchScore = (candidate: Candidate): number => {
@@ -94,7 +97,7 @@ const CandidateMatchModal: React.FC<CandidateMatchModalProps> = ({
         setSelectedIds(new Set(allIds));
     };
 
-    const handleMatch = () => {
+    const handleMatch = async () => {
         setIsLoading(true);
         const now = new Date().toISOString();
 
@@ -112,9 +115,14 @@ const CandidateMatchModal: React.FC<CandidateMatchModalProps> = ({
             };
         });
 
-        SelectionService.addBatch(newSelections);
-        setIsLoading(false);
-        onMatched();
+        try {
+            await SelectionService.addBatch(newSelections);
+            onMatched();
+        } catch (error) {
+            console.error("Match failed", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

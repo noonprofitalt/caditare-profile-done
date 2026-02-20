@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { DemandOrder, DemandOrderStatus } from '../../types';
 import { DemandOrderService } from '../../services/demandOrderService';
 import {
     Package, Plus, Calendar, MapPin, Users, Clock,
-    ChevronRight, AlertTriangle, CheckCircle2, TrendingUp, Briefcase, ExternalLink
+    ChevronRight, AlertTriangle, CheckCircle2, TrendingUp, Briefcase, ExternalLink, Loader
 } from 'lucide-react';
 
 interface DemandOrderListProps {
@@ -21,7 +21,23 @@ const DemandOrderList: React.FC<DemandOrderListProps> = ({
     onCreateNew,
 }) => {
     const [filter, setFilter] = useState<'all' | 'open' | 'filled' | 'closed'>('all');
-    const orders = DemandOrderService.getByEmployerId(employerId);
+    const [orders, setOrders] = useState<DemandOrder[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadOrders = async () => {
+            setIsLoading(true);
+            try {
+                const data = await DemandOrderService.getByEmployerId(employerId);
+                setOrders(data || []);
+            } catch (error) {
+                console.error("Failed to load demand orders", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadOrders();
+    }, [employerId]);
 
     const filteredOrders = orders.filter(o => {
         if (filter === 'all') return true;
@@ -60,6 +76,13 @@ const DemandOrderList: React.FC<DemandOrderListProps> = ({
         totalPositions: orders.reduce((sum, o) => sum + o.positionsRequired, 0),
         totalFilled: orders.reduce((sum, o) => sum + o.positionsFilled, 0),
     };
+
+    if (isLoading) return (
+        <div className="flex flex-col items-center justify-center p-12 text-slate-400">
+            <Loader className="animate-spin mb-2" size={24} />
+            <p className="text-xs font-bold">Loading orders...</p>
+        </div>
+    );
 
     return (
         <div className="space-y-6">

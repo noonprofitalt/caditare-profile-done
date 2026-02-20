@@ -6,7 +6,7 @@ import { CandidateReportPDF } from '../src/components/reports/CandidateReportPDF
 import { CandidateService } from '../services/candidateService';
 import { JobService } from '../services/jobService';
 import { PartnerService } from '../services/partnerService';
-import { Candidate, WorkflowStage, CandidateDocument, PassportData, PCCData, TimelineEventType, PassportStatus } from '../types';
+import { Candidate, WorkflowStage, CandidateDocument, PassportData, PCCData, TimelineEventType, PassportStatus, Job, Employer } from '../types';
 import { User, FileText, History, Bot, AlertCircle, Plus, Trash2, ShieldCheck, ShieldAlert, Edit2, CheckCircle, X, Mail, Globe, MapPin, Calendar, Briefcase, Phone, Award, Clock, RefreshCw } from 'lucide-react';
 
 // New Components
@@ -84,6 +84,30 @@ const CandidateDetail: React.FC = () => {
   // Handles profile fields editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Partial<Candidate>>({});
+
+  // Matched Jobs & Employers State
+  const [matchedJobs, setMatchedJobs] = useState<Job[]>([]);
+  const [employersMap, setEmployersMap] = useState<Record<string, Employer>>({});
+
+  useEffect(() => {
+    const loadLinkedData = async () => {
+      if (!candidate) return;
+      try {
+        const allJobs = await JobService.getJobs();
+        const allEmployers = await PartnerService.getEmployers();
+
+        const matches = allJobs.filter(j => j.matchedCandidateIds?.includes(candidate.id));
+        setMatchedJobs(matches);
+
+        const map: Record<string, Employer> = {};
+        allEmployers.forEach(e => { map[e.id] = e; });
+        setEmployersMap(map);
+      } catch (error) {
+        console.error("Error loading linked data", error);
+      }
+    };
+    loadLinkedData();
+  }, [candidate]);
 
   const startEditing = () => {
     if (!candidate) return;
@@ -1573,46 +1597,43 @@ const CandidateDetail: React.FC = () => {
             <SLBFEStatusWidget candidate={candidate} />
 
             {/* Matched Jobs Widget */}
-            {(() => {
-              const matchedJobs = JobService.getJobs().filter(j => j.matchedCandidateIds?.includes(candidate.id));
-              if (matchedJobs.length === 0) return null;
-              return (
-                <div className="bg-white rounded-xl border border-slate-200 p-5">
-                  <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                    <Briefcase size={14} className="text-blue-500" />
-                    Matched Jobs ({matchedJobs.length})
-                  </h4>
-                  <div className="space-y-2.5">
-                    {matchedJobs.map(job => {
-                      const employer = job.employerId ? PartnerService.getEmployerById(job.employerId) : null;
-                      return (
-                        <div key={job.id} className="p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-all">
-                          <Link to={`/jobs?highlight=${job.id}`} className="text-sm font-bold text-slate-800 hover:text-blue-600 transition-colors">
-                            {job.title}
-                          </Link>
-                          <div className="flex items-center gap-2 mt-1">
-                            {employer && (
-                              <Link to={`/partners/${employer.id}`} className="text-[10px] text-blue-500 hover:underline font-semibold">
-                                {employer.companyName}
-                              </Link>
-                            )}
-                            <span className="text-[10px] text-slate-400">•</span>
-                            <span className="text-[10px] text-slate-500">{job.location}</span>
-                          </div>
-                          <div className="flex items-center justify-between mt-1.5">
-                            <span className="text-[10px] text-green-600 font-bold">{job.salaryRange}</span>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${job.status === 'Open' ? 'bg-green-50 text-green-600' :
-                                job.status === 'Filled' ? 'bg-blue-50 text-blue-600' :
-                                  'bg-slate-100 text-slate-500'
-                              }`}>{job.status}</span>
-                          </div>
+            {/* Matched Jobs Widget */}
+            {matchedJobs.length > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 p-5">
+                <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                  <Briefcase size={14} className="text-blue-500" />
+                  Matched Jobs ({matchedJobs.length})
+                </h4>
+                <div className="space-y-2.5">
+                  {matchedJobs.map(job => {
+                    const employer = job.employerId ? employersMap[job.employerId] : null;
+                    return (
+                      <div key={job.id} className="p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-all">
+                        <Link to={`/jobs?highlight=${job.id}`} className="text-sm font-bold text-slate-800 hover:text-blue-600 transition-colors">
+                          {job.title}
+                        </Link>
+                        <div className="flex items-center gap-2 mt-1">
+                          {employer && (
+                            <Link to={`/partners/${employer.id}`} className="text-[10px] text-blue-500 hover:underline font-semibold">
+                              {employer.companyName}
+                            </Link>
+                          )}
+                          <span className="text-[10px] text-slate-400">•</span>
+                          <span className="text-[10px] text-slate-500">{job.location}</span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="text-[10px] text-green-600 font-bold">{job.salaryRange}</span>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${job.status === 'Open' ? 'bg-green-50 text-green-600' :
+                            job.status === 'Filled' ? 'bg-blue-50 text-blue-600' :
+                              'bg-slate-100 text-slate-500'
+                            }`}>{job.status}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })()}
+              </div>
+            )}
             <WorkflowProgressWidget
               candidate={candidate}
               onAdvance={handleAdvanceStage}

@@ -49,8 +49,8 @@ const JobBoard: React.FC = () => {
     const load = async () => {
       setIsLoading(true);
       try {
-        const jobsData = JobService.getJobs();
-        const employersData = PartnerService.getEmployers();
+        const jobsData = await JobService.getJobs();
+        const employersData = await PartnerService.getEmployers();
         const candidatesData = await CandidateService.getCandidates() || [];
         setJobs(jobsData);
         setEmployers(employersData);
@@ -122,8 +122,8 @@ const JobBoard: React.FC = () => {
     }
   };
 
-  const handleDeleteJob = (jobId: string) => {
-    JobService.deleteJob(jobId);
+  const handleDeleteJob = async (jobId: string) => {
+    await JobService.deleteJob(jobId);
     if (selectedJob?.id === jobId) setSelectedJob(null);
     setShowDeleteConfirm(null);
     triggerRefresh();
@@ -584,24 +584,35 @@ const JobFormModal: React.FC<JobFormModalProps> = ({ job, employers, onClose, on
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Get demand orders for selected employer
-  const availableDemandOrders = form.employerId
-    ? DemandOrderService.getByEmployerId(form.employerId)
-    : [];
+  const [availableDemandOrders, setAvailableDemandOrders] = useState<DemandOrder[]>([]);
+  useEffect(() => {
+    if (form.employerId) {
+      DemandOrderService.getByEmployerId(form.employerId).then(setAvailableDemandOrders);
+    } else {
+      setAvailableDemandOrders([]);
+    }
+  }, [form.employerId]);
 
-  const handleDemandOrderSelect = (doId: string) => {
+  const handleDemandOrderSelect = async (doId: string) => {
+    if (!doId) {
+      setForm(prev => ({ ...prev, demandOrderId: doId }));
+      return;
+    }
+
+    // Check if we need to await this. Assuming getById is now async or we assume clean refactor.
+    // Actually DemandOrderService.getById might be async now.
+    const order = await DemandOrderService.getById(doId);
+
     setForm(prev => {
       const updated = { ...prev, demandOrderId: doId };
-      if (doId) {
-        const order = DemandOrderService.getById(doId);
-        if (order) {
-          updated.location = `${order.location}, ${order.country}`;
-          updated.salaryRange = order.salaryRange;
-          updated.category = order.jobCategory || '';
-          updated.positions = order.positionsRequired.toString();
-          updated.deadline = order.deadline || '';
-          updated.requirements = order.requirements?.join(', ') || '';
-          updated.benefits = new Set(order.benefits || []);
-        }
+      if (order) {
+        updated.location = `${order.location}, ${order.country}`;
+        updated.salaryRange = order.salaryRange;
+        updated.category = order.jobCategory || '';
+        updated.positions = order.positionsRequired.toString();
+        updated.deadline = order.deadline || '';
+        updated.requirements = order.requirements?.join(', ') || '';
+        updated.benefits = new Set(order.benefits || []);
       }
       return updated;
     });
@@ -649,12 +660,8 @@ const JobFormModal: React.FC<JobFormModalProps> = ({ job, employers, onClose, on
       benefits: Array.from(form.benefits),
     };
 
-    if (isEdit) {
-      JobService.updateJob(savedJob);
-    } else {
-      JobService.addJob(savedJob);
-    }
-    onSaved(savedJob);
+    const savePromise = isEdit ? JobService.updateJob(savedJob) : JobService.addJob(savedJob);
+    savePromise.then(() => onSaved(savedJob));
   };
 
   const toggleBenefit = (b: string) => {

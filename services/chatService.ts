@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, getCurrentUser } from './supabase';
 import { ChatChannel, ChatMessage, ChatUser, ChatMessageContext, ChatNotification, ChatAttachment, MessageReaction } from '../types';
 import { UserService } from './userService';
 
@@ -30,12 +30,68 @@ interface IChatService {
     joinChannel: (channelId: string) => void;
     leaveChannel: (channelId: string) => void;
     subscribeToMessages: (channelId: string, callback: (payload: any) => void) => () => void;
+    initialize: () => void;
 }
 
 // Add Socket.IO style event emitters to the service
 const eventListeners: Map<string, Set<Function>> = new Map();
 
+// Helper to map DB row to ChatMessage
+const mapRowToMessage = (row: any): ChatMessage => ({
+    id: row.id,
+    channelId: row.channel_id,
+    text: row.text,
+    senderId: row.sender_id,
+    senderName: row.sender_name,
+    timestamp: row.timestamp,
+    attachments: row.attachments || [],
+    context: row.context,
+    isMe: false, // determined at call time if needed, or by component
+    isSystem: row.sender_id === 'system' || row.sender_id === '00000000-0000-0000-0000-000000000000',
+    reactions: [] // Reactions logic would go here if persisted
+});
+
+let isInitialized = false;
+
 export const ChatService: IChatService = {
+    initialize: () => {
+        if (isInitialized) return;
+        isInitialized = true;
+
+        // Subscribe to global notifications for the current user
+        // We can't easily filter by auth.uidIn realtime unless we use RLS and row level changes.
+        // Assuming RLS is on, we receive what we are allowed to see.
+        supabase
+            .channel('global_notifications')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                },
+                (payload) => {
+                    const n = payload.new;
+                    // Check if it's a chat notification type
+                    if (['mention', 'reply', 'channel_invite', 'system'].includes(n.type)) {
+                        const chatNotif: ChatNotification = {
+                            id: n.id,
+                            userId: n.user_id,
+                            channelId: n.metadata?.channelId || '',
+                            messageId: n.metadata?.messageId,
+                            title: n.title,
+                            message: n.message,
+                            type: n.type as any,
+                            isRead: n.is_read,
+                            createdAt: n.created_at
+                        };
+                        ChatService.emit('notification:new', chatNotif);
+                    }
+                }
+            )
+            .subscribe();
+    },
+
     getChannels: async (currentUserRole?: string): Promise<ChatChannel[]> => {
         const { data, error } = await supabase
             .from('chat_channels')
@@ -46,7 +102,13 @@ export const ChatService: IChatService = {
             return [];
         }
 
-        let channels: ChatChannel[] = data || [];
+        let channels: ChatChannel[] = (data || []).map(c => ({
+            id: c.id,
+            name: c.name,
+            type: c.type || 'public',
+            unreadCount: 0, // Simplified for now, real unread count requires joining chat_reads
+            allowedRoles: c.allowed_roles
+        }));
 
         // Fallback/Seed for dev if empty
         if (channels.length === 0) {
@@ -56,21 +118,17 @@ export const ChatService: IChatService = {
                 { id: 'c3', name: 'Visa Processing', type: 'public', unreadCount: 0 },
                 { id: 'c4', name: 'Management', type: 'private', unreadCount: 0, allowed_roles: ['Admin', 'Manager', 'HR Manager'] },
             ];
+            // @ts-ignore
             await supabase.from('chat_channels').insert(initialChannels);
-            channels = initialChannels as any[];
+            // @ts-ignore
+            channels = initialChannels.map(c => ({ ...c, allowedRoles: c.allowed_roles }));
         }
 
         // RBAC Filtering
         if (currentUserRole) {
             return channels.filter(c => !c.allowedRoles || (c.allowedRoles && c.allowedRoles.includes(currentUserRole)));
         }
-        return (data || []).map(c => ({
-            id: c.id,
-            name: c.name,
-            type: c.type || 'public',
-            unreadCount: 0,
-            allowedRoles: c.allowed_roles
-        }));
+        return channels;
     },
 
     getUsers: async (): Promise<ChatUser[]> => {
@@ -96,7 +154,7 @@ export const ChatService: IChatService = {
             .from('chat_messages')
             .select('*', { count: 'exact' })
             .eq('channel_id', channelId)
-            .order('timestamp', { ascending: true })
+            .order('timestamp', { ascending: false }) // Fetch NEWEST first
             .range(offset, offset + limit - 1);
 
         if (error) {
@@ -104,18 +162,7 @@ export const ChatService: IChatService = {
             return { messages: [], hasMore: false };
         }
 
-        const messages: ChatMessage[] = (data || []).map(m => ({
-            id: m.id,
-            channelId: m.channel_id,
-            text: m.text,
-            senderId: m.sender_id,
-            senderName: m.sender_name,
-            timestamp: m.timestamp,
-            attachments: m.attachments || [],
-            context: m.context,
-            isMe: false, // Will be determined by component based on current user
-            isSystem: m.sender_id === 'system'
-        }));
+        const messages: ChatMessage[] = (data || []).map(mapRowToMessage).reverse(); // Reverse back to chronological
 
         return {
             messages,
@@ -151,22 +198,15 @@ export const ChatService: IChatService = {
 
         if (error) throw error;
 
-        const message: ChatMessage = {
-            id: data.id,
-            channelId: data.channel_id,
-            text: data.text,
-            senderId: data.sender_id,
-            senderName: data.sender_name,
-            timestamp: data.timestamp,
-            attachments: data.attachments || [],
-            context: data.context,
-            isMe: true
-        };
-
+        const message = mapRowToMessage(data);
+        message.isMe = true;
         return message;
     },
 
     subscribeToMessages: (channelId: string, callback: (payload: any) => void) => {
+        // Ensure initialized
+        ChatService.initialize();
+
         const channel = supabase
             .channel(`channel:${channelId}`)
             .on(
@@ -178,7 +218,11 @@ export const ChatService: IChatService = {
                     filter: `channel_id=eq.${channelId}`
                 },
                 (payload) => {
-                    callback(payload.new);
+                    // Start async process to fetch sender details if needed, 
+                    // but for now we map what we have.
+                    // IMPORTANT: The callback likely expects a ChatMessage object, not raw row.
+                    const message = mapRowToMessage(payload.new);
+                    callback(message);
                 }
             )
             .subscribe();
@@ -250,8 +294,6 @@ export const ChatService: IChatService = {
 
     getDmChannelId: (userId1: string, userId2?: string) => {
         if (!userId2) {
-            // If only one user provided, get current user (this should ideally be passed in)
-            // But usually we map logged in user to userId2 in getDmChannelId calls
             return `dm-${userId1}`;
         }
         const ids = [userId1, userId2].sort();
@@ -261,7 +303,7 @@ export const ChatService: IChatService = {
     getChannelDisplay: (channelId: string, users: ChatUser[]) => {
         if (channelId.startsWith('dm-')) {
             const userIds = channelId.replace('dm-', '').split('-');
-            const otherUserId = userIds.find(id => id !== 'current-user'); // This logic needs to be better if we have real IDs
+            const otherUserId = userIds.find(id => id !== 'current-user'); // Logic needs actual current user ID
             const user = users.find(u => u.id === otherUserId);
             return {
                 name: user?.name || 'Direct Message',
@@ -273,12 +315,60 @@ export const ChatService: IChatService = {
         return { name: channelId, isUser: false };
     },
 
-    getNotifications: async () => [],
-    markNotificationRead: async () => { },
-    markAllNotificationsRead: async () => { },
-    markChannelAsRead: () => { },
+    getNotifications: async (): Promise<ChatNotification[]> => {
+        ChatService.initialize();
+        // Fetch from notifications table filtering by chat types
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .in('type', ['mention', 'reply', 'channel_invite', 'system'])
+            .eq('is_read', false)
+            .order('created_at', { ascending: false });
+
+        if (error || !data) return [];
+
+        return data.map(n => ({
+            id: n.id,
+            userId: n.user_id,
+            channelId: n.metadata?.channelId || '',
+            messageId: n.metadata?.messageId,
+            title: n.title,
+            message: n.message,
+            type: n.type as any,
+            isRead: n.is_read,
+            createdAt: n.created_at
+        }));
+    },
+
+    markNotificationRead: async (id: string) => {
+        await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    },
+
+    markAllNotificationsRead: async () => {
+        const user = await getCurrentUser();
+        if (user) {
+            await supabase.from('notifications')
+                .update({ is_read: true })
+                .eq('user_id', user.id)
+                .in('type', ['mention', 'reply', 'channel_invite', 'system']);
+        }
+    },
+
+    markChannelAsRead: async (channelId: string) => {
+        // Upsert chat_reads
+        const user = await getCurrentUser();
+        if (user) {
+            await supabase.from('chat_reads').upsert({
+                channel_id: channelId,
+                user_id: user.id,
+                last_read_at: new Date().toISOString()
+            });
+        }
+    },
+
     addReaction: async () => { },
     removeReaction: async () => { },
+
     on: (event, callback) => {
         if (!eventListeners.has(event)) eventListeners.set(event, new Set());
         eventListeners.get(event)!.add(callback);
@@ -289,7 +379,8 @@ export const ChatService: IChatService = {
     emit: (event, data) => {
         eventListeners.get(event)?.forEach(cb => cb(data));
     },
-    isConnected: () => true,
+
+    isConnected: () => !!supabase.realtime.accessToken, // weak check but better than true
     startTyping: () => { },
     stopTyping: () => { },
     joinChannel: () => { },

@@ -38,15 +38,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const refreshNotifications = () => {
-    setNotifications(NotificationService.getNotifications());
+  const refreshNotifications = async () => {
+    setNotifications(await NotificationService.getNotifications());
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshNotifications();
-    window.addEventListener('storage', refreshNotifications);
-    return () => window.removeEventListener('storage', refreshNotifications);
+    // Use an interval for polling or setup Supabase subscription ideally
+    const interval = setInterval(refreshNotifications, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   // Smart Search Logic
@@ -80,13 +80,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       ).slice(0, 3);
 
       // Search Employers
-      const employers = (PartnerService.getEmployers() || []).filter(e =>
+      const allEmployers = await PartnerService.getEmployers() || [];
+      const employers = allEmployers.filter(e =>
         (e?.companyName && e.companyName.toLowerCase().includes(lowerQ)) ||
         (e?.contactPerson && e.contactPerson.toLowerCase().includes(lowerQ))
       ).slice(0, 3);
 
       // Search Jobs
-      const jobs = (JobService.getJobs() || []).filter(j =>
+      const allJobs = await JobService.getJobs() || [];
+      const jobs = allJobs.filter(j =>
         (j?.title && j.title.toLowerCase().includes(lowerQ)) ||
         (j?.company && j.company.toLowerCase().includes(lowerQ))
       ).slice(0, 3);

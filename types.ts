@@ -145,6 +145,7 @@ export interface CandidateDocument {
   version: number;
   logs: DocumentLog[];
   rejectionReason?: string;
+  storagePath?: string; // Supabase Storage path
 }
 
 export type TimelineEventType = 'STAGE_TRANSITION' | 'STATUS_CHANGE' | 'DOCUMENT' | 'NOTE' | 'ALERT' | 'SYSTEM' | 'MANUAL_OVERRIDE' | 'WORKFLOW';

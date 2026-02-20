@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CandidateSelection, SelectionStage, DemandOrder } from '../../types';
 import { SelectionService } from '../../services/selectionService';
 import { DemandOrderService } from '../../services/demandOrderService';
@@ -6,7 +6,7 @@ import {
     Users, UserCheck, Video, Phone, Eye, CheckCircle2,
     FileText, ThumbsUp, XCircle, ChevronLeft, Plus,
     GripVertical, Clock, Star, ArrowRight, MessageSquare,
-    Send, X
+    Send, X, Loader
 } from 'lucide-react';
 
 interface SelectionBoardProps {
@@ -33,18 +33,28 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
     onMatchCandidates,
     onRefresh,
 }) => {
-    const [selections, setSelections] = useState<CandidateSelection[]>(
-        SelectionService.getByDemandOrderId(demandOrder.id)
-    );
+    const [selections, setSelections] = useState<CandidateSelection[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [detailPanel, setDetailPanel] = useState<CandidateSelection | null>(null);
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [rejectModal, setRejectModal] = useState<CandidateSelection | null>(null);
     const [rejectReason, setRejectReason] = useState('');
 
-    const reload = () => {
-        setSelections(SelectionService.getByDemandOrderId(demandOrder.id));
-        onRefresh();
+    const loadSelections = async () => {
+        setIsLoading(true);
+        try {
+            const data = await SelectionService.getByDemandOrderId(demandOrder.id);
+            setSelections(data || []);
+        } catch (error) {
+            console.error("Failed to load selections", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    useEffect(() => {
+        loadSelections();
+    }, [demandOrder.id]);
 
     const activeSelections = selections.filter(s => s.stage !== SelectionStage.REJECTED);
     const rejectedSelections = selections.filter(s => s.stage === SelectionStage.REJECTED);
@@ -59,7 +69,7 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
         e.dataTransfer.dropEffect = 'move';
     };
 
-    const handleDrop = (e: React.DragEvent, targetStage: SelectionStage) => {
+    const handleDrop = async (e: React.DragEvent, targetStage: SelectionStage) => {
         e.preventDefault();
         if (!draggedId) return;
 
@@ -69,50 +79,86 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
             return;
         }
 
-        // Advance stage
-        SelectionService.advanceStage(draggedId, targetStage);
+        try {
+            // Optimistic update
+            setSelections(prev => prev.map(s =>
+                s.id === draggedId ? { ...s, stage: targetStage } : s
+            ));
 
-        // If candidate reached OFFER_ACCEPTED, increment demand order filled count
-        if (targetStage === SelectionStage.OFFER_ACCEPTED) {
-            DemandOrderService.incrementFilled(demandOrder.id);
+            await SelectionService.advanceStage(draggedId, targetStage);
+
+            // If candidate reached OFFER_ACCEPTED, increment demand order filled count
+            if (targetStage === SelectionStage.OFFER_ACCEPTED) {
+                await DemandOrderService.incrementFilled(demandOrder.id);
+            }
+
+            // Reload strictly ensuring data consistency
+            loadSelections();
+            onRefresh();
+        } catch (error) {
+            console.error("Failed to update stage", error);
+            // Revert on error would be ideal here
+            loadSelections();
+        } finally {
+            setDraggedId(null);
         }
-
-        setDraggedId(null);
-        reload();
     };
 
-    const handleAdvance = (selection: CandidateSelection) => {
+    const handleAdvance = async (selection: CandidateSelection) => {
         const stageOrder = SelectionService.getStageOrder();
         const currentIndex = stageOrder.indexOf(selection.stage);
         if (currentIndex < stageOrder.length - 1) {
             const nextStage = stageOrder[currentIndex + 1];
-            SelectionService.advanceStage(selection.id, nextStage);
 
-            if (nextStage === SelectionStage.OFFER_ACCEPTED) {
-                DemandOrderService.incrementFilled(demandOrder.id);
-            }
-            reload();
-            if (detailPanel?.id === selection.id) {
-                setDetailPanel(SelectionService.getById(selection.id) || null);
+            try {
+                await SelectionService.advanceStage(selection.id, nextStage);
+
+                if (nextStage === SelectionStage.OFFER_ACCEPTED) {
+                    await DemandOrderService.incrementFilled(demandOrder.id);
+                }
+
+                if (detailPanel?.id === selection.id) {
+                    const updated = await SelectionService.getById(selection.id);
+                    setDetailPanel(updated || null);
+                }
+                loadSelections();
+                onRefresh();
+            } catch (error) {
+                console.error("Failed to advance stage", error);
             }
         }
     };
 
-    const handleReject = () => {
+    const handleReject = async () => {
         if (!rejectModal) return;
-        SelectionService.rejectCandidate(rejectModal.id, rejectReason);
-        setRejectModal(null);
-        setRejectReason('');
-        if (detailPanel?.id === rejectModal.id) setDetailPanel(null);
-        reload();
+        try {
+            await SelectionService.rejectCandidate(rejectModal.id, rejectReason);
+            setRejectModal(null);
+            setRejectReason('');
+            if (detailPanel?.id === rejectModal.id) setDetailPanel(null);
+            loadSelections();
+            onRefresh();
+        } catch (error) {
+            console.error("Failed to reject candidate", error);
+        }
     };
 
     const fillPercent = demandOrder.positionsRequired > 0
         ? Math.round((demandOrder.positionsFilled / demandOrder.positionsRequired) * 100)
         : 0;
 
+    if (isLoading && selections.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-slate-400">
+                <Loader className="animate-spin mb-2" size={24} />
+                <p className="text-xs font-bold">Loading selections...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
+            {/* Header and UI components remain largely same, just ensuring no sync calls */}
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -197,8 +243,8 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
                                                 </div>
                                                 {sel.matchScore && (
                                                     <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${sel.matchScore >= 80 ? 'bg-green-100 text-green-700' :
-                                                            sel.matchScore >= 60 ? 'bg-amber-100 text-amber-700' :
-                                                                'bg-red-100 text-red-700'
+                                                        sel.matchScore >= 60 ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-red-100 text-red-700'
                                                         }`}>
                                                         {sel.matchScore}%
                                                     </span>
@@ -245,7 +291,7 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
                 </div>
             )}
 
-            {/* Detail Side Panel */}
+            {/* Detail Side Panel - Mostly display, but Advance/Reject uses async handlers now */}
             {detailPanel && (
                 <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl border-l border-slate-200 z-50 overflow-y-auto animate-in slide-in-from-right duration-300">
                     <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
@@ -280,8 +326,8 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
                                     <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
                                         <div
                                             className={`h-full rounded-full ${detailPanel.matchScore >= 80 ? 'bg-green-500' :
-                                                    detailPanel.matchScore >= 60 ? 'bg-amber-500' :
-                                                        'bg-red-500'
+                                                detailPanel.matchScore >= 60 ? 'bg-amber-500' :
+                                                    'bg-red-500'
                                                 }`}
                                             style={{ width: `${detailPanel.matchScore}%` }}
                                         />
@@ -350,7 +396,7 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
                 </div>
             )}
 
-            {/* Reject Modal */}
+            {/* Reject Modal - uses async submit */}
             {rejectModal && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">

@@ -41,7 +41,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
         return Object.keys(errs).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validate()) return;
 
@@ -89,8 +89,12 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
             ],
         };
 
-        PartnerService.addEmployer(employer);
-        onSaved(employer);
+        try {
+            await PartnerService.addEmployer(employer);
+            onSaved(employer);
+        } catch (error) {
+            console.error("Failed to add partner:", error);
+        }
     };
 
     const inputClasses = (field: string) =>
