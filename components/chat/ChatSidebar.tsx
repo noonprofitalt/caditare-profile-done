@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useChat } from '../../context/ChatContext';
-import { Hash, Plus, Shield, ChevronDown, ChevronRight, Circle, Trash2, MoreVertical, X, Search } from 'lucide-react';
+import { Hash, Plus, Shield, ChevronDown, ChevronRight, Trash2, X } from 'lucide-react';
 import { ChatService } from '../../services/chatService';
 import { useAuth } from '../../context/AuthContext';
 
@@ -16,6 +16,7 @@ export const ChatSidebar: React.FC = () => {
     const [newChannelName, setNewChannelName] = useState('');
     const [newChannelType, setNewChannelType] = useState<'public' | 'private'>('public');
     const [expandedSections, setExpandedSections] = useState({ channels: true, dms: true });
+    const [clickedActiveId, setClickedActiveId] = useState<string | null>(null);
 
     const toggleSection = (section: 'channels' | 'dms') => {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -36,7 +37,6 @@ export const ChatSidebar: React.FC = () => {
     // or if they are the currently active channel
     const filteredUsers = users.filter(u => {
         if (!currentUser) return false;
-        const dmId = ChatService.getDmChannelId(u.id, currentUser.id);
         const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase());
         // For now, if we are in real-time dev, maybe we show more users or just matched ones
         return matchesSearch;
@@ -90,9 +90,16 @@ export const ChatSidebar: React.FC = () => {
                         return (
                             <div key={channel.id} className="group relative">
                                 <button
-                                    onClick={() => setActiveChannelId(channel.id)}
+                                    onClick={() => {
+                                        if (activeChannelId === channel.id) {
+                                            setClickedActiveId(channel.id);
+                                            setTimeout(() => setClickedActiveId(null), 400);
+                                        } else {
+                                            setActiveChannelId(channel.id);
+                                        }
+                                    }}
                                     className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-all ${isActive
-                                        ? 'bg-white shadow-sm text-slate-900'
+                                        ? `bg-white shadow-sm text-slate-900 ${clickedActiveId === channel.id ? 'animate-pulse ring-2 ring-blue-300' : ''}`
                                         : 'text-slate-600 hover:bg-slate-200/50'
                                         }`}
                                 >

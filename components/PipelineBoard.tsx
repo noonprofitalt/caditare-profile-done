@@ -8,13 +8,10 @@ import {
     closestCorners,
     DragStartEvent,
     DragEndEvent,
-    DragOverEvent,
-    defaultAnnouncements,
     useDroppable
 } from '@dnd-kit/core';
 import { useCandidates } from '../context/CandidateContext';
 import {
-    arrayMove,
     SortableContext,
     verticalListSortingStrategy,
     useSortable
@@ -27,13 +24,8 @@ import {
     Users,
     Search,
     Filter,
-    MoreHorizontal,
-    AlertCircle,
-    Clock,
-    ArrowRight,
-    ChevronRight
+    AlertCircle
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 
 // --- Types ---
@@ -148,7 +140,7 @@ const PipelineColumn = ({ column }: { column: Column }) => {
 
 // --- Main Board Component ---
 const PipelineBoard: React.FC = () => {
-    const { candidates, isLoading, updateCandidateInState, refreshCandidates } = useCandidates();
+    const { candidates, updateCandidateInState, refreshCandidates } = useCandidates();
     // Local state for optimistic UI updates if needed, but context handles it.
     // However, dnd-kit needs stable items. Context updates might be fast enough.
     // Let's use context stats directly but we might need local state for immediate feedback if context is slow?

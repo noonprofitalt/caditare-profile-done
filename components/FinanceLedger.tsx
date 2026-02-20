@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useToast } from '../context/ToastContext';
 import { Link } from 'react-router-dom';
 import { FinanceService } from '../services/financeService';
 import { CandidateService } from '../services/candidateService';
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 
 const FinanceLedger: React.FC = () => {
+    const toast = useToast();
     // Transaction Modal State
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
     const [newTxType, setNewTxType] = useState<TransactionType>(TransactionType.EXPENSE);
@@ -93,20 +95,26 @@ const FinanceLedger: React.FC = () => {
         e.preventDefault();
         if (!newTxAmount || !newTxDescription) return;
 
-        await FinanceService.addTransaction({
-            type: newTxType,
-            amount: parseFloat(newTxAmount),
-            description: newTxDescription,
-            category: newTxCategory,
-            candidateId: 'system', // Use system for generic transactions
-            employerId: 'system',  // Use system for generic transactions
-        });
+        try {
+            await FinanceService.addTransaction({
+                type: newTxType,
+                amount: parseFloat(newTxAmount),
+                description: newTxDescription,
+                category: newTxCategory,
+                candidateId: 'system',
+                employerId: 'system',
+            });
 
-        refreshFinanceData();
-        setIsTransactionModalOpen(false);
-        setNewTxAmount('');
-        setNewTxDescription('');
-        setNewTxType(TransactionType.EXPENSE);
+            refreshFinanceData();
+            setIsTransactionModalOpen(false);
+            setNewTxAmount('');
+            setNewTxDescription('');
+            setNewTxType(TransactionType.EXPENSE);
+            toast.success('Transaction recorded successfully');
+        } catch (error) {
+            console.error('Failed to record transaction:', error);
+            toast.error('Failed to record transaction. Please try again.');
+        }
     };
 
     const handleExportReport = () => {
