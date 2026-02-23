@@ -155,12 +155,9 @@ const PipelineBoard: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const toast = useToast();
 
+    // FRICTIONLESS: Removed activationConstraint (distance: 8) so drag starts instantly without requiring initial movement.
     const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8,
-            },
-        })
+        useSensor(PointerSensor)
     );
 
     // Initial load handled by context

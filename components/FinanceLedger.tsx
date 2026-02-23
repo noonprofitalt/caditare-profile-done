@@ -93,13 +93,13 @@ const FinanceLedger: React.FC = () => {
 
     const handleAddTransaction = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newTxAmount || !newTxDescription) return;
+        // FRICTIONLESS: Removed requirement for amount and description
 
         try {
             await FinanceService.addTransaction({
                 type: newTxType,
-                amount: parseFloat(newTxAmount),
-                description: newTxDescription,
+                amount: parseFloat(newTxAmount) || 0,
+                description: newTxDescription || 'Quick Transaction',
                 category: newTxCategory,
                 candidateId: 'system',
                 employerId: 'system',
@@ -454,7 +454,6 @@ const FinanceLedger: React.FC = () => {
                                     <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2">Amount ($)</label>
                                     <input
                                         type="number"
-                                        required
                                         placeholder="0.00"
                                         value={newTxAmount}
                                         onChange={(e) => setNewTxAmount(e.target.value)}
@@ -466,7 +465,6 @@ const FinanceLedger: React.FC = () => {
                                     <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2">Description</label>
                                     <input
                                         type="text"
-                                        required
                                         placeholder="What is this for?"
                                         value={newTxDescription}
                                         onChange={(e) => setNewTxDescription(e.target.value)}
