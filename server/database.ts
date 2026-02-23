@@ -229,10 +229,12 @@ class MemoryDB {
             return { rows: [newAttachment], rowCount: 1 };
         }
 
-        // 9. Generic SELECT 1 check / mark_channel_read / notifications / cleanup
+        // 9. Generic SELECT 1 check / mark_channel_read / notifications / cleanup / typing indicators
         if (sql === 'select 1' || sql.includes('mark_channel_read') ||
             sql.includes('create_mention_notification') ||
-            sql.includes('cleanup_old_typing_indicators')) {
+            sql.includes('cleanup_old_typing_indicators') ||
+            sql.includes('select 1 from chat_channels') ||
+            sql.includes('select user_id as "userid"')) {
             return { rows: [{ id: generateId(), '1': 1 }], rowCount: 1 };
         }
 

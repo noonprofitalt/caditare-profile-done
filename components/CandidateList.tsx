@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { List } from 'react-window';
 import { useCandidates } from '../context/CandidateContext';
 import { Candidate, ProfileCompletionStatus, WorkflowStage } from '../types';
@@ -7,10 +7,12 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import FilterBar from './FilterBar';
 import Skeleton from './ui/Skeleton';
 import { convertToCSV } from '../services/csvExportService';
+import { useDebounce } from '../hooks/useDebounce';
 
 const CandidateList: React.FC = () => {
   const { candidates, isLoading, refreshCandidates } = useCandidates();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [activeStatus, setActiveStatus] = useState<ProfileCompletionStatus | 'ALL'>('ALL');
   const [activeStage, setActiveStage] = useState<WorkflowStage | 'ALL'>('ALL');
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
@@ -24,7 +26,7 @@ const CandidateList: React.FC = () => {
   // Initial Load from Context
   useEffect(() => {
     refreshCandidates();
-  }, []);
+  }, [refreshCandidates]);
 
   // Initialize filters from URL
   useEffect(() => {
@@ -57,33 +59,35 @@ const CandidateList: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Filter candidates
-  const filteredCandidates = candidates.filter(candidate => {
-    if (activeStatus !== 'ALL' && candidate.profileCompletionStatus !== activeStatus) {
-      return false;
-    }
-    if (activeStage !== 'ALL' && candidate.stage !== activeStage) {
-      return false;
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        candidate.name.toLowerCase().includes(query) ||
-        candidate.phone?.includes(query) ||
-        candidate.nic?.toLowerCase().includes(query) ||
-        candidate.email?.toLowerCase().includes(query) ||
-        candidate.role?.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  });
+  // Filter candidates (Optimized with useMemo for high volume)
+  const filteredCandidates = useMemo(() => {
+    return candidates.filter(candidate => {
+      if (activeStatus !== 'ALL' && candidate.profileCompletionStatus !== activeStatus) {
+        return false;
+      }
+      if (activeStage !== 'ALL' && candidate.stage !== activeStage) {
+        return false;
+      }
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
+        return (
+          candidate.name.toLowerCase().includes(query) ||
+          candidate.phone?.includes(query) ||
+          candidate.nic?.toLowerCase().includes(query) ||
+          candidate.email?.toLowerCase().includes(query) ||
+          candidate.role?.toLowerCase().includes(query)
+        );
+      }
+      return true;
+    });
+  }, [candidates, activeStatus, activeStage, debouncedSearchQuery]);
 
-  const candidateCounts = {
+  const candidateCounts = useMemo(() => ({
     all: candidates.length,
     quick: candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK).length,
     partial: candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL).length,
     complete: candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length
-  };
+  }), [candidates]);
 
   const handleStatusChange = (status: ProfileCompletionStatus | 'ALL') => {
     setActiveStatus(status);
@@ -149,11 +153,7 @@ const CandidateList: React.FC = () => {
   };
 
   const toggleIntegrityScan = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      setIsIntegrityScanActive(!isIntegrityScanActive);
-      setIsScanning(false);
-    }, 800);
+    setIsIntegrityScanActive(!isIntegrityScanActive);
   };
 
   // Virtualized Row Component - Responsive Card

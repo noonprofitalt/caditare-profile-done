@@ -193,7 +193,7 @@ const PartnerManager: React.FC = () => {
             </div>
 
             {/* STATS OVERVIEW */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {[
                     { label: 'Total Partners', value: globalStats.totalPartners, icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50' },
                     { label: 'Active Agreements', value: globalStats.activeAgreements, icon: ShieldCheck, color: 'text-green-600', bg: 'bg-green-50' },
@@ -261,11 +261,11 @@ const PartnerManager: React.FC = () => {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${getStatusColor(employer.status)}`}>
+                                        <div className="flex flex-col items-end gap-1 shrink-0">
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${getStatusColor(employer.status)} truncate max-w-[80px] sm:max-w-none`}>
                                                 {employer.status}
                                             </span>
-                                            <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden mt-1">
                                                 <div
                                                     className={`h-full transition-all duration-700 ${quotaPercent > 90 ? 'bg-red-500' : quotaPercent > 70 ? 'bg-amber-500' : 'bg-blue-600'}`}
                                                     style={{ width: `${quotaPercent}%` }}
@@ -297,32 +297,32 @@ const PartnerManager: React.FC = () => {
                                             {selectedEmployer.companyName.charAt(0)}
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-slate-800">{selectedEmployer.companyName}</h3>
-                                            <p className="text-sm text-slate-500 flex items-center gap-2 mt-0.5">
-                                                <MapPin size={12} /> {selectedEmployer.country}
+                                            <h3 className="text-xl font-bold text-slate-800 break-words line-clamp-2">{selectedEmployer.companyName}</h3>
+                                            <p className="text-sm text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                                                <MapPin size={12} className="shrink-0" /> <span className="truncate max-w-[120px]">{selectedEmployer.country}</span>
                                                 <span className="text-slate-300">•</span>
                                                 {selectedEmployer.regNumber}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(selectedEmployer.status)}`}>
+                                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                                        <span className={`px-2 md:px-3 py-1 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${getStatusColor(selectedEmployer.status)} truncate max-w-[100px] md:max-w-none`}>
                                             {selectedEmployer.status}
                                         </span>
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100">
+                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100">
                                             <Star size={12} fill="currentColor" /> {selectedEmployer.selectionRatio ? (selectedEmployer.selectionRatio * 10).toFixed(1) : '8.5'}
                                         </span>
                                         <Link
                                             to={`/jobs?employer=${selectedEmployer.id}`}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-all"
+                                            className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-all shrink-0"
                                         >
-                                            <Briefcase size={12} /> View Jobs ({employerJobs.length})
+                                            <Briefcase size={12} className="hidden sm:block" /> View Jobs ({employerJobs.length})
                                         </Link>
                                     </div>
                                 </div>
 
                                 {/* Quick Stats */}
-                                <div className="grid grid-cols-4 gap-3 mt-5">
+                                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mt-5">
                                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                         <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Comms / Hire</p>
                                         <p className="text-lg font-black text-slate-800">${selectedEmployer.commissionPerHire || '450'}</p>

@@ -49,11 +49,18 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+import expressWinston from 'express-winston';
+import { logger } from './services/loggerService';
+
 // Request logging middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
-});
+app.use(expressWinston.logger({
+    winstonInstance: logger,
+    meta: true, // Output HTTP metadata
+    msg: "HTTP {{req.method}} {{req.url}}",
+    expressFormat: true,
+    colorize: false, // let winston handles this
+    ignoreRoute: (req, res) => { return req.path === '/api/health'; } // Don't spam healthchecks
+}));
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
@@ -85,9 +92,14 @@ app.use('/api/notifications', notificationRoutes);
 // Setup Socket.IO chat handlers
 setupChatSocket(io);
 
+// express-winston error logger makes sense BEFORE the custom error handler
+app.use(expressWinston.errorLogger({
+    winstonInstance: logger
+}));
+
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error('Error:', err);
+    logger.error(`Error processing path ${req.path}: ${err.message}`, { stack: err.stack });
     const statusCode = 'statusCode' in err ? (err as any).statusCode : 500;
     res.status(statusCode).json({
         error: 'Internal server error',
@@ -134,8 +146,9 @@ const PORT = process.env.PORT || 3001;
 // Run migrations before listening
 import { runMigrations } from './database';
 runMigrations().then(() => {
-    httpServer.listen(PORT, () => {
-        console.log(`
+    if (process.env.NODE_ENV !== 'test') {
+        httpServer.listen(PORT, () => {
+            console.log(`
     ╔════════════════════════════════════════════════════════════╗
     ║  🚀 Chat Server Running                                    ║
     ║  📡 Port: ${PORT}                                             ║
@@ -145,7 +158,8 @@ runMigrations().then(() => {
     ║  ✅ DB Migrations: Checked                                 ║
     ╚════════════════════════════════════════════════════════════╝
       `);
-    });
+        });
+    }
 });
 
 export { app, io, httpServer };

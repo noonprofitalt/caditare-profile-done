@@ -42,7 +42,7 @@ export function sanitizeFileName(fileName: string): string {
     if (!fileName) return 'unnamed';
 
     // Remove path separators and special characters
-    let sanitized = fileName.replace(/[\/\\:*?"<>|]/g, '_');
+    let sanitized = fileName.replace(/[\\/*?:"<>|]/g, '_');
 
     // Remove leading dots
     sanitized = sanitized.replace(/^\.+/, '');

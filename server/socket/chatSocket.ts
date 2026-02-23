@@ -13,6 +13,13 @@ export const setupChatSocket = (io: SocketIOServer) => {
         try {
             const token = socket.handshake.auth.token;
 
+            // Dev mode bypass for mock tokens
+            if (process.env.NODE_ENV !== 'production' && token === 'mock-jwt-token') {
+                socket.userId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; // Standard test UUID
+                socket.userName = 'Test Admin';
+                return next();
+            }
+
             if (!token) {
                 return next(new Error('Authentication error: No token provided'));
             }

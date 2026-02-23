@@ -89,7 +89,7 @@ export const ChatSidebar: React.FC = () => {
 
                         return (
                             <div key={channel.id} className="group relative">
-                                <button
+                                <div
                                     onClick={() => {
                                         if (activeChannelId === channel.id) {
                                             setClickedActiveId(channel.id);
@@ -98,7 +98,7 @@ export const ChatSidebar: React.FC = () => {
                                             setActiveChannelId(channel.id);
                                         }
                                     }}
-                                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-all ${isActive
+                                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-all cursor-pointer ${isActive
                                         ? `bg-white shadow-sm text-slate-900 ${clickedActiveId === channel.id ? 'animate-pulse ring-2 ring-blue-300' : ''}`
                                         : 'text-slate-600 hover:bg-slate-200/50'
                                         }`}
@@ -132,7 +132,7 @@ export const ChatSidebar: React.FC = () => {
                                             </button>
                                         )}
                                     </div>
-                                </button>
+                                </div>
                             </div>
                         );
                     })}
@@ -162,10 +162,10 @@ export const ChatSidebar: React.FC = () => {
                         const dmId = ChatService.getDmChannelId(user.id, currentUser?.id || '');
                         const isActive = activeChannelId === dmId;
                         return (
-                            <button
+                            <div
                                 key={user.id}
                                 onClick={() => setActiveChannelId(dmId)}
-                                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-md transition-all group ${isActive ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:bg-slate-200/50'
+                                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-md transition-all group cursor-pointer ${isActive ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:bg-slate-200/50'
                                     }`}
                             >
                                 <div className="relative shrink-0">
@@ -193,7 +193,7 @@ export const ChatSidebar: React.FC = () => {
                                         <Trash2 size={12} />
                                     </button>
                                 </div>
-                            </button>
+                            </div>
                         );
                     })}
                 </div>

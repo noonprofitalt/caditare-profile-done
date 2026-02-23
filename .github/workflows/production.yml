@@ -1,0 +1,42 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-test:
+    name: Build & Test Enterprise App
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Verify Production Build
+      run: npm run build
+      env:
+        # Pass mock values for build process
+        VITE_APP_ENV: production
+        VITE_SUPABASE_URL: mock-url
+        VITE_SUPABASE_ANON_KEY: mock-key
+        NODE_ENV: production

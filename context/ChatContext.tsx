@@ -112,14 +112,44 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const sendMessage = async (text: string, context?: ChatMessageContext, attachments?: ChatAttachment[]) => {
         if (!state.activeChannelId || !currentUser) return;
-        await ChatService.sendMessage(
-            state.activeChannelId,
+
+        // 🚀 Optimistic update for zero-delay user experience
+        const tempId = `temp_${Date.now()}`;
+        const optimisticMsg: ChatMessage = {
+            id: tempId,
+            channelId: state.activeChannelId,
             text,
-            currentUser.id,
-            currentUser.name,
+            senderId: currentUser.id,
+            senderName: currentUser.name || 'Me',
+            timestamp: new Date().toISOString(),
+            attachments: attachments || [],
             context,
-            attachments
-        );
+            isMe: true,
+            isSystem: false
+        };
+
+        // Add to UI immediately before server computes
+        setState(prev => ({ ...prev, messages: [...prev.messages, optimisticMsg] }));
+
+        try {
+            await ChatService.sendMessage(
+                state.activeChannelId,
+                text,
+                currentUser.id,
+                currentUser.name,
+                context,
+                attachments
+            );
+            // The real-time listener will pull the verified message, we can optionally clean up tempId here
+            // but the listener usually avoids duplicates gracefully.
+        } catch (error) {
+            console.error("Failed to send message", error);
+            // Revert on failure
+            setState(prev => ({
+                ...prev,
+                messages: prev.messages.filter(m => m.id !== tempId)
+            }));
+        }
     };
 
     const addReaction = async (messageId: string, emoji: string) => {

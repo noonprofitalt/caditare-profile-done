@@ -14,11 +14,13 @@ describe('Integration Tests - Chat Flow', () => {
         server = app.listen(0);
 
         // Mock authentication - in real tests, you'd authenticate properly
-        authToken = 'test-auth-token';
+        authToken = 'mock-jwt-token';
     });
 
-    afterAll((done) => {
-        server.close(done);
+    afterAll(async () => {
+        await new Promise<void>((resolve) => {
+            server.close(() => resolve());
+        });
     });
 
     describe('Complete Chat Flow', () => {

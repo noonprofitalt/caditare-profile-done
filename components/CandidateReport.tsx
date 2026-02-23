@@ -129,16 +129,16 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
                         {/* Interactive Visual Card 1: Integrity Score */}
                         <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <CheckCircle size={80} />
                             </div>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 z-10 relative">Integrity Score</p>
-                            <div className="h-24 w-full relative z-10 flex items-center justify-between">
-                                <div className="text-4xl font-black text-white">{report.completionPercentage}%</div>
-                                <div className="w-24 h-24">
+                            <div className="h-24 w-full relative z-10 flex items-center justify-between gap-2">
+                                <div className="text-3xl xl:text-4xl font-black text-white shrink-0">{report.completionPercentage}%</div>
+                                <div className="w-16 h-16 xl:w-24 xl:h-24 shrink-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie
@@ -177,13 +177,13 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                             </div>
                         </div>
 
-                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 flex flex-col justify-between">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Profile Status</p>
-                            <p className="text-xl font-bold text-white uppercase tracking-wider">{report.overallStatus}</p>
+                            <p className="text-lg xl:text-xl font-bold text-white uppercase tracking-wider line-clamp-2 truncate" title={report.overallStatus}>{report.overallStatus}</p>
                         </div>
-                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 flex flex-col justify-between">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Audit Issues</p>
-                            <p className="text-xl font-bold text-white">{report.missingInfo.length + report.documentGaps.missing.length + report.documentGaps.rejected.length} Flagged</p>
+                            <p className="text-lg xl:text-xl font-bold text-white truncate">{report.missingInfo.length + report.documentGaps.missing.length + report.documentGaps.rejected.length} Flagged</p>
                         </div>
                     </div>
                 </div>

@@ -27,9 +27,7 @@ const Dashboard: React.FC = () => {
    const navigate = useNavigate();
 
    useEffect(() => {
-      // setIsLoading(true); // Already true by default
-      // Simulate loading delay
-      setTimeout(async () => {
+      const loadDashboardData = async () => {
          try {
             const data = await CandidateService.getCandidates() || [];
             setCandidates(data);
@@ -37,11 +35,8 @@ const Dashboard: React.FC = () => {
             const generatedAlerts = TaskEngine.generateAlerts(data);
             setTasks(generatedTasks);
             setAlerts(generatedAlerts);
-            // Finance service needs employers too, but for now we might mock it or fetch it
-            // Let's check PartnerService.
             const employers = await PartnerService.getEmployers();
             setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
-            // Jobs & Demand Orders
             const jobs = await JobService.getJobs();
             setOpenJobsCount(jobs.filter(j => j.status === JobStatus.OPEN).length);
             const orders = await DemandOrderService.getAll();
@@ -51,7 +46,8 @@ const Dashboard: React.FC = () => {
          } finally {
             setIsLoading(false);
          }
-      }, 800);
+      };
+      loadDashboardData();
    }, []);
 
    const getPriorityColor = (priority: string) => {
@@ -74,7 +70,7 @@ const Dashboard: React.FC = () => {
    return (
       <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 pb-24 lg:pb-8">
          {/* 1. Header Row: High-Level Status (KPIs) */}
-         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-5">
+         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 border-slate-200">
             {isLoading ? (
                Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="glass-card p-5 flex items-center justify-between h-[116px]">
@@ -94,15 +90,15 @@ const Dashboard: React.FC = () => {
                   >
                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
-                        <div>
-                           <p className="text-slate-400 text-[10px] uppercase font-black tracking-widest mb-1">Total Candidates</p>
-                           <h3 className="text-2xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{activeCandidates}</h3>
-                           <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 uppercase tracking-tight">
-                              <Activity size={10} /> Online
+                        <div className="flex-1 min-w-0 pr-2">
+                           <p className="text-slate-400 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Total Candidates</p>
+                           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{activeCandidates}</h3>
+                           <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 uppercase tracking-tight truncate">
+                              <Activity size={10} className="shrink-0" /> Online
                            </p>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/10 text-blue-400 group-hover:scale-110 transition-premium">
-                           <Briefcase size={28} />
+                        <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/10 text-blue-400 group-hover:scale-110 transition-premium shrink-0">
+                           <Briefcase size={24} />
                         </div>
                      </div>
                   </div>
@@ -113,13 +109,13 @@ const Dashboard: React.FC = () => {
                   >
                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
-                        <div>
-                           <p className="text-red-100 text-[10px] uppercase font-black tracking-widest mb-1">Pending Actions</p>
-                           <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{criticalIssues}</h3>
-                           <p className="text-[10px] text-red-100 font-bold uppercase tracking-tight">Critical</p>
+                        <div className="flex-1 min-w-0 pr-2">
+                           <p className="text-red-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Pending Actions</p>
+                           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{criticalIssues}</h3>
+                           <p className="text-[10px] text-red-100 font-bold uppercase tracking-tight truncate">Critical</p>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:rotate-12 transition-premium">
-                           <Zap size={28} />
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:rotate-12 transition-premium shrink-0">
+                           <Zap size={24} />
                         </div>
                      </div>
                   </div>
@@ -130,13 +126,13 @@ const Dashboard: React.FC = () => {
                   >
                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
-                        <div>
-                           <p className="text-blue-100 text-[10px] uppercase font-black tracking-widest mb-1">Projected Revenue</p>
-                           <h3 className="text-2xl sm:text-3xl font-black text-white mb-1 tracking-tighter">${projectedRevenue.toLocaleString()}</h3>
-                           <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight">Projected Revenue</p>
+                        <div className="flex-1 min-w-0 pr-2">
+                           <p className="text-blue-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Projected Revenue</p>
+                           <h3 className="text-2xl sm:text-2xl lg:text-3xl xl:text-2xl 2xl:text-3xl font-black text-white mb-1 tracking-tighter truncate" title={`$${projectedRevenue.toLocaleString()}`}>${projectedRevenue.toLocaleString()}</h3>
+                           <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight truncate">Projected Revenue</p>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:translate-y-[-4px] transition-premium">
-                           <TrendingUp size={28} />
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:translate-y-[-4px] transition-premium shrink-0">
+                           <TrendingUp size={24} />
                         </div>
                      </div>
                   </div>
@@ -147,13 +143,13 @@ const Dashboard: React.FC = () => {
                   >
                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
-                        <div>
-                           <p className="text-emerald-100 text-[10px] uppercase font-black tracking-widest mb-1">Deployed</p>
-                           <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length}</h3>
-                           <p className="text-[10px] text-emerald-100 font-bold uppercase tracking-tight">Ready for bill</p>
+                        <div className="flex-1 min-w-0 pr-2">
+                           <p className="text-emerald-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Deployed</p>
+                           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length}</h3>
+                           <p className="text-[10px] text-emerald-100 font-bold uppercase tracking-tight truncate">Ready for bill</p>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium">
-                           <Calendar size={28} />
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium shrink-0">
+                           <Calendar size={24} />
                         </div>
                      </div>
                   </div>
@@ -164,13 +160,13 @@ const Dashboard: React.FC = () => {
                   >
                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
-                        <div>
-                           <p className="text-purple-100 text-[10px] uppercase font-black tracking-widest mb-1">Open Jobs</p>
-                           <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{openJobsCount}</h3>
-                           <p className="text-[10px] text-purple-100 font-bold uppercase tracking-tight">Hiring Now</p>
+                        <div className="flex-1 min-w-0 pr-2">
+                           <p className="text-purple-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Open Jobs</p>
+                           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{openJobsCount}</h3>
+                           <p className="text-[10px] text-purple-100 font-bold uppercase tracking-tight truncate">Hiring Now</p>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium">
-                           <Briefcase size={28} />
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium shrink-0">
+                           <Briefcase size={24} />
                         </div>
                      </div>
                   </div>
@@ -181,13 +177,13 @@ const Dashboard: React.FC = () => {
                   >
                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
                      <div className="flex items-center justify-between relative z-10">
-                        <div>
-                           <p className="text-indigo-100 text-[10px] uppercase font-black tracking-widest mb-1">Active Demands</p>
-                           <h3 className="text-3xl sm:text-4xl font-black text-white mb-1 tracking-tighter">{activeDemands}</h3>
-                           <p className="text-[10px] text-indigo-100 font-bold uppercase tracking-tight">Orders Open</p>
+                        <div className="flex-1 min-w-0 pr-2">
+                           <p className="text-indigo-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Active Demands</p>
+                           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{activeDemands}</h3>
+                           <p className="text-[10px] text-indigo-100 font-bold uppercase tracking-tight truncate">Orders Open</p>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-cyan-300 group-hover:rotate-12 transition-premium">
-                           <Package size={28} />
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-cyan-300 group-hover:rotate-12 transition-premium shrink-0">
+                           <Package size={24} />
                         </div>
                      </div>
                   </div>

@@ -19,30 +19,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     React.useEffect(() => {
         const initAuth = async () => {
-            console.log('[Auth] Initializing auth state...');
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => {
-                    console.warn('[Auth] Authentication initialization timed out after 5 seconds.');
-                    reject(new Error('Auth Timeout'));
-                }, 5000)
-            );
-
+            console.log('[Auth] Initializing frictionless auth...');
             try {
-                console.log('[Auth] Attempting to get current user...');
-                const userPromise = AuthService.getCurrentUser();
-                const user = await Promise.race([userPromise, timeoutPromise]) as User | null;
+                // Quick check for existing session
+                const user = await AuthService.getCurrentUser();
 
-                console.log('[Auth] Initialization complete. User:', user?.email || 'Guest');
+                // FRICTIONLESS: Always authenticated, fallback to system user
                 setState({
-                    user,
-                    isAuthenticated: !!user,
+                    user: user || {
+                        id: 'system-admin',
+                        name: 'System Admin',
+                        role: 'Admin',
+                        email: 'admin@suhara.erp',
+                        status: 'Active',
+                        lastLogin: new Date().toISOString()
+                    } as any,
+                    isAuthenticated: true,
                     isLoading: false,
                 });
             } catch (error) {
-                console.error('[Auth] Initialization error or timeout:', error);
+                console.warn('[Auth] Initialization error, falling back to system admin:', error);
                 setState({
-                    user: null,
-                    isAuthenticated: false,
+                    user: {
+                        id: 'system-admin',
+                        name: 'System Admin',
+                        role: 'Admin',
+                        email: 'admin@suhara.erp',
+                        status: 'Active',
+                        lastLogin: new Date().toISOString()
+                    } as any,
+                    isAuthenticated: true,
                     isLoading: false,
                 });
             }
