@@ -61,12 +61,9 @@ export const MessageSearch: React.FC<MessageSearchProps> = ({
         });
     };
 
+    // Frictionless: Instant search trigger without artificial delay
     useEffect(() => {
-        const debounceTimer = setTimeout(() => {
-            performSearch(searchQuery);
-        }, 300);
-
-        return () => clearTimeout(debounceTimer);
+        performSearch(searchQuery);
     }, [searchQuery]);
 
     const highlightText = (text: string, query: string) => {

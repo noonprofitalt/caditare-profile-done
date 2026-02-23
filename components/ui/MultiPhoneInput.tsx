@@ -44,22 +44,9 @@ const MultiPhoneInput: React.FC<MultiPhoneInputProps> = ({
         }
     };
 
-    // Check for duplicates
+    // Check for duplicates (Frictionless: Ignored)
     const checkDuplicate = (phone: string, type: 'primary' | 'whatsapp' | 'additional'): boolean => {
-        const cleaned = phone.replace(/[\s\-\(\)]/g, '');
-        const allPhones = [
-            primaryPhone,
-            whatsappPhone,
-            ...additionalPhones
-        ].map(p => p.replace(/[\s\-\(\)]/g, ''));
-
-        const isDuplicate = allPhones.filter(p => p === cleaned).length > 0;
-
-        if (isDuplicate && onDuplicateDetected) {
-            onDuplicateDetected(phone, type);
-        }
-
-        return isDuplicate;
+        return false;
     };
 
     // Handle primary phone change

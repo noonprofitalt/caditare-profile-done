@@ -188,9 +188,9 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Debounced Smart Input (# for Candidates)
+    // Instant Smart Input (# for Candidates) - Frictionless Zero Delay
     useEffect(() => {
-        const timeoutId = setTimeout(async () => {
+        const fetchSuggestions = async () => {
             const lastWord = inputValue.split(' ').pop();
             if (lastWord && lastWord.startsWith('#') && lastWord.length > 1) {
                 const query = lastWord.substring(1).toLowerCase();
@@ -205,9 +205,8 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
             } else {
                 setShowSuggestions(false);
             }
-        }, 300); // 300ms debounce
-
-        return () => clearTimeout(timeoutId);
+        };
+        fetchSuggestions();
     }, [inputValue]);
 
     const handleSelectCandidate = (candidate: Candidate) => {

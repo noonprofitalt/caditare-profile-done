@@ -320,15 +320,10 @@ export const useReactions = (channelId: string | null) => {
 export const useDebounce = <T,>(value: T, delay: number): T => {
     const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
+    // Frictionless: instantly update debounced value without any artificial timeout delay
     useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
+        setDebouncedValue(value);
+    }, [value]);
 
     return debouncedValue;
 };
