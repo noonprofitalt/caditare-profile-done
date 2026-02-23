@@ -23,35 +23,8 @@ const MultiPhoneInput: React.FC<MultiPhoneInputProps> = ({
     const [newPhone, setNewPhone] = useState('');
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-    // Sri Lankan phone number validation
+    // Sri Lankan phone number validation (frictionless)
     const validateSriLankanPhone = (phone: string): { valid: boolean; message?: string } => {
-        if (!phone) {
-            return { valid: false, message: 'Phone number is required' };
-        }
-
-        // Remove spaces and special characters for validation
-        const cleaned = phone.replace(/[\s\-\(\)]/g, '');
-
-        // Sri Lankan formats:
-        // +94771234567 (11 digits with +94)
-        // 0771234567 (10 digits starting with 0)
-        // 771234567 (9 digits without leading 0)
-
-        const patterns = [
-            /^\+94[0-9]{9}$/,      // +94771234567
-            /^0[0-9]{9}$/,         // 0771234567
-            /^[0-9]{9}$/           // 771234567
-        ];
-
-        const isValid = patterns.some(pattern => pattern.test(cleaned));
-
-        if (!isValid) {
-            return {
-                valid: false,
-                message: 'Invalid Sri Lankan phone number format (e.g., +94771234567 or 0771234567)'
-            };
-        }
-
         return { valid: true };
     };
 

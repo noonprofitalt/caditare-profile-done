@@ -11,17 +11,10 @@ import { useState, useEffect } from 'react';
 export function useDebounce<T>(value: T, delay: number = 500): T {
     const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
+    // Frictionless: Instantly update value without any delay
     useEffect(() => {
-        // Set debouncedValue to value (passed in) after the specified delay
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-
-        // Cleanup: cancel the timeout if value changes (also on delay change or unmount)
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
+        setDebouncedValue(value);
+    }, [value]);
 
     return debouncedValue;
 }

@@ -43,7 +43,7 @@ const IntelligenceEngine: React.FC = () => {
    if (!snapshot) return <div className="p-8 text-center">Initializing Operational Analytics...</div>;
 
    const renderDashboard = () => (
-      <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="space-y-6">
 
          {/* Top Level KPI Cards */}
          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -340,7 +340,7 @@ const IntelligenceEngine: React.FC = () => {
             {activeTab === 'workflow' && renderWorkflowAnalytics()}
             {activeTab === 'staff' && renderStaffMetrics()}
             {activeTab === 'financial' && (
-               <div className="space-y-6 animate-in fade-in duration-500">
+               <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex justify-between items-start mb-2">
@@ -452,7 +452,7 @@ const IntelligenceEngine: React.FC = () => {
                            </div>
                            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                               <div
-                                 className="h-full bg-green-500 rounded-full transition-all duration-1000"
+                                 className="h-full bg-green-500 rounded-full"
                                  style={{ width: `${(snapshot.financials.totalCollected / snapshot.financials.pipelineValue) * 100}%` }}
                               />
                            </div>
@@ -470,7 +470,7 @@ const IntelligenceEngine: React.FC = () => {
                            </div>
                            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                               <div
-                                 className="h-full bg-blue-500 rounded-full transition-all duration-1000 delay-300"
+                                 className="h-full bg-blue-500 rounded-full"
                                  style={{ width: `${((snapshot.financials.totalCollected + snapshot.financials.projectedRevenue) / snapshot.financials.pipelineValue) * 100}%` }}
                               />
                            </div>
