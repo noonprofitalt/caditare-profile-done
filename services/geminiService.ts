@@ -55,8 +55,9 @@ export class GeminiService {
             return await fn();
         } catch (error) {
             if (retries > 0) {
-                console.warn(`Gemini API call failed, retrying... (${retries} attempts left)`);
-                await new Promise(r => setTimeout(r, 1000));
+                console.warn(`Gemini API call failed, retrying instantly... (${retries} attempts left)`);
+                // FRICTIONLESS MODE: Reduced from 1000ms to 10ms for instant retries
+                await new Promise(r => setTimeout(r, 10));
                 return this.withRetry(fn, retries - 1);
             }
             throw error;

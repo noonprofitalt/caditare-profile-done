@@ -44,40 +44,38 @@ const Settings: React.FC = () => {
       setTimeout(() => setIsSaved(false), 3000);
    };
 
-   const handleScanIntegrity = () => {
+   const handleScanIntegrity = async () => {
       setScanning(true);
       setIntegrityIssues([]);
       setScanComplete(false);
 
-      setTimeout(async () => {
-         const issues: string[] = [];
-         const candidates = await CandidateService.getCandidates();
-         const jobs = await JobService.getJobs();
-         const employers = await PartnerService.getEmployers();
-         const employerIds = new Set(employers.map(e => e.id));
+      const issues: string[] = [];
+      const candidates = await CandidateService.getCandidates();
+      const jobs = await JobService.getJobs();
+      const employers = await PartnerService.getEmployers();
+      const employerIds = new Set(employers.map(e => e.id));
 
-         // Check 1: Orphaned Jobs
-         jobs.forEach(j => {
-            if (j.employerId && !employerIds.has(j.employerId)) {
-               issues.push(`Orphaned Job: "${j.title}" links to missing employer (ID: ${j.employerId})`);
+      // Check 1: Orphaned Jobs
+      jobs.forEach(j => {
+         if (j.employerId && !employerIds.has(j.employerId)) {
+            issues.push(`Orphaned Job: "${j.title}" links to missing employer (ID: ${j.employerId})`);
+         }
+      });
+
+      // Check 2: Stuck Candidates (Mock > 30 days)
+      // In a real app we would diff dates. Here we just mock found issues if none exist to show UI.
+      if (issues.length === 0) {
+         // Check for valid docs vs status mismatch
+         candidates.forEach(c => {
+            if (c.stage === 'Registered' && c.documents.length === 0) {
+               issues.push(`Data Quality: Candidate "${c.name}" is Registered but has 0 documents.`);
             }
          });
+      }
 
-         // Check 2: Stuck Candidates (Mock > 30 days)
-         // In a real app we would diff dates. Here we just mock found issues if none exist to show UI.
-         if (issues.length === 0) {
-            // Check for valid docs vs status mismatch
-            candidates.forEach(c => {
-               if (c.stage === 'Registered' && c.documents.length === 0) {
-                  issues.push(`Data Quality: Candidate "${c.name}" is Registered but has 0 documents.`);
-               }
-            });
-         }
-
-         setIntegrityIssues(issues);
-         setScanning(false);
-         setScanComplete(true);
-      }, 1500);
+      setIntegrityIssues(issues);
+      setScanning(false);
+      setScanComplete(true);
    };
 
    return (

@@ -14,8 +14,11 @@ interface HeaderProps {
   onMenuClick: () => void;
 }
 
+import { useDebounce } from '../hooks/useDebounce';
+
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [query, setQuery] = useState('');
+  const debouncedQuery = useDebounce(query, 300);
   const [results, setResults] = useState<{ candidates: Candidate[], employers: Employer[], jobs: Job[] }>({ candidates: [], employers: [], jobs: [] });
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -61,13 +64,13 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
   useEffect(() => {
     const performSearch = async () => {
-      if (query.length < 2) {
+      if (debouncedQuery.length < 2) {
         setResults({ candidates: [], employers: [], jobs: [] });
         setIsOpen(false);
         return;
       }
 
-      const lowerQ = (query || '').toLowerCase();
+      const lowerQ = (debouncedQuery || '').toLowerCase();
       if (!lowerQ) return;
 
       // Search Candidates
@@ -98,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       setSelectedIndex(-1);
     };
     performSearch();
-  }, [query]);
+  }, [debouncedQuery]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

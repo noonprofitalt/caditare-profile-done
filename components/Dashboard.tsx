@@ -29,17 +29,22 @@ const Dashboard: React.FC = () => {
    useEffect(() => {
       const loadDashboardData = async () => {
          try {
-            const data = await CandidateService.getCandidates() || [];
+            // FRICTIONLESS MODE: Parallel Fetching to eliminate network waterfalls
+            const [data, employers, jobs, orders] = await Promise.all([
+               CandidateService.getCandidates().then(res => res || []),
+               PartnerService.getEmployers().then(res => res || []),
+               JobService.getJobs().then(res => res || []),
+               DemandOrderService.getAll().then(res => res || [])
+            ]);
+
             setCandidates(data);
             const generatedTasks = TaskEngine.generateWorkQueue(data);
             const generatedAlerts = TaskEngine.generateAlerts(data);
             setTasks(generatedTasks);
             setAlerts(generatedAlerts);
-            const employers = await PartnerService.getEmployers();
+
             setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
-            const jobs = await JobService.getJobs();
             setOpenJobsCount(jobs.filter(j => j.status === JobStatus.OPEN).length);
-            const orders = await DemandOrderService.getAll();
             setActiveDemands(orders.filter(o => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
          } catch (error) {
             console.error('Failed to load dashboard data:', error);

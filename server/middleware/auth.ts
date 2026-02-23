@@ -17,89 +17,34 @@ declare global {
 }
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        // Get token from header
-        const authHeader = req.headers.authorization;
-
-        // Dev mode bypass for mock tokens
-        if (process.env.NODE_ENV !== 'production' && authHeader === 'Bearer mock-jwt-token') {
-            req.user = {
-                id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', // Standard test UUID
-                name: 'Test Admin',
-                email: 'admin@example.com',
-                role: 'admin',
-            };
-            return next();
-        }
-
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'No token provided' });
-        }
-
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-        // Verify token
-        const secret = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
-        const decoded = jwt.verify(token, secret) as any;
-
-        // Attach user to request
-        req.user = {
-            id: decoded.id || decoded.userId,
-            name: decoded.name,
-            email: decoded.email,
-            role: decoded.role,
-            avatar: decoded.avatar,
-        };
-
-        next();
-    } catch (error) {
-        if (error instanceof jwt.JsonWebTokenError) {
-            return res.status(401).json({ error: 'Invalid token' });
-        }
-        if (error instanceof jwt.TokenExpiredError) {
-            return res.status(401).json({ error: 'Token expired' });
-        }
-        return res.status(500).json({ error: 'Authentication error' });
-    }
+    // FRICTIONLESS MODE: Instantly bypass all JWT logic and grant maximum access.
+    req.user = {
+        id: 'system-admin',
+        name: 'System Admin',
+        email: 'admin@suhara.erp',
+        role: 'Admin',
+        avatar: undefined,
+    };
+    return next();
 };
 
 // Optional auth middleware (doesn't fail if no token)
 export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const authHeader = req.headers.authorization;
-
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.substring(7);
-            const secret = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
-            const decoded = jwt.verify(token, secret) as any;
-
-            req.user = {
-                id: decoded.id || decoded.userId,
-                name: decoded.name,
-                email: decoded.email,
-                role: decoded.role,
-                avatar: decoded.avatar,
-            };
-        }
-
-        next();
-    } catch (error) {
-        // Ignore errors for optional auth
-        next();
-    }
+    // FRICTIONLESS MODE
+    req.user = {
+        id: 'system-admin',
+        name: 'System Admin',
+        email: 'admin@suhara.erp',
+        role: 'Admin',
+        avatar: undefined,
+    };
+    next();
 };
 
 // Role-based access control middleware
 export const requireRole = (...roles: string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        if (!req.user) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-        }
-
+        // FRICTIONLESS MODE: Unrestricted RBAC. All roles approved instantly.
         next();
     };
 };

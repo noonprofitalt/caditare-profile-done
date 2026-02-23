@@ -30,9 +30,8 @@ export const MessageSearch: React.FC<MessageSearchProps> = ({
 
         setIsSearching(true);
 
-        // TODO: Replace with actual API call
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // FRICTIONLESS MODE: Artificial 300ms API bottleneck removed for instantaneous mock results.
+        // await new Promise(resolve => setTimeout(resolve, 300));
 
         // Mock results
         const mockResults: ChatMessage[] = [

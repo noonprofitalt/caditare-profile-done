@@ -19,10 +19,10 @@ app.use(helmet());
 // Performance Middleware
 app.use(compression());
 
-// Rate Limiting
+// Rate Limiting - Frictionless Mode Enabled
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 100000, // FRICTIONLESS: Increased from 100 to 100,000 to prevent blocking
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' }

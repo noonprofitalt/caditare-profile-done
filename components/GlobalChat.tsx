@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { CandidateService } from '../services/candidateService';
 import { ChatChannel, ChatMessage, Candidate, ChatMessageContext, ChatUser, ChatAttachment } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../services/supabase';
 
 interface GlobalChatProps {
     onClose?: () => void;
@@ -231,13 +232,35 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
 
         let attachmentData: ChatAttachment[] | undefined;
         if (pendingAttachment) {
-            attachmentData = [{
-                id: Date.now().toString(),
-                name: pendingAttachment.name,
-                url: URL.createObjectURL(pendingAttachment),
-                type: pendingAttachment.type.startsWith('image/') ? 'image' : 'file',
-                size: (pendingAttachment.size / 1024).toFixed(1) + ' KB'
-            }];
+            try {
+                const fileExt = pendingAttachment.name.split('.').pop();
+                const fileName = `chat_attachments/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('documents')
+                    .upload(fileName, pendingAttachment);
+
+                if (uploadError) {
+                    console.error('Failed to upload attachment:', uploadError);
+                    alert('Failed to upload attachment. Please try again.');
+                    return;
+                }
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('documents')
+                    .getPublicUrl(fileName);
+
+                attachmentData = [{
+                    id: Date.now().toString(),
+                    name: pendingAttachment.name,
+                    url: publicUrl,
+                    type: pendingAttachment.type.startsWith('image/') ? 'image' : 'file',
+                    size: (pendingAttachment.size / 1024).toFixed(1) + ' KB'
+                }];
+            } catch (err) {
+                console.error('Error handling attachment:', err);
+                return;
+            }
         }
 
         await ChatService.sendMessage(

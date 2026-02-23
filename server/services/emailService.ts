@@ -11,7 +11,7 @@ export const sendEmail = async (options: EmailOptions) => {
     console.log(`[EmailService] Sending email to ${options.to}`);
     console.log(`[EmailService] Subject: ${options.subject}`);
     // In a real app, you would await the email sending promise here
-    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate delay
+    // FRICTIONLESS MODE: Mock email delay completely eliminated for instant responses
     return true;
 };
 
