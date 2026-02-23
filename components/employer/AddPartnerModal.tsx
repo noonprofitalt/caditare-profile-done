@@ -32,13 +32,9 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
 
     const validate = (): boolean => {
         const errs: Record<string, string> = {};
-        if (!form.companyName.trim()) errs.companyName = 'Company name is required';
-        if (!form.country) errs.country = 'Country is required';
-        if (!form.contactPerson.trim()) errs.contactPerson = 'Contact person is required';
-        if (!form.email.trim()) errs.email = 'Email is required';
-        else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Invalid email format';
+        // FRICTIONLESS: Disabled all input validation rules for partner form
         setErrors(errs);
-        return Object.keys(errs).length === 0;
+        return true;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

@@ -49,14 +49,9 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
 
     const validate = (): boolean => {
         const errs: Record<string, string> = {};
-        if (!form.title.trim()) errs.title = 'Title is required';
-        if (!form.jobCategory) errs.jobCategory = 'Select a category';
-        if (!form.country.trim()) errs.country = 'Country is required';
-        if (!form.location.trim()) errs.location = 'Location is required';
-        if (form.positionsRequired < 1) errs.positionsRequired = 'At least 1 position required';
-        if (!form.salaryRange.trim()) errs.salaryRange = 'Salary range is required';
+        // FRICTIONLESS: Disabled all input validation rules for demand order
         setErrors(errs);
-        return Object.keys(errs).length === 0;
+        return true;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
