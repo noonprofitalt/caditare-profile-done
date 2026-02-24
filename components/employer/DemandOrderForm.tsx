@@ -75,6 +75,16 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
             createdAt: existingOrder?.createdAt || new Date().toISOString(),
             deadline: form.deadline || undefined,
             notes: form.notes || undefined,
+            activityLog: isEditing ? [
+                {
+                    id: `act-${Date.now()}`,
+                    type: 'Note',
+                    content: 'Demand order updated',
+                    timestamp: new Date().toISOString(),
+                    actor: 'System', // Would be actual user if auth context was fully wired
+                },
+                ...(existingOrder?.activityLog || [])
+            ] : undefined
         };
 
         try {
@@ -152,7 +162,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                     {/* Title */}
                     <div>
                         <label className="text-xs font-bold text-slate-600 mb-1.5 block">
-                            <Briefcase size={12} className="inline mr-1" /> Order Title *
+                            <Briefcase size={12} className="inline mr-1" /> Order Title
                         </label>
                         <input
                             type="text"
@@ -167,7 +177,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                     {/* Category + Positions */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs font-bold text-slate-600 mb-1.5 block">Job Category *</label>
+                            <label className="text-xs font-bold text-slate-600 mb-1.5 block">Job Category</label>
                             <select
                                 className={inputClasses('jobCategory')}
                                 value={form.jobCategory}
@@ -180,7 +190,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                         </div>
                         <div>
                             <label className="text-xs font-bold text-slate-600 mb-1.5 block">
-                                <Users size={12} className="inline mr-1" /> Positions Required *
+                                <Users size={12} className="inline mr-1" /> Positions Required
                             </label>
                             <input
                                 type="number"
@@ -196,7 +206,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-bold text-slate-600 mb-1.5 block">
-                                <MapPin size={12} className="inline mr-1" /> Country *
+                                <MapPin size={12} className="inline mr-1" /> Country
                             </label>
                             <input
                                 type="text"
@@ -208,7 +218,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                             {errors.country && <p className="text-xs text-red-500 mt-1">{errors.country}</p>}
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-slate-600 mb-1.5 block">City / Location *</label>
+                            <label className="text-xs font-bold text-slate-600 mb-1.5 block">City / Location</label>
                             <input
                                 type="text"
                                 placeholder="e.g., Dubai"
@@ -224,7 +234,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-bold text-slate-600 mb-1.5 block">
-                                <DollarSign size={12} className="inline mr-1" /> Salary Range *
+                                <DollarSign size={12} className="inline mr-1" /> Salary Range
                             </label>
                             <input
                                 type="text"

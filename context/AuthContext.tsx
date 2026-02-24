@@ -19,36 +19,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     React.useEffect(() => {
         const initAuth = async () => {
-            console.log('[Auth] Initializing frictionless auth...');
+            console.log('[Auth] Initializing authentication...');
             try {
-                // Quick check for existing session
+                // Check Supabase for existing session
                 const user = await AuthService.getCurrentUser();
 
-                // FRICTIONLESS: Always authenticated, fallback to system user
-                setState({
-                    user: user || {
-                        id: 'system-admin',
-                        name: 'System Admin',
-                        role: 'Admin',
-                        email: 'admin@suhara.erp',
-                        status: 'Active',
-                        lastLogin: new Date().toISOString()
-                    } as any,
-                    isAuthenticated: true,
-                    isLoading: false,
-                });
+                if (user) {
+                    setState({
+                        user,
+                        isAuthenticated: true,
+                        isLoading: false,
+                    });
+                } else {
+                    setState({
+                        user: null,
+                        isAuthenticated: false,
+                        isLoading: false,
+                    });
+                }
             } catch (error) {
-                console.warn('[Auth] Initialization error, falling back to system admin:', error);
+                console.error('[Auth] Initialization error:', error);
                 setState({
-                    user: {
-                        id: 'system-admin',
-                        name: 'System Admin',
-                        role: 'Admin',
-                        email: 'admin@suhara.erp',
-                        status: 'Active',
-                        lastLogin: new Date().toISOString()
-                    } as any,
-                    isAuthenticated: true,
+                    user: null,
+                    isAuthenticated: false,
                     isLoading: false,
                 });
             }

@@ -126,7 +126,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
                         </h4>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-bold text-slate-600 mb-1.5 block">Company Name *</label>
+                                <label className="text-xs font-bold text-slate-600 mb-1.5 block">Company Name</label>
                                 <input
                                     type="text"
                                     placeholder="e.g., BuildCorp International"
@@ -149,7 +149,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold text-slate-600 mb-1.5 block">
-                                        <MapPin size={12} className="inline mr-1" /> Country *
+                                        <MapPin size={12} className="inline mr-1" /> Country
                                     </label>
                                     <select
                                         className={inputClasses('country')}
@@ -184,7 +184,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
                         </h4>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-bold text-slate-600 mb-1.5 block">Contact Person *</label>
+                                <label className="text-xs font-bold text-slate-600 mb-1.5 block">Contact Person</label>
                                 <input
                                     type="text"
                                     placeholder="e.g., Ahmed Al Rasheed"
@@ -197,7 +197,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-xs font-bold text-slate-600 mb-1.5 block">
-                                        <Mail size={12} className="inline mr-1" /> Email *
+                                        <Mail size={12} className="inline mr-1" /> Email
                                     </label>
                                     <input
                                         type="email"

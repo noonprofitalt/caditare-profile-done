@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { NotificationService } from '../services/notificationService';
 import GlobalChat from './GlobalChat';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from './ui/Toast';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -40,6 +41,20 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { showToast, ToastContainer } = useToast();
+
+  useEffect(() => {
+    const handleOffline = () => showToast('You are offline. Changes will be saved locally and auto-synced.', 'error');
+    const handleSync = (e: any) => showToast(`Network restored! Auto-synced ${e.detail?.count || 'all'} items.`, 'success');
+
+    window.addEventListener('caditare_offline', handleOffline);
+    window.addEventListener('caditare_synced', handleSync);
+
+    return () => {
+      window.removeEventListener('caditare_offline', handleOffline);
+      window.removeEventListener('caditare_synced', handleSync);
+    };
+  }, []);
 
   const refreshNotifications = async () => {
     setNotifications(await NotificationService.getNotifications());
@@ -159,6 +174,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
   return (
     <>
+      <ToastContainer />
       <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between shadow-sm">
         <div className={`flex items-center gap-4 flex-1 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
           <button

@@ -655,6 +655,7 @@ export interface DemandOrder {
   createdAt: string;
   deadline?: string;            // When employer needs candidates by
   notes?: string;
+  activityLog?: EmployerActivity[];
 }
 
 export enum SelectionStage {

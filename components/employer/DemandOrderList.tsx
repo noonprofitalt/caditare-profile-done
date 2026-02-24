@@ -7,6 +7,8 @@ import {
     ChevronRight, AlertTriangle, CheckCircle2, TrendingUp, Briefcase, ExternalLink, Loader
 } from 'lucide-react';
 
+import { supabase } from '../../services/supabase';
+
 interface DemandOrderListProps {
     employerId: string;
     onSelectOrder: (order: DemandOrder) => void;
@@ -25,18 +27,38 @@ const DemandOrderList: React.FC<DemandOrderListProps> = ({
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
         const loadOrders = async () => {
             setIsLoading(true);
             try {
                 const data = await DemandOrderService.getByEmployerId(employerId);
-                setOrders(data || []);
+                if (isMounted) setOrders(data || []);
             } catch (error) {
                 console.error("Failed to load demand orders", error);
             } finally {
-                setIsLoading(false);
+                if (isMounted) setIsLoading(false);
             }
         };
+
         loadOrders();
+
+        // Realtime Data Syncing for Demand Orders
+        const subscription = supabase
+            .channel(`public:demand_orders:${employerId}`)
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'demand_orders' },
+                () => {
+                    console.log('Realtime update: demand_orders changed. Refreshing...');
+                    loadOrders();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
     }, [employerId]);
 
     const filteredOrders = orders.filter(o => {

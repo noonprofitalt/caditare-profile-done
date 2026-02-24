@@ -1,5 +1,6 @@
-import { Employer, EmployerStatus } from '../types';
+import { Employer, EmployerStatus, EmployerActivity } from '../types';
 import { supabase } from './supabase';
+import { OfflineSyncService } from './offlineSyncService';
 
 export class PartnerService {
     static async getEmployers(): Promise<Employer[]> {
@@ -55,6 +56,12 @@ export class PartnerService {
             }
         };
 
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'INSERT', table: 'employers', payload: dbEmployer });
+            return this.mapDatabaseToEmployer({ id: `emp_tmp_${Date.now()}`, ...dbEmployer });
+        }
+
         const { data, error } = await supabase
             .from('employers')
             .insert(dbEmployer)
@@ -63,6 +70,10 @@ export class PartnerService {
 
         if (error) {
             console.error('Error adding employer:', error);
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'INSERT', table: 'employers', payload: dbEmployer });
+                return this.mapDatabaseToEmployer({ id: `emp_tmp_${Date.now()}`, ...dbEmployer });
+            }
             return null;
         }
 
@@ -93,6 +104,12 @@ export class PartnerService {
             }
         };
 
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'UPDATE', table: 'employers', payload: { id: updated.id, ...dbUpdate } });
+            return this.mapDatabaseToEmployer({ id: updated.id, ...dbUpdate });
+        }
+
         const { data, error } = await supabase
             .from('employers')
             .update(dbUpdate)
@@ -102,6 +119,10 @@ export class PartnerService {
 
         if (error) {
             console.error('Error updating employer:', error);
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'UPDATE', table: 'employers', payload: { id: updated.id, ...dbUpdate } });
+                return this.mapDatabaseToEmployer({ id: updated.id, ...dbUpdate });
+            }
             return null;
         }
 
@@ -109,6 +130,12 @@ export class PartnerService {
     }
 
     static async deleteEmployer(id: string): Promise<boolean> {
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'DELETE', table: 'employers', payload: { id } });
+            return true;
+        }
+
         const { error } = await supabase
             .from('employers')
             .delete()
@@ -116,6 +143,10 @@ export class PartnerService {
 
         if (error) {
             console.error('Error deleting employer:', error);
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'DELETE', table: 'employers', payload: { id } });
+                return true;
+            }
             return false;
         }
         return true;
@@ -142,5 +173,20 @@ export class PartnerService {
             activityLog: dbRecord.data?.activityLog || [],
             notes: dbRecord.data?.notes
         };
+    }
+
+    static async addActivity(employerId: string, activity: Omit<EmployerActivity, 'id' | 'timestamp'>): Promise<boolean> {
+        const employer = await this.getEmployerById(employerId);
+        if (!employer) return false;
+
+        const newActivity: EmployerActivity = {
+            id: `act-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            ...activity
+        };
+
+        employer.activityLog = [...(employer.activityLog || []), newActivity];
+        const updated = await this.updateEmployer(employer);
+        return updated !== null;
     }
 }

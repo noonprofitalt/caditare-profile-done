@@ -1,16 +1,32 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { List } from 'react-window';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+// @ts-ignore
+import * as reactWindowModule from 'react-window';
+const _rw: any = reactWindowModule;
+const List = _rw.FixedSizeList || _rw.default?.FixedSizeList;
 import { useCandidates } from '../context/CandidateContext';
 import { Candidate, ProfileCompletionStatus, WorkflowStage } from '../types';
-import { Download, Users, X, ArrowRight } from 'lucide-react';
+import { Download, Users, X, ArrowRight, Loader2 } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import FilterBar from './FilterBar';
 import Skeleton from './ui/Skeleton';
 import { convertToCSV } from '../services/csvExportService';
 import { useDebounce } from '../hooks/useDebounce';
+import { CandidateService } from '../services/candidateService';
+import { supabase } from '../services/supabase';
+
+const PAGE_SIZE = 50;
 
 const CandidateList: React.FC = () => {
-  const { candidates, isLoading, refreshCandidates } = useCandidates();
+  const { candidates: contextCandidates } = useCandidates(); // Keeps the top-level stats alive
+
+  const [paginatedCandidates, setPaginatedCandidates] = useState<Candidate[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  const hasMoreItems = paginatedCandidates.length < totalCount;
+
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [activeStatus, setActiveStatus] = useState<ProfileCompletionStatus | 'ALL'>('ALL');
@@ -22,11 +38,6 @@ const CandidateList: React.FC = () => {
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  // Initial Load from Context
-  useEffect(() => {
-    refreshCandidates();
-  }, [refreshCandidates]);
 
   // Initialize filters from URL
   useEffect(() => {
@@ -47,6 +58,64 @@ const CandidateList: React.FC = () => {
     }
   }, [searchParams]);
 
+  // Load Initial Data or Filter Change
+  const loadData = useCallback(async (pageNum: number, isRefresh: boolean = false) => {
+    if (isRefresh) setIsLoading(true);
+    else setIsFetchingMore(true);
+
+    try {
+      const { candidates: newBatch, count } = await CandidateService.searchCandidates(
+        PAGE_SIZE,
+        pageNum * PAGE_SIZE,
+        {
+          status: activeStatus,
+          stage: activeStage,
+          query: debouncedSearchQuery
+        }
+      );
+
+      setPaginatedCandidates(prev => isRefresh ? newBatch : [...prev, ...newBatch]);
+      setTotalCount(count);
+    } catch (err) {
+      console.error("Failed to load candidates page", err);
+    } finally {
+      setIsLoading(false);
+      setIsFetchingMore(false);
+    }
+  }, [activeStatus, activeStage, debouncedSearchQuery]);
+
+  useEffect(() => {
+    setPage(0);
+    loadData(0, true);
+  }, [loadData]);
+
+  useEffect(() => {
+    // Connect to realtime for updates directly visible in the local paginated list
+    const channel = supabase.channel('public:candidates_list')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'candidates' },
+        (payload) => {
+          // On any change, softly reload the current page data so we get accurate numbers and latest items
+          // We'll just reset and reload the first page for simplicity on any structural change 
+          // if this is too aggressive we could handle INSERT/UPDATE granularly
+          setPage(0);
+          loadData(0, true);
+        }
+      )
+      .subscribe();
+
+    return () => { channel.unsubscribe(); };
+  }, [loadData]);
+
+
+  const loadMoreItems = () => {
+    if (isFetchingMore || isLoading || paginatedCandidates.length >= totalCount) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    loadData(nextPage, false);
+  };
+
   // Handle resize for virtual list
   useEffect(() => {
     const handleResize = () => {
@@ -59,35 +128,13 @@ const CandidateList: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Filter candidates (Optimized with useMemo for high volume)
-  const filteredCandidates = useMemo(() => {
-    return candidates.filter(candidate => {
-      if (activeStatus !== 'ALL' && candidate.profileCompletionStatus !== activeStatus) {
-        return false;
-      }
-      if (activeStage !== 'ALL' && candidate.stage !== activeStage) {
-        return false;
-      }
-      if (debouncedSearchQuery) {
-        const query = debouncedSearchQuery.toLowerCase();
-        return (
-          candidate.name.toLowerCase().includes(query) ||
-          candidate.phone?.includes(query) ||
-          candidate.nic?.toLowerCase().includes(query) ||
-          candidate.email?.toLowerCase().includes(query) ||
-          candidate.role?.toLowerCase().includes(query)
-        );
-      }
-      return true;
-    });
-  }, [candidates, activeStatus, activeStage, debouncedSearchQuery]);
-
+  // Use the context array just for the stats counter on the header
   const candidateCounts = useMemo(() => ({
-    all: candidates.length,
-    quick: candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK).length,
-    partial: candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL).length,
-    complete: candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length
-  }), [candidates]);
+    all: contextCandidates.length,
+    quick: contextCandidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK).length,
+    partial: contextCandidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL).length,
+    complete: contextCandidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length
+  }), [contextCandidates]);
 
   const handleStatusChange = (status: ProfileCompletionStatus | 'ALL') => {
     setActiveStatus(status);
@@ -122,15 +169,15 @@ const CandidateList: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedCandidateIds.length === filteredCandidates.length) {
+    if (selectedCandidateIds.length === paginatedCandidates.length) {
       setSelectedCandidateIds([]);
     } else {
-      setSelectedCandidateIds(filteredCandidates.map(c => c.id));
+      setSelectedCandidateIds(paginatedCandidates.map(c => c.id));
     }
   };
 
   const handleBulkExport = (format: 'json' | 'csv' = 'csv') => {
-    const selectedCandidates = candidates.filter(c => selectedCandidateIds.includes(c.id));
+    const selectedCandidates = contextCandidates.filter(c => selectedCandidateIds.includes(c.id));
     let dataBlob: Blob;
     let extension: string;
 
@@ -236,7 +283,7 @@ const CandidateList: React.FC = () => {
             <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Candidates</h1>
             <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">
               <Users size={12} className="text-blue-500" />
-              <span>{candidates.length} Total Candidates</span>
+              <span>{totalCount} Total Candidates</span>
             </div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
@@ -303,7 +350,7 @@ const CandidateList: React.FC = () => {
                 onClick={handleSelectAll}
                 className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-tighter transition-premium"
               >
-                {selectedCandidateIds.length === filteredCandidates.length ? 'Reset' : 'Select All'}
+                {selectedCandidateIds.length === paginatedCandidates.length ? 'Reset' : 'Select All'}
               </button>
               <button onClick={() => setSelectedCandidateIds([])} className="p-1 hover:bg-white/10 rounded-lg text-slate-500 hover:text-red-400 transition-premium">
                 <X size={16} />
@@ -319,7 +366,7 @@ const CandidateList: React.FC = () => {
         <div className="flex items-center justify-between mb-3 px-2">
           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             <Users size={12} />
-            <span>Showing {filteredCandidates.length} of {candidates.length} Candidates</span>
+            <span>Showing {paginatedCandidates.length} of {totalCount} Candidates</span>
           </div>
         </div>
 
@@ -340,8 +387,7 @@ const CandidateList: React.FC = () => {
           </div>
         )}
 
-        {/* Empty State */}
-        {!isLoading && filteredCandidates.length === 0 && (
+        {!isLoading && paginatedCandidates.length === 0 && (
           <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-16 text-center">
             <Users size={48} className="mx-auto text-slate-200 mb-4" />
             <h3 className="text-lg font-bold text-slate-900 mb-2">
@@ -359,7 +405,7 @@ const CandidateList: React.FC = () => {
         )}
 
         {/* Virtualized Registry */}
-        {!isLoading && filteredCandidates.length > 0 && (
+        {!isLoading && paginatedCandidates.length > 0 && (
           <div className="glass-card overflow-hidden bg-white/50" style={{ height: listHeight }}>
             <div className="hidden md:flex items-center px-6 py-3 border-b border-slate-200 bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
               <div className="w-1/3">Candidate</div>
@@ -370,11 +416,16 @@ const CandidateList: React.FC = () => {
 
             <List
               style={{ height: listHeight - 40, width: '100%' }}
-              rowCount={filteredCandidates.length}
+              rowCount={paginatedCandidates.length + (hasMoreItems ? 1 : 0)}
               rowHeight={window.innerWidth < 768 ? 160 : 72}
+              onItemsRendered={({ visibleStopIndex }: { visibleStopIndex: number }) => {
+                if (visibleStopIndex >= paginatedCandidates.length - 5) {
+                  loadMoreItems();
+                }
+              }}
               rowComponent={CandidateRow}
               rowProps={{
-                candidates: filteredCandidates,
+                candidates: paginatedCandidates,
                 selectedIds: selectedCandidateIds,
                 onSelect: handleSelectCandidate
               }}

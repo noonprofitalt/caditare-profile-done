@@ -9,10 +9,11 @@ import {
 import { supabase } from './supabase';
 import { logger } from './loggerService';
 import WorkflowEngine from './workflowEngine.v2';
+import { OfflineSyncService } from './offlineSyncService';
 
 export class CandidateService {
 
-    // Fetch all candidates from Supabase
+    // Fetch all candidates from Supabase (Used for Dashboard/Pipeline where aggregations are needed)
     static async getCandidates(): Promise<Candidate[]> {
         const { data, error } = await supabase
             .from('candidates')
@@ -25,6 +26,49 @@ export class CandidateService {
         }
 
         return (data || []).map(row => this.mapRowToCandidate(row));
+    }
+
+    // Server-side paginated & filtered search for CandidateList
+    static async searchCandidates(
+        limit: number = 50,
+        offset: number = 0,
+        filters?: {
+            status?: string | 'ALL',
+            stage?: WorkflowStage | 'ALL',
+            query?: string
+        }
+    ): Promise<{ candidates: Candidate[], count: number }> {
+        let queryBuilder = supabase
+            .from('candidates')
+            .select('*', { count: 'exact' });
+
+        if (filters?.stage && filters.stage !== 'ALL') {
+            queryBuilder = queryBuilder.eq('stage', filters.stage);
+        }
+
+        if (filters?.status && filters.status !== 'ALL') {
+            // querying inside the JSONB 'data' column
+            queryBuilder = queryBuilder.contains('data', { profileCompletionStatus: filters.status });
+        }
+
+        if (filters?.query) {
+            const searchTerm = `%${filters.query}%`;
+            queryBuilder = queryBuilder.or(`name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},nic.ilike.${searchTerm}`);
+        }
+
+        const { data, error, count } = await queryBuilder
+            .order('updated_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+
+        if (error) {
+            logger.error('Error in searchCandidates:', error);
+            return { candidates: [], count: 0 };
+        }
+
+        return {
+            candidates: (data || []).map(row => this.mapRowToCandidate(row)),
+            count: count || 0
+        };
     }
 
     static async getCandidate(id: string): Promise<Candidate | undefined> {
@@ -77,6 +121,12 @@ export class CandidateService {
             updated_at: new Date().toISOString()
         };
 
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'INSERT', table: 'candidates', payload: row });
+            return this.mapRowToCandidate(row);
+        }
+
         const { data, error } = await supabase
             .from('candidates')
             .insert(row)
@@ -85,6 +135,11 @@ export class CandidateService {
 
         if (error) {
             logger.error('Error creating candidate:', error, { candidateData });
+            // Fallback to queue if it's a network-level fetch failure
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'INSERT', table: 'candidates', payload: row });
+                return this.mapRowToCandidate(row);
+            }
             throw error;
         }
 
@@ -109,12 +164,23 @@ export class CandidateService {
 
     static async updateCandidate(candidate: Candidate): Promise<void> {
         const row = this.mapCandidateToRow(candidate);
+
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'UPDATE', table: 'candidates', payload: { id: candidate.id, ...row } });
+            return;
+        }
+
         const { error } = await supabase
             .from('candidates')
             .upsert(row)
             .eq('id', candidate.id);
 
         if (error) {
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'UPDATE', table: 'candidates', payload: { id: candidate.id, ...row } });
+                return;
+            }
             throw error;
         }
     }
@@ -131,11 +197,24 @@ export class CandidateService {
     }
 
     static async deleteCandidate(id: string): Promise<void> {
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'DELETE', table: 'candidates', payload: { id } });
+            return;
+        }
+
         const { error } = await supabase
             .from('candidates')
             .delete()
             .eq('id', id);
-        if (error) throw error;
+
+        if (error) {
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'DELETE', table: 'candidates', payload: { id } });
+                return;
+            }
+            throw error;
+        }
     }
 
     // --- Helpers for mapping between JSONB and Typed Object ---

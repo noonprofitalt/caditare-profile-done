@@ -15,6 +15,7 @@ import {
    Package, Building2
 } from 'lucide-react';
 import Skeleton from './ui/Skeleton';
+import WidgetErrorBoundary from './ui/WidgetErrorBoundary';
 
 const Dashboard: React.FC = () => {
    const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -37,6 +38,12 @@ const Dashboard: React.FC = () => {
                DemandOrderService.getAll().then(res => res || [])
             ]);
 
+            // OFFLINE MODE: Cache latest data
+            if (data.length > 0) localStorage.setItem('caditare_dash_data', JSON.stringify(data));
+            if (employers.length > 0) localStorage.setItem('caditare_dash_employers', JSON.stringify(employers));
+            if (jobs.length > 0) localStorage.setItem('caditare_dash_jobs', JSON.stringify(jobs));
+            if (orders.length > 0) localStorage.setItem('caditare_dash_orders', JSON.stringify(orders));
+
             setCandidates(data);
             const generatedTasks = TaskEngine.generateWorkQueue(data);
             const generatedAlerts = TaskEngine.generateAlerts(data);
@@ -48,6 +55,26 @@ const Dashboard: React.FC = () => {
             setActiveDemands(orders.filter(o => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
          } catch (error) {
             console.error('Failed to load dashboard data:', error);
+            // OFFLINE MODE: Fallback to cached data if network fails
+            const cData = localStorage.getItem('caditare_dash_data');
+            const cEmpl = localStorage.getItem('caditare_dash_employers');
+            const cJobs = localStorage.getItem('caditare_dash_jobs');
+            const cOrders = localStorage.getItem('caditare_dash_orders');
+
+            if (cData && cEmpl && cJobs && cOrders) {
+               console.log('Network offline. Serving dashboard from local cache.');
+               const data = JSON.parse(cData);
+               const employers = JSON.parse(cEmpl);
+               const jobs = JSON.parse(cJobs);
+               const orders = JSON.parse(cOrders);
+
+               setCandidates(data);
+               setTasks(TaskEngine.generateWorkQueue(data));
+               setAlerts(TaskEngine.generateAlerts(data));
+               setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
+               setOpenJobsCount(jobs.filter((j: any) => j.status === JobStatus.OPEN).length);
+               setActiveDemands(orders.filter((o: any) => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
+            }
          } finally {
             setIsLoading(false);
          }

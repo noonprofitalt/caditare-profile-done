@@ -27,8 +27,6 @@ import UserManagement from './UserManagement';
 
 const Settings: React.FC = () => {
    const { user } = useAuth();
-   const isAdmin = user?.role === 'Admin';
-
    const [activeTab, setActiveTab] = useState<'agency' | 'security' | 'data' | 'ai' | 'users'>('data'); // Default to safe tab
    const [isSaved, setIsSaved] = useState(false);
    const [apiKey, setApiKey] = useState(() => localStorage.getItem('globalworkforce_gemini_api_key') || '');
@@ -88,36 +86,30 @@ const Settings: React.FC = () => {
          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Settings Navigation */}
             <div className="md:col-span-1 space-y-2">
-               {isAdmin && (
-                  <button
-                     onClick={() => setActiveTab('agency')}
-                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'agency' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                  >
-                     <Building2 size={18} /> Agency Profile
-                  </button>
-               )}
-               {isAdmin && (
-                  <button
-                     onClick={() => setActiveTab('security')}
-                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'security' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                  >
-                     <Shield size={18} /> Security & Roles
-                  </button>
-               )}
+               <button
+                  onClick={() => setActiveTab('agency')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'agency' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+               >
+                  <Building2 size={18} /> Agency Profile
+               </button>
+               <button
+                  onClick={() => setActiveTab('security')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'security' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+               >
+                  <Shield size={18} /> Security & Roles
+               </button>
                <button
                   onClick={() => setActiveTab('data')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'data' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
                >
                   <Database size={18} /> Data Management
                </button>
-               {isAdmin && (
-                  <button
-                     onClick={() => setActiveTab('users')}
-                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'users' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                  >
-                     <Users size={18} /> User Management
-                  </button>
-               )}
+               <button
+                  onClick={() => setActiveTab('users')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'users' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+               >
+                  <Users size={18} /> User Management
+               </button>
                <button
                   onClick={() => setActiveTab('ai')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'ai' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}

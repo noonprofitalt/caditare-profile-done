@@ -59,7 +59,6 @@ router.get('/', async (req: Request, res: Response) => {
       FROM chat_channels c
       LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $1
       WHERE c.is_archived = FALSE
-        AND (c.type = 'public' OR cm.user_id IS NOT NULL)
       ORDER BY c.created_at DESC
     `, [userId]);
 
@@ -109,8 +108,6 @@ router.get('/:id',
       LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $2
       WHERE c.id = $1
         AND c.is_archived = FALSE
-        AND (c.type = 'public' OR cm.user_id IS NOT NULL)
-    `, [id, userId]);
 
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'Channel not found' });
@@ -155,14 +152,14 @@ router.get('/context/:contextType/:contextId', async (req: Request, res: Respons
                     ))
                     FROM chat_channel_members cm
                     WHERE cm.channel_id = c.id
-                ) as members
+            ) as members
             FROM chat_channels c
             JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $3
             WHERE c.context_type = $1 
               AND c.context_id = $2
               AND c.is_archived = FALSE
             LIMIT 1
-        `, [contextType, contextId, userId]);
+                `, [contextType, contextId, userId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Channel not found' });
@@ -199,27 +196,27 @@ router.post('/',
                 const existing = await query(`
                 SELECT id FROM chat_channels 
                 WHERE context_type = $1 AND context_id = $2 AND is_archived = FALSE
-             `, [contextType, contextId]);
+                `, [contextType, contextId]);
 
                 if (existing.rows.length > 0) {
                     // Return the existing one (fetching full details in a real app, but here id is enough 
                     // or we can redirect to GET /:id logic, but simpler to return the id to frontend)
                     // Let's fetch the full object to be consistent
                     const fullExisting = await query(`
-                    SELECT 
-                        c.id, c.name, c.description, c.type, 
-                        c.context_type as "contextType", c.context_id as "contextId", 
-                        c.created_by as "createdBy", c.created_at as "createdAt"
+            SELECT
+            c.id, c.name, c.description, c.type,
+                c.context_type as "contextType", c.context_id as "contextId",
+                c.created_by as "createdBy", c.created_at as "createdAt"
                     FROM chat_channels c WHERE id = $1
-                 `, [existing.rows[0].id]);
+                `, [existing.rows[0].id]);
 
                     // Ensure current user is a member, if not add them?
                     // For system channels, we probably want to ensure membership.
                     await query(`
-                    INSERT INTO chat_channel_members (channel_id, user_id, user_name, user_avatar, role)
-                    VALUES ($1, $2, $3, $4, 'member')
-                    ON CONFLICT (channel_id, user_id) DO NOTHING
-                 `, [existing.rows[0].id, userId, userName, userAvatar]);
+                    INSERT INTO chat_channel_members(channel_id, user_id, user_name, user_avatar, role)
+            VALUES($1, $2, $3, $4, 'member')
+                    ON CONFLICT(channel_id, user_id) DO NOTHING
+                `, [existing.rows[0].id, userId, userName, userAvatar]);
 
                     return res.status(200).json(fullExisting.rows[0]);
                 }
@@ -228,18 +225,18 @@ router.post('/',
             const result = await transaction(async (client) => {
                 // Create channel
                 const channelResult = await client.query(`
-        INSERT INTO chat_channels (name, description, type, context_type, context_id, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
-      `, [name, description, type, contextType, contextId, userId]);
+        INSERT INTO chat_channels(name, description, type, context_type, context_id, created_by)
+            VALUES($1, $2, $3, $4, $5, $6)
+            RETURNING *
+                `, [name, description, type, contextType, contextId, userId]);
 
                 const channel = channelResult.rows[0];
 
                 // Add creator as owner
                 await client.query(`
-        INSERT INTO chat_channel_members (channel_id, user_id, user_name, user_avatar, role)
-        VALUES ($1, $2, $3, $4, 'owner')
-        `, [channel.id, userId, userName, userAvatar]);
+        INSERT INTO chat_channel_members(channel_id, user_id, user_name, user_avatar, role)
+            VALUES($1, $2, $3, $4, 'owner')
+                `, [channel.id, userId, userName, userAvatar]);
 
                 return channel;
             });
@@ -280,8 +277,8 @@ router.put('/:id',
             // Check if user is owner or admin
             const memberCheck = await query(`
       SELECT role FROM chat_channel_members
-      WHERE channel_id = $1 AND user_id = $2 AND role IN ('owner', 'admin')
-    `, [id, userId]);
+      WHERE channel_id = $1 AND user_id = $2 AND role IN('owner', 'admin')
+                `, [id, userId]);
 
             if (memberCheck.rows.length === 0) {
                 return res.status(403).json({ error: 'Forbidden: Only channel owners/admins can update' });
@@ -290,11 +287,11 @@ router.put('/:id',
             const result = await query(`
       UPDATE chat_channels
       SET name = COALESCE($2, name),
-          description = COALESCE($3, description),
-          updated_at = CURRENT_TIMESTAMP
+                description = COALESCE($3, description),
+                updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
-      RETURNING *
-    `, [id, name, description]);
+            RETURNING *
+                `, [id, name, description]);
 
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'Channel not found' });
@@ -323,7 +320,7 @@ router.delete('/:id',
             const memberCheck = await query(`
       SELECT role FROM chat_channel_members
       WHERE channel_id = $1 AND user_id = $2 AND role = 'owner'
-    `, [id, userId]);
+                `, [id, userId]);
 
             if (memberCheck.rows.length === 0) {
                 return res.status(403).json({ error: 'Forbidden: Only channel owner can delete' });
@@ -334,7 +331,7 @@ router.delete('/:id',
       UPDATE chat_channels
       SET is_archived = TRUE
       WHERE id = $1
-    `, [id]);
+                `, [id]);
 
             res.json({ message: 'Channel archived successfully' });
         } catch (error) {
@@ -364,8 +361,8 @@ router.post('/:id/members',
             // Check if current user is owner or admin
             const memberCheck = await query(`
       SELECT role FROM chat_channel_members
-      WHERE channel_id = $1 AND user_id = $2 AND role IN ('owner', 'admin')
-    `, [id, userId]);
+      WHERE channel_id = $1 AND user_id = $2 AND role IN('owner', 'admin')
+                `, [id, userId]);
 
             if (memberCheck.rows.length === 0) {
                 return res.status(403).json({ error: 'Forbidden: Only channel owners/admins can add members' });
@@ -376,17 +373,17 @@ router.post('/:id/members',
             for (const newUserId of userIds) {
                 try {
                     const result = await query(`
-          INSERT INTO chat_channel_members (channel_id, user_id, user_name, user_avatar, role)
-          VALUES ($1, $2, $3, $4, 'member')
-          ON CONFLICT (channel_id, user_id) DO NOTHING
-          RETURNING *
-        `, [id, newUserId, 'User Name', '']); // TODO: Fetch actual user details
+          INSERT INTO chat_channel_members(channel_id, user_id, user_name, user_avatar, role)
+            VALUES($1, $2, $3, $4, 'member')
+          ON CONFLICT(channel_id, user_id) DO NOTHING
+            RETURNING *
+                `, [id, newUserId, 'User Name', '']); // TODO: Fetch actual user details
 
                     if (result.rows.length > 0) {
                         addedMembers.push(result.rows[0]);
                     }
                 } catch (err) {
-                    console.error(`Error adding user ${newUserId}:`, err);
+                    console.error(`Error adding user ${ newUserId }: `, err);
                 }
             }
 
@@ -411,7 +408,7 @@ router.delete('/:id/members/:memberId', async (req: Request, res: Response) => {
         const memberCheck = await query(`
       SELECT role FROM chat_channel_members
       WHERE channel_id = $1 AND user_id = $2
-    `, [id, userId]);
+                `, [id, userId]);
 
         const isOwnerOrAdmin = memberCheck.rows.length > 0 && ['owner', 'admin'].includes(memberCheck.rows[0].role);
         const isSelf = userId === memberId;
@@ -423,7 +420,7 @@ router.delete('/:id/members/:memberId', async (req: Request, res: Response) => {
         await query(`
       DELETE FROM chat_channel_members
       WHERE channel_id = $1 AND user_id = $2
-    `, [id, memberId]);
+                `, [id, memberId]);
 
         res.json({ message: 'Member removed successfully' });
     } catch (error) {

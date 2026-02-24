@@ -1,5 +1,6 @@
-import { DemandOrder, DemandOrderStatus } from '../types';
+import { DemandOrder, DemandOrderStatus, EmployerActivity } from '../types';
 import { supabase } from './supabase';
+import { OfflineSyncService } from './offlineSyncService';
 
 export class DemandOrderService {
     static async getAll(): Promise<DemandOrder[]> {
@@ -78,9 +79,22 @@ export class DemandOrderService {
                 contractDuration: order.contractDuration,
                 benefits: order.benefits,
                 deadline: order.deadline,
-                notes: order.notes
+                notes: order.notes,
+                activityLog: order.activityLog || [{
+                    id: `act-${Date.now()}`,
+                    type: 'Note',
+                    content: 'Demand order manually created',
+                    timestamp: new Date().toISOString(),
+                    actor: 'System',
+                }]
             }
         };
+
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'INSERT', table: 'demand_orders', payload: dbOrder });
+            return this.mapDatabaseToOrder({ id: `do_tmp_${Date.now()}`, ...dbOrder });
+        }
 
         const { data, error } = await supabase
             .from('demand_orders')
@@ -90,6 +104,11 @@ export class DemandOrderService {
 
         if (error) {
             console.error('Error adding demand order:', error);
+            // Fallback to queue if it's a network-level fetch failure
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'INSERT', table: 'demand_orders', payload: dbOrder });
+                return this.mapDatabaseToOrder({ id: `do_tmp_${Date.now()}`, ...dbOrder });
+            }
             return null;
         }
 
@@ -111,9 +130,16 @@ export class DemandOrderService {
                 contractDuration: updated.contractDuration,
                 benefits: updated.benefits,
                 deadline: updated.deadline,
-                notes: updated.notes
+                notes: updated.notes,
+                activityLog: updated.activityLog || []
             }
         };
+
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'UPDATE', table: 'demand_orders', payload: { id: updated.id, ...dbUpdate } });
+            return this.mapDatabaseToOrder({ id: updated.id, ...dbUpdate });
+        }
 
         const { data, error } = await supabase
             .from('demand_orders')
@@ -124,6 +150,10 @@ export class DemandOrderService {
 
         if (error) {
             console.error('Error updating demand order:', error);
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'UPDATE', table: 'demand_orders', payload: { id: updated.id, ...dbUpdate } });
+                return this.mapDatabaseToOrder({ id: updated.id, ...dbUpdate });
+            }
             return null;
         }
 
@@ -131,6 +161,12 @@ export class DemandOrderService {
     }
 
     static async delete(id: string): Promise<boolean> {
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'DELETE', table: 'demand_orders', payload: { id } });
+            return true;
+        }
+
         const { error } = await supabase
             .from('demand_orders')
             .delete()
@@ -138,6 +174,10 @@ export class DemandOrderService {
 
         if (error) {
             console.error('Error deleting demand order:', error);
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'DELETE', table: 'demand_orders', payload: { id } });
+                return true;
+            }
             return false;
         }
         return true;
@@ -173,7 +213,23 @@ export class DemandOrderService {
             status: (dbRecord.status as DemandOrderStatus) || DemandOrderStatus.OPEN,
             createdAt: dbRecord.created_at,
             deadline: dbRecord.data?.deadline,
-            notes: dbRecord.data?.notes
+            notes: dbRecord.data?.notes,
+            activityLog: dbRecord.data?.activityLog || []
         };
+    }
+
+    static async addActivity(orderId: string, activity: Omit<EmployerActivity, 'id' | 'timestamp'>): Promise<boolean> {
+        const order = await this.getById(orderId);
+        if (!order) return false;
+
+        const newActivity: EmployerActivity = {
+            id: `act-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            ...activity
+        };
+
+        order.activityLog = [...(order.activityLog || []), newActivity];
+        const updated = await this.update(order);
+        return updated !== null;
     }
 }

@@ -1,5 +1,6 @@
 import { Job, JobStatus } from '../types';
 import { supabase } from './supabase';
+import { OfflineSyncService } from './offlineSyncService';
 
 export class JobService {
     static async getJobs(): Promise<Job[]> {
@@ -14,6 +15,32 @@ export class JobService {
         }
 
         return data.map((j: any) => this.mapDatabaseToJob(j));
+    }
+
+    static async searchJobs(
+        limit: number = 20,
+        offset: number = 0,
+        filters?: { employerId?: string; status?: JobStatus | 'ALL'; query?: string }
+    ): Promise<{ jobs: Job[], count: number }> {
+        let qb = supabase.from('jobs').select('*', { count: 'exact' });
+
+        if (filters?.employerId) qb = qb.eq('employer_id', filters.employerId);
+        if (filters?.status && filters.status !== 'ALL') qb = qb.eq('status', filters.status);
+        if (filters?.query) {
+            const q = `%${filters.query}%`;
+            qb = qb.or(`title.ilike.${q},location.ilike.${q},description.ilike.${q}`);
+        }
+
+        const { data, error, count } = await qb
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+
+        if (error) {
+            console.error('Error paginating jobs:', error);
+            return { jobs: [], count: 0 };
+        }
+
+        return { jobs: data.map((j: any) => this.mapDatabaseToJob(j)), count: count || 0 };
     }
 
     static async getJobById(id: string): Promise<Job | undefined> {
@@ -78,8 +105,13 @@ export class JobService {
             requirements: job.requirements,
             matched_candidate_ids: job.matchedCandidateIds,
             created_at: job.postedDate || new Date().toISOString(),
-            // Assuming we added a data column or matching existing schema fields
         };
+
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'INSERT', table: 'jobs', payload: dbJob });
+            return this.mapDatabaseToJob({ id: `job_tmp_${Date.now()}`, ...dbJob });
+        }
 
         const { data, error } = await supabase
             .from('jobs')
@@ -89,6 +121,10 @@ export class JobService {
 
         if (error) {
             console.error('Error adding job:', error);
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'INSERT', table: 'jobs', payload: dbJob });
+                return this.mapDatabaseToJob({ id: `job_tmp_${Date.now()}`, ...dbJob });
+            }
             return null;
         }
 
@@ -110,6 +146,12 @@ export class JobService {
             updated_at: new Date().toISOString(),
         };
 
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'UPDATE', table: 'jobs', payload: { id: updatedJob.id, ...dbUpdate } });
+            return this.mapDatabaseToJob({ id: updatedJob.id, ...dbUpdate });
+        }
+
         const { data, error } = await supabase
             .from('jobs')
             .update(dbUpdate)
@@ -119,6 +161,10 @@ export class JobService {
 
         if (error) {
             console.error('Error updating job:', error);
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'UPDATE', table: 'jobs', payload: { id: updatedJob.id, ...dbUpdate } });
+                return this.mapDatabaseToJob({ id: updatedJob.id, ...dbUpdate });
+            }
             return null;
         }
 
@@ -126,6 +172,12 @@ export class JobService {
     }
 
     static async deleteJob(id: string): Promise<boolean> {
+        // OPTIMISTIC OFFLINE MODE
+        if (!OfflineSyncService.isAppOnline()) {
+            OfflineSyncService.enqueue({ type: 'DELETE', table: 'jobs', payload: { id } });
+            return true;
+        }
+
         const { error } = await supabase
             .from('jobs')
             .delete()
@@ -133,6 +185,10 @@ export class JobService {
 
         if (error) {
             console.error('Error deleting job:', error);
+            if (error.message === 'Failed to fetch') {
+                OfflineSyncService.enqueue({ type: 'DELETE', table: 'jobs', payload: { id } });
+                return true;
+            }
             return false;
         }
         return true;

@@ -14,6 +14,7 @@ import {
     Download, Plus, CreditCard, PieChart,
     FileText, AlertCircle
 } from 'lucide-react';
+import { supabase } from '../services/supabase';
 
 const FinanceLedger: React.FC = () => {
     const toast = useToast();
@@ -44,6 +45,10 @@ const FinanceLedger: React.FC = () => {
 
             const txData = (rawTxData || []).filter(t => t && t.id);
             const invData = (rawInvData || []).filter(i => i && i.id);
+
+            // OFFLINE MODE: Cache latest data
+            if (txData.length > 0) localStorage.setItem('caditare_offline_finance_tx', JSON.stringify(txData));
+            if (invData.length > 0) localStorage.setItem('caditare_offline_finance_inv', JSON.stringify(invData));
 
             setTransactions(txData);
             setInvoices(invData);
@@ -82,6 +87,18 @@ const FinanceLedger: React.FC = () => {
 
         } catch (error) {
             console.error("Failed to load finance data", error);
+            // OFFLINE MODE: Fallback to cached data if network fails
+            const cachedTx = localStorage.getItem('caditare_offline_finance_tx');
+            const cachedInv = localStorage.getItem('caditare_offline_finance_inv');
+
+            if (cachedTx && cachedInv) {
+                console.log('Network offline. Serving finance data from local cache.');
+                const txData = JSON.parse(cachedTx);
+                setTransactions(txData);
+                setInvoices(JSON.parse(cachedInv));
+                setActualRevenue(FinanceService.calculateTotalActualRevenue(txData) || 0);
+                setExpenses(FinanceService.calculateTotalExpenses(txData) || 0);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -89,6 +106,37 @@ const FinanceLedger: React.FC = () => {
 
     React.useEffect(() => {
         refreshFinanceData();
+
+        // Realtime Data Syncing for Finance Ledger
+        const channel = supabase ? supabase.channel('public:finance') : null;
+        if (!channel) return; // Fallback if not exposed
+
+        const subscription = channel
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'finance_transactions' },
+                () => {
+                    console.log('Realtime update: finance_transactions changed. Refreshing...');
+                    refreshFinanceData();
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'finance_invoices' },
+                () => {
+                    console.log('Realtime update: finance_invoices changed. Refreshing...');
+                    refreshFinanceData();
+                }
+            )
+            .subscribe((status: string) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Successfully subscribed to real-time finance updates');
+                }
+            });
+
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     const handleAddTransaction = async (e: React.FormEvent) => {

@@ -12,6 +12,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { logger } from './services/loggerService';
+import { OfflineSyncService } from './services/offlineSyncService';
 import * as Sentry from '@sentry/react';
 
 // Initialize Sentry explicitly for production error tracking
@@ -80,6 +81,11 @@ import MobileNav from './components/MobileNav';
 
 const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    // Initialize Offline Queueing behavior application-wide
+    OfflineSyncService.init();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
