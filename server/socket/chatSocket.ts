@@ -54,17 +54,9 @@ export const setupChatSocket = (io: SocketIOServer) => {
             try {
                 const { channelId } = data;
 
-                // Verify user has access to this channel
-                const accessCheck = await query(`
-          SELECT 1 FROM chat_channels c
-          LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $2
-          WHERE c.id = $1 AND (c.type = 'public' OR cm.user_id IS NOT NULL)
-        `, [channelId, socket.userId]);
-
-                if (accessCheck.rows.length > 0) {
-                    socket.join(`channel:${channelId}`);
-                    console.log(`User ${socket.userName} joined channel ${channelId}`);
-                }
+                // FRICTIONLESS: Allow all users to join any channel without access check
+                socket.join(`channel:${channelId}`);
+                console.log(`User ${socket.userName} joined channel ${channelId}`);
             } catch (error) {
                 console.error('Error joining channel:', error);
             }
@@ -86,7 +78,8 @@ export const setupChatSocket = (io: SocketIOServer) => {
             try {
                 const { channelId, text, parentMessageId } = data;
 
-                // Verify access
+                // FRICTIONLESS: Bypassed channel access check — all users can send to any channel
+                /*
                 const accessCheck = await query(`
           SELECT 1 FROM chat_channels c
           LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $2
@@ -97,6 +90,7 @@ export const setupChatSocket = (io: SocketIOServer) => {
                     socket.emit('error', { message: 'Access denied to this channel' });
                     return;
                 }
+                */
 
                 // Extract mentions
                 const mentionRegex = /@(\w+)/g;
@@ -198,6 +192,8 @@ export const setupChatSocket = (io: SocketIOServer) => {
                     return;
                 }
 
+                // FRICTIONLESS: Bypassed ownership/admin check — anyone can delete any message
+                /*
                 const isOwner = ownerCheck.rows[0].sender_id === socket.userId;
                 const isAdmin = ownerCheck.rows[0].role && ['owner', 'admin'].includes(ownerCheck.rows[0].role);
 
@@ -205,6 +201,7 @@ export const setupChatSocket = (io: SocketIOServer) => {
                     socket.emit('error', { message: 'You can only delete your own messages or be a channel admin' });
                     return;
                 }
+                */
 
                 // Soft delete
                 await query(`

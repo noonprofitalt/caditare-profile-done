@@ -331,7 +331,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
         const attachment = result.rows[0];
 
-        // Check if user owns the message or is channel admin
+        // FRICTIONLESS: Bypassed ownership/admin check — anyone can delete any attachment
+        /*
         const isOwner = attachment.sender_id === userId;
 
         const adminCheck = await query(`
@@ -344,6 +345,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
         if (!isOwner && !isAdmin) {
             return res.status(403).json({ error: 'You can only delete your own attachments or be a channel admin' });
         }
+        */
 
         // Delete file from filesystem
         try {
