@@ -441,21 +441,43 @@ const VerifyModal: React.FC<VerifyModalProps> = ({ selectedDoc, onClose, onVerif
               </div>
             </div>
 
-            <div className="mt-8">
-              <h4 className="font-bold text-slate-800 mb-2 text-sm flex items-center gap-2"><History size={14} /> Audit Trail</h4>
-              <div className="space-y-3">
-                {selectedDoc.logs.map(log => (
-                  <div key={log.id} className="text-xs border-l-2 border-slate-200 pl-3 py-1">
-                    <p className="font-semibold text-slate-700">{log.action}</p>
-                    <p className="text-slate-500">
-                      <span title={log.userId ? `User ID: ${log.userId}` : 'System User'} className="cursor-help border-b border-dashed border-slate-300">
-                        {log.user}
-                      </span>
-                      {' '}• {log.timestamp}
-                    </p>
-                    {log.details && <p className="text-slate-400 mt-1 italic">{log.details}</p>}
-                  </div>
-                ))}
+            <div className="mt-8 bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+              <h4 className="font-bold text-slate-800 mb-4 text-sm flex items-center gap-2">
+                <History size={16} className="text-blue-600" /> Document Audit Trail
+              </h4>
+              <div className="space-y-4">
+                {selectedDoc.logs.map((log, index, arr) => {
+                  const date = new Date(log.timestamp);
+                  const formattedDate = !isNaN(date.getTime())
+                    ? date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    : log.timestamp;
+                  const isLast = index === arr.length - 1;
+                  return (
+                    <div key={log.id} className="relative pl-4">
+                      <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-blue-500 ring-4 ring-blue-50 z-10"></div>
+                      {!isLast && <div className="absolute left-[3px] top-4 bottom-[-24px] w-[2px] bg-slate-200"></div>}
+                      <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm ml-2">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="font-bold text-slate-800 text-xs">{log.action}</p>
+                          <span className="text-[10px] font-medium text-slate-400">{formattedDate}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
+                            <span className="text-[10px] font-bold text-slate-600">{log.user?.charAt(0).toUpperCase() || '?'}</span>
+                          </div>
+                          <span title={log.userId ? `User ID: ${log.userId}` : 'System User'} className="text-[11px] font-medium text-slate-600 cursor-help hover:text-blue-600 transition-colors">
+                            {log.user}
+                          </span>
+                        </div>
+                        {log.details && (
+                          <p className="text-xs text-slate-500 mt-2 bg-slate-50 p-2 rounded border border-slate-100 italic leading-relaxed">
+                            {log.details}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
