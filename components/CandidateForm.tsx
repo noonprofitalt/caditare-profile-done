@@ -801,7 +801,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                       name="medicalScheduledDate"
                       value={formData.medicalScheduledDate}
                       onChange={handleChange}
-                      required
+                      // FRICTIONLESS: required removed
                       className="w-full px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                   </div>
@@ -957,103 +957,6 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
               </div>
             </div>
           </div>
-
-          {/* SLBFE COMPLIANCE SECTION */}
-          <div className="pt-2">
-            <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
-              SLBFE Compliance <ShieldCheck size={12} />
-            </h4>
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              {/* Registration */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">SLBFE Registration No</label>
-                <input
-                  name="slbfeRegNo"
-                  value={formData.slbfeRegNo}
-                  onChange={handleChange}
-                  placeholder="e.g. SLBFE/2026/XXXX"
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Registration Date</label>
-                <input
-                  type="date"
-                  name="slbfeRegDate"
-                  value={formData.slbfeRegDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-
-              {/* Training & Insurance */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Training Completion Date</label>
-                <input
-                  type="date"
-                  name="trainingDate"
-                  value={formData.trainingDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Insurance Policy No</label>
-                <input
-                  name="insurancePolicyNo"
-                  value={formData.insurancePolicyNo}
-                  onChange={handleChange}
-                  placeholder="Policy Number"
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Insurance Expiry Date</label>
-                <input
-                  type="date"
-                  name="insuranceExpiryDate"
-                  value={formData.insuranceExpiryDate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-
-              {/* Biometrics */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Biometric Status</label>
-                <select
-                  name="biometricStatus"
-                  value={formData.biometricStatus}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
-                >
-                  {Object.values(BiometricStatus).map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Family Consent (Checkbox style) */}
-              <div className="col-span-2 pt-2 border-t border-slate-200 mt-2">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="familyConsentGiven"
-                    checked={formData.familyConsentGiven}
-                    onChange={e => setFormData(p => ({ ...p, familyConsentGiven: e.target.checked }))}
-                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                  />
-                  <div>
-                    <label htmlFor="familyConsentGiven" className="text-sm font-bold text-slate-700 block cursor-pointer">Family Consent Verified</label>
-                    <p className="text-xs text-slate-500">Required for female candidates in domestic sector roles.</p>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
 
           {/* SLBFE COMPLIANCE SECTION */}
           <div className="pt-2">

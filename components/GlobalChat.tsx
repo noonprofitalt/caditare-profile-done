@@ -85,6 +85,13 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
         };
     }, [activeChannelId, currentUser]);
 
+    const handleContextClick = React.useCallback((context: ChatMessageContext) => {
+        if (context.type === 'CANDIDATE') {
+            navigate(`/candidates/${context.id}`);
+            if (onClose) onClose();
+        }
+    }, [navigate, onClose]);
+
     const messagesList = React.useMemo(() => {
         if (messages.length === 0) return null;
 
@@ -182,7 +189,7 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
             );
             return acc;
         }, []);
-    }, [messages]);
+    }, [messages, handleContextClick]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -283,12 +290,6 @@ const GlobalChat: React.FC<GlobalChatProps> = ({ onClose }) => {
         }
     };
 
-    const handleContextClick = (context: ChatMessageContext) => {
-        if (context.type === 'CANDIDATE') {
-            navigate(`/candidates/${context.id}`);
-            if (onClose) onClose();
-        }
-    };
 
     return (
         <div className="flex flex-col h-full bg-slate-50">

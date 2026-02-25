@@ -10,6 +10,7 @@ import { Candidate, WorkflowStage, PassportStatus, PCCStatus, MedicalStatus, Doc
 import { ComplianceEngine } from './compliance/ComplianceEngine';
 import { ComplianceSeverity } from './compliance/ComplianceTypes';
 import { SLBFEAutomationEngine } from './slbfe/SLBFEEngine';
+import { AuditService } from './auditService';
 
 // ============================================================================
 // WORKFLOW CONFIGURATION
@@ -694,6 +695,15 @@ export class WorkflowEngine {
       slaStatus: slaStatus.status === 'OVERDUE' ? 'OVERDUE' : 'ON_TIME',
       daysInPreviousStage
     };
+
+    AuditService.log('WORKFLOW_TRANSITION', {
+      candidateId: candidate.id,
+      fromStage,
+      toStage,
+      transitionType: event.transitionType,
+      isOverdue: event.slaStatus === 'OVERDUE',
+      reason: event.reason
+    }, userId);
 
     return {
       success: true,

@@ -1,6 +1,7 @@
 import { supabase, getCurrentUser } from './supabase';
 import { ChatChannel, ChatMessage, ChatUser, ChatMessageContext, ChatNotification, ChatAttachment, MessageReaction } from '../types';
 import { UserService } from './userService';
+import { AuditService } from './auditService';
 
 const STORAGE_KEY_CHANNELS = 'caditare_chat_channels_v2';
 
@@ -112,22 +113,23 @@ export const ChatService: IChatService = {
 
         // Fallback/Seed for dev if empty
         if (channels.length === 0) {
-            const initialChannels = [
-                { id: 'c1', name: 'General', type: 'public', unreadCount: 0 },
-                { id: 'c2', name: 'Announcements', type: 'public', unreadCount: 0 },
-                { id: 'c3', name: 'Visa Processing', type: 'public', unreadCount: 0 },
-                { id: 'c4', name: 'Management', type: 'private', unreadCount: 0, allowed_roles: ['Admin', 'Manager', 'HR Manager'] },
+            const seedRows = [
+                { id: 'c1', name: 'General', type: 'public' },
+                { id: 'c2', name: 'Announcements', type: 'public' },
+                { id: 'c3', name: 'Visa Processing', type: 'public' },
+                { id: 'c4', name: 'Management', type: 'private', allowed_roles: ['Admin', 'Manager', 'HR Manager'] },
             ];
-            // @ts-ignore
-            await supabase.from('chat_channels').insert(initialChannels);
-            // @ts-ignore
-            channels = initialChannels.map(c => ({ ...c, allowedRoles: c.allowed_roles }));
+            await supabase.from('chat_channels').insert(seedRows);
+            channels = seedRows.map(c => ({
+                id: c.id,
+                name: c.name,
+                type: c.type as 'public' | 'private',
+                unreadCount: 0,
+                allowedRoles: (c as any).allowed_roles
+            }));
         }
 
-        // RBAC Filtering
-        if (currentUserRole) {
-            return channels.filter(c => !c.allowedRoles || (c.allowedRoles && c.allowedRoles.includes(currentUserRole)));
-        }
+        // FRICTIONLESS: RBAC channel filtering bypassed — all channels visible to all users
         return channels;
     },
 
@@ -200,6 +202,17 @@ export const ChatService: IChatService = {
 
         const message = mapRowToMessage(data);
         message.isMe = true;
+
+        // Skip logging system level messages to avoid bloating the audit log excessively,
+        // but log actual human team chat.
+        if (senderId !== 'system' && senderId !== '00000000-0000-0000-0000-000000000000') {
+            AuditService.log('TEAM_CHAT_MESSAGE_SENT', {
+                channelId,
+                messageId: message.id,
+                hasAttachments: (attachments && attachments.length > 0)
+            }, senderId);
+        }
+
         return message;
     },
 

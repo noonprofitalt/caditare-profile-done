@@ -10,7 +10,9 @@ import {
   KanbanSquare,
   Target,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  BrainCircuit,
+  Activity
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -52,8 +54,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <span>Dashboard</span>
         </NavLink>
         <NavLink to="/analytics" className={linkClass}>
-          <TrendingUp size={20} />
-          <span>Analytics</span>
+          <BrainCircuit size={20} />
+          <span>Intelligence</span>
         </NavLink>
         <NavLink to="/pipeline" className={linkClass}>
           <KanbanSquare size={20} />
@@ -82,6 +84,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       </nav>
 
       <div className="p-4 border-t border-slate-800 space-y-2">
+        <NavLink to="/audit" className={linkClass}>
+          <Activity size={20} />
+          <span>Audit Trails</span>
+        </NavLink>
         <NavLink to="/settings" className={linkClass}>
           <Settings size={20} />
           <span>Settings</span>

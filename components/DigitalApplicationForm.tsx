@@ -6,6 +6,7 @@ import { ComplianceService } from '../services/complianceService';
 import { WORKFLOW_STAGES } from '../services/workflowEngine.v2';
 import { ProfileCompletionService } from '../services/profileCompletionService';
 import { NICService } from '../services/nicService';
+import { useAuth } from '../context/AuthContext';
 import { Plus, Trash2, Save, X, AlertCircle, CheckCircle, Calendar, FileEdit, TrendingUp, ShieldCheck, ShieldAlert } from 'lucide-react';
 import MultiSelect from './ui/MultiSelect';
 import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
@@ -19,6 +20,7 @@ import JobRoleEntry from './JobRoleEntry';
 
 const DigitalApplicationForm: React.FC = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [searchParams] = useSearchParams();
     const upgradeId = searchParams.get('upgrade');
     const [isUpgradeMode, setIsUpgradeMode] = useState(false);
@@ -226,7 +228,7 @@ const DigitalApplicationForm: React.FC = () => {
     const canEditPersonal = true; // !isUpgradeMode || !isStageAtLeast(WorkflowStage.APPLIED);
     const canEditCompliance = true; // !isUpgradeMode || !isStageAtLeast(WorkflowStage.VISA_RECEIVED);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const handleInputChange = (field: string, value: any) => {
         const personalFields = ['firstName', 'middleName', 'name', 'nic', 'drivingLicenseNo', 'dob'];
         if (personalFields.includes(field) && !canEditPersonal) return; // Guard
@@ -247,11 +249,11 @@ const DigitalApplicationForm: React.FC = () => {
         });
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const handleNestedChange = (field: string, nestedField: string, value: any) => {
         setFormData(prev => ({
             ...prev,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             
             [field]: { ...((prev as any)[field]), [nestedField]: value }
         }));
     };
@@ -385,7 +387,7 @@ const DigitalApplicationForm: React.FC = () => {
                     title: 'Full Application Submitted',
                     description: 'Candidate registered via Digital Application Form.',
                     timestamp: new Date().toISOString(),
-                    actor: 'Staff User',
+                    actor: user?.name || 'Staff User',
                     stage: WorkflowStage.REGISTERED
                 }],
                 documents: [],

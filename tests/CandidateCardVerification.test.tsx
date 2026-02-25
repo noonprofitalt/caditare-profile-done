@@ -6,7 +6,6 @@ import { Candidate, WorkflowStage, ProfileCompletionStatus, ComplianceFlag, Medi
 import { BrowserRouter } from 'react-router-dom';
 
 // Mock Lucide icons
-// eslint-disable-next-line react/display-name
 vi.mock('lucide-react', () => ({
     Phone: () => <span data-testid="icon-phone" />,
     Mail: () => <span data-testid="icon-mail" />,

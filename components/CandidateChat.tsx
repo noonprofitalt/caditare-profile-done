@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, MessageCircle, Shield } from 'lucide-react';
 import { CandidateComment } from '../types';
 import { CandidateService } from '../services/candidateService';
+import { useAuth } from '../context/AuthContext';
 
 interface CandidateChatProps {
     candidateId: string;
@@ -10,6 +11,7 @@ interface CandidateChatProps {
 }
 
 const CandidateChat: React.FC<CandidateChatProps> = ({ candidateId, comments, onCommentAdded }) => {
+    const { user } = useAuth();
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -17,10 +19,10 @@ const CandidateChat: React.FC<CandidateChatProps> = ({ candidateId, comments, on
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [comments]);
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!inputValue.trim()) return;
 
-        CandidateService.addComment(candidateId, 'Admin User', inputValue, true);
+        await CandidateService.addComment(candidateId, user?.name || 'System User', inputValue, true);
         setInputValue('');
         onCommentAdded();
     };

@@ -1,5 +1,6 @@
 import { supabase, getUserProfile } from './supabase';
 import { User, UserRole } from '../types';
+import { AuditService } from './auditService';
 
 export class AuthService {
     static async login(email: string, password: string): Promise<User> {
@@ -19,6 +20,10 @@ export class AuthService {
         // Fetch profile to get name and role
         const profile = await getUserProfile(data.user.id);
 
+        // SYSLOG: Track User Login
+        await AuditService.log('USER_LOGIN', { email: data.user.email }, data.user.id);
+
+
         return {
             id: data.user.id,
             email: data.user.email || '',
@@ -31,6 +36,12 @@ export class AuthService {
     }
 
     static async logout(): Promise<void> {
+        // SYSLOG: Track User Logout
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            await AuditService.log('USER_LOGOUT', {}, user.id);
+        }
+
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         localStorage.removeItem('globalworkforce_auth_user'); // Clean up old legacy key if exists

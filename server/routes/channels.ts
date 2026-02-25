@@ -108,6 +108,7 @@ router.get('/:id',
       LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $2
       WHERE c.id = $1
         AND c.is_archived = FALSE
+    `, [id, userId]);
 
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'Channel not found' });
@@ -372,18 +373,23 @@ router.post('/:id/members',
             const addedMembers = [];
             for (const newUserId of userIds) {
                 try {
+                    // Fetch actual user details from profiles table
+                    const userResult = await query('SELECT full_name, avatar_url FROM profiles WHERE id = $1', [newUserId]);
+                    const fullName = userResult.rows[0]?.full_name || 'Anonymous User';
+                    const avatarUrl = userResult.rows[0]?.avatar_url || '';
+
                     const result = await query(`
-          INSERT INTO chat_channel_members(channel_id, user_id, user_name, user_avatar, role)
+                        INSERT INTO chat_channel_members(channel_id, user_id, user_name, user_avatar, role)
             VALUES($1, $2, $3, $4, 'member')
-          ON CONFLICT(channel_id, user_id) DO NOTHING
+                        ON CONFLICT(channel_id, user_id) DO NOTHING
             RETURNING *
-                `, [id, newUserId, 'User Name', '']); // TODO: Fetch actual user details
+                `, [id, newUserId, fullName, avatarUrl]);
 
                     if (result.rows.length > 0) {
                         addedMembers.push(result.rows[0]);
                     }
                 } catch (err) {
-                    console.error(`Error adding user ${ newUserId }: `, err);
+                    console.error(`Error adding user ${newUserId}: `, err);
                 }
             }
 

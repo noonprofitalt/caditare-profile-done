@@ -24,7 +24,7 @@ const IntelligenceEngine: React.FC = () => {
    };
 
    useEffect(() => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       refreshData();
    }, []);
 
@@ -322,6 +322,7 @@ const IntelligenceEngine: React.FC = () => {
                { id: 'workflow', label: 'Workflow Analytics', icon: Server },
                { id: 'staff', label: 'Staff Performance', icon: Users },
                { id: 'financial', label: 'Financials', icon: DollarSign },
+               { id: 'assistant', label: 'AI Assistant', icon: BrainCircuit },
             ].map(tab => (
                <button
                   key={tab.id}
@@ -486,6 +487,7 @@ const IntelligenceEngine: React.FC = () => {
                   </div>
                </div>
             )}
+            {activeTab === 'assistant' && <AIPlayground />}
          </div>
       </div>
    );

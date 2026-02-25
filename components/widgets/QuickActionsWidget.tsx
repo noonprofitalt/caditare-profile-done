@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileEdit, Calendar, MessageCircle, Briefcase, FileText, Trash2 } from 'lucide-react';
+import { FileEdit, Calendar, MessageCircle, Briefcase, FileText, Trash2, RefreshCw } from 'lucide-react';
 import { Candidate, ProfileCompletionStatus } from '../../types';
 import { Link } from 'react-router-dom';
 import WorkflowEngine from '../../services/workflowEngine';
@@ -8,9 +8,16 @@ interface QuickActionsWidgetProps {
     candidate: Candidate;
     onDelete?: () => void;
     onGenerateReport?: () => void;
+    isGeneratingReport?: boolean;
 }
 
-const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({ candidate, onDelete, onGenerateReport }) => {
+const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
+    candidate,
+    onDelete,
+    onGenerateReport,
+    isGeneratingReport = false
+}) => {
+
     const actions = [];
 
     // Check policies for common actions
@@ -67,11 +74,11 @@ const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({ candidate, onDe
     // Generate Report
     actions.push({
         id: 'generate_report',
-        icon: FileText,
-        label: 'Generate Report',
-        description: 'Create PDF summary',
+        icon: isGeneratingReport ? RefreshCw : FileText,
+        label: isGeneratingReport ? 'Generating...' : 'Generate Report',
+        description: isGeneratingReport ? 'Preparing PDF summary...' : 'Create PDF summary',
         color: 'indigo',
-        allowed: true,
+        allowed: !isGeneratingReport,
         onClick: onGenerateReport || (() => alert('Report generation coming soon!'))
     });
 
@@ -108,7 +115,7 @@ const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({ candidate, onDe
                     const content = (
                         <>
                             <div className="flex items-start gap-3">
-                                <div className={`p-2 bg-white rounded-lg border ${action.allowed ? 'border-slate-200' : 'border-slate-100'}`}>
+                                <div className={`p-2 bg-white rounded-lg border ${action.allowed ? 'border-slate-200' : 'border-slate-100'} ${isGeneratingReport && action.id === 'generate_report' ? 'animate-spin text-indigo-500 border-indigo-200' : ''}`}>
                                     <Icon size={18} />
                                 </div>
                                 <div className="flex-1 min-w-0">

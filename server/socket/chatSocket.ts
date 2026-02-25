@@ -129,7 +129,46 @@ export const setupChatSocket = (io: SocketIOServer) => {
 
                 // Create notifications for mentions
                 if (mentions.length > 0) {
-                    // TODO: Resolve mentions to user IDs and send notifications
+                    for (const mention of mentions) {
+                        try {
+                            // Find the user by mention (case insensitive name match with spaces removed, or direct UUID)
+                            const userMatch = await query(`
+                                SELECT id FROM profiles 
+                                WHERE REPLACE(LOWER(full_name), ' ', '') = LOWER($1)
+                                   OR id::text = $1
+                                LIMIT 1
+                            `, [mention]);
+
+                            if (userMatch.rows.length > 0) {
+                                const mentionedUserId = userMatch.rows[0].id;
+
+                                // Don't notify self
+                                if (mentionedUserId === socket.userId) continue;
+
+                                await query(`
+                                    INSERT INTO chat_notifications (user_id, type, title, message, channel_id, message_id)
+                                    VALUES ($1, 'mention', $2, $3, $4, $5)
+                                `, [
+                                    mentionedUserId,
+                                    `Mentioned by ${socket.userName}`,
+                                    text.substring(0, 100),
+                                    channelId,
+                                    message.id
+                                ]);
+
+                                // Push real-time notification to the mentioned user
+                                io.to(`user:${mentionedUserId}`).emit('notification:new', {
+                                    type: 'mention',
+                                    title: `Mentioned by ${socket.userName}`,
+                                    message: text.substring(0, 100),
+                                    channelId,
+                                    messageId: message.id
+                                });
+                            }
+                        } catch (err) {
+                            console.error('Error resolving mention:', err);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Error sending message:', error);

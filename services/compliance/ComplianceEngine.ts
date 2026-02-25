@@ -472,8 +472,7 @@ export class ComplianceEngine {
 
         return {
             overallScore: overallPercentage,
-            // @ts-ignore - casting key string to enum key
-            domainBreakdown: breakdown,
+            domainBreakdown: breakdown as Record<ComplianceDomain, { score: number; maxScore: number }>,
             criticalIssuesCount: criticalCount,
             warningIssuesCount: warningCount
         };

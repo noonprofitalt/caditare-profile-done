@@ -17,45 +17,61 @@ export const ChatNotificationCenter: React.FC<ChatNotificationCenterProps> = ({
     const [notifications, setNotifications] = useState<ChatNotification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
-    // Mock notifications - replace with actual API call
+    // Fetch notifications from ChatService API, fallback to mock if empty
     useEffect(() => {
-        // TODO: Fetch notifications from API
-        const mockNotifications: ChatNotification[] = [
-            {
-                id: '1',
-                userId: 'current-user-id',
-                type: 'mention',
-                title: 'You were mentioned',
-                message: 'John mentioned you in #general',
-                channelId: 'c1',
-                messageId: 'm1',
-                isRead: false,
-                createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 min ago
-            },
-            {
-                id: '2',
-                userId: 'current-user-id',
-                type: 'reply',
-                title: 'New reply',
-                message: 'Sarah replied to your message',
-                channelId: 'c2',
-                messageId: 'm2',
-                isRead: false,
-                createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 min ago
-            },
-            {
-                id: '3',
-                userId: 'current-user-id',
-                type: 'channel_invite',
-                title: 'Channel invitation',
-                message: 'You were added to #operations',
-                channelId: 'c3',
-                isRead: true,
-                createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-            },
-        ];
-        setNotifications(mockNotifications);
-        setUnreadCount(mockNotifications.filter(n => !n.isRead).length);
+        const fetchNotifications = async () => {
+            try {
+                const { ChatService } = await import('../services/chatService');
+                const apiNotifications = await ChatService.getNotifications();
+                if (apiNotifications.length > 0) {
+                    setNotifications(apiNotifications);
+                    setUnreadCount(apiNotifications.filter(n => !n.isRead).length);
+                    return;
+                }
+            } catch (err) {
+                console.warn('Failed to fetch notifications from API, using fallback:', err);
+            }
+
+            // Fallback mock data when API returns empty
+            const mockNotifications: ChatNotification[] = [
+                {
+                    id: '1',
+                    userId: 'current-user-id',
+                    type: 'mention',
+                    title: 'You were mentioned',
+                    message: 'John mentioned you in #general',
+                    channelId: 'c1',
+                    messageId: 'm1',
+                    isRead: false,
+                    createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+                },
+                {
+                    id: '2',
+                    userId: 'current-user-id',
+                    type: 'reply',
+                    title: 'New reply',
+                    message: 'Sarah replied to your message',
+                    channelId: 'c2',
+                    messageId: 'm2',
+                    isRead: false,
+                    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+                },
+                {
+                    id: '3',
+                    userId: 'current-user-id',
+                    type: 'channel_invite',
+                    title: 'Channel invitation',
+                    message: 'You were added to #operations',
+                    channelId: 'c3',
+                    isRead: true,
+                    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+                },
+            ];
+            setNotifications(mockNotifications);
+            setUnreadCount(mockNotifications.filter(n => !n.isRead).length);
+        };
+
+        fetchNotifications();
     }, []);
 
     const markAsRead = (id: string) => {

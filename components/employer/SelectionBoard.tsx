@@ -40,8 +40,8 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
     const [rejectModal, setRejectModal] = useState<CandidateSelection | null>(null);
     const [rejectReason, setRejectReason] = useState('');
 
-    const loadSelections = async () => {
-        setIsLoading(true);
+    const loadSelections = async (quiet = false) => {
+        if (!quiet) setIsLoading(true);
         try {
             const data = await SelectionService.getByDemandOrderId(demandOrder.id);
             setSelections(data || []);
@@ -93,7 +93,7 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
             }
 
             // Reload strictly ensuring data consistency
-            loadSelections();
+            loadSelections(true);
             onRefresh();
         } catch (error) {
             console.error("Failed to update stage", error);
@@ -121,7 +121,7 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
                     const updated = await SelectionService.getById(selection.id);
                     setDetailPanel(updated || null);
                 }
-                loadSelections();
+                loadSelections(true);
                 onRefresh();
             } catch (error) {
                 console.error("Failed to advance stage", error);

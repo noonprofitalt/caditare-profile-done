@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { User, UserRole } from '../types';
+import { AuditService } from './auditService';
 
 export class UserService {
 
@@ -42,6 +43,12 @@ export class UserService {
             console.error('Error creating user:', error);
             throw error;
         }
+
+        AuditService.log('SYSTEM_USER_CREATED', {
+            newUserEmail: user.email,
+            newUserRole: user.role,
+            newUserName: user.name
+        });
     }
 
     // Delete a user via Edge Function
@@ -54,6 +61,10 @@ export class UserService {
             console.error('Error deleting user:', error);
             throw error;
         }
+
+        AuditService.log('SYSTEM_USER_DELETED', {
+            deletedUserId: userId
+        });
     }
 
     // Update user profile (role, status, etc.) - Direct DB update as Admin
@@ -70,5 +81,10 @@ export class UserService {
         if (error) {
             throw error;
         }
+
+        AuditService.log('SYSTEM_USER_UPDATED', {
+            targetUserId: userId,
+            updates: updates
+        });
     }
 }

@@ -1,6 +1,7 @@
 import { DemandOrder, DemandOrderStatus, EmployerActivity } from '../types';
 import { supabase } from './supabase';
 import { OfflineSyncService } from './offlineSyncService';
+import { AuditService } from './auditService';
 
 export class DemandOrderService {
     static async getAll(): Promise<DemandOrder[]> {
@@ -112,6 +113,9 @@ export class DemandOrderService {
             return null;
         }
 
+        // SYSLOG: Track Audit
+        AuditService.log('DEMAND_ORDER_CREATED', { orderId: dbOrder.order_number || data.id, title: dbOrder.title });
+
         return this.mapDatabaseToOrder(data);
     }
 
@@ -157,6 +161,9 @@ export class DemandOrderService {
             return null;
         }
 
+        // SYSLOG: Track Audit
+        AuditService.log('DEMAND_ORDER_UPDATED', { orderId: updated.id, status: updated.status });
+
         return this.mapDatabaseToOrder(data);
     }
 
@@ -180,6 +187,10 @@ export class DemandOrderService {
             }
             return false;
         }
+
+        // SYSLOG: Track Audit
+        AuditService.log('DEMAND_ORDER_DELETED', { orderId: id });
+
         return true;
     }
 
@@ -202,7 +213,7 @@ export class DemandOrderService {
             employerId: dbRecord.employer_id,
             title: dbRecord.title || '',
             jobCategory: dbRecord.category || '',
-            country: 'Qatar', // Default or from joined employer
+            country: dbRecord.country || dbRecord.location?.split(',').pop()?.trim() || 'Qatar', // Use db value if available, or try to infer from location
             location: dbRecord.location || '',
             positionsRequired: dbRecord.positions || 1,
             positionsFilled: dbRecord.data?.positionsFilled || 0,

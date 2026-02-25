@@ -4,12 +4,14 @@ import { NotificationService } from '../services/notificationService';
 import { UploadCloud, CheckCircle, AlertCircle, FileText, Clock, XCircle, Eye, Download, History, Lock, ShieldCheck, Maximize2 } from 'lucide-react';
 import DocumentPreviewer from './ui/DocumentPreviewer';
 import { DocumentService } from '../services/documentService';
+import { useAuth } from '../context/AuthContext';
 interface DocumentManagerProps {
   candidate: Candidate;
   onUpdate: (updatedDocs: CandidateDocument[]) => void;
 }
 
 const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }) => {
+  const { user } = useAuth();
   const [selectedDoc, setSelectedDoc] = useState<CandidateDocument | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'upload' | 'verify' | 'history'>('list');
   const [dragActive, setDragActive] = useState(false);
@@ -85,7 +87,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     const newLog: DocumentLog = {
       id: `log-${Date.now()}`,
       action: 'UPLOAD',
-      user: 'Current User', // TODO: Use real user
+      user: user?.name || 'System Admin',
       timestamp: new Date().toISOString(),
       details: `Uploaded v${(existingDoc?.version || 0) + 1} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
     };
@@ -98,7 +100,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       url, // Use the persistent public URL
       storagePath: path, // Store the storage path for future deletion
       uploadedAt: new Date().toISOString(),
-      uploadedBy: 'Current User',
+      uploadedBy: user?.name || 'System Admin',
       fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
       fileType: file.type,
       version: (existingDoc?.version || 0) + 1,
@@ -118,7 +120,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     const newLog: DocumentLog = {
       id: `log-${Date.now()}`,
       action,
-      user: 'Current User',
+      user: user?.name || 'System Admin',
       timestamp: new Date().toISOString(),
       details: reason ? `Reason: ${reason}` : undefined
     };

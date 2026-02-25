@@ -45,6 +45,7 @@ const IntelligenceEngine = React.lazy(() => import('./components/IntelligenceEng
 const Settings = React.lazy(() => import('./components/Settings'));
 const PartnerManager = React.lazy(() => import('./components/PartnerManager'));
 const FinanceLedger = React.lazy(() => import('./components/FinanceLedger'));
+const AuditLogPage = React.lazy(() => import('./components/AuditLogPage'));
 const DigitalApplicationForm = React.lazy(() => import('./components/DigitalApplicationForm'));
 const QuickAddForm = React.lazy(() => import('./components/QuickAddForm'));
 // DevTools removed
@@ -131,6 +132,7 @@ const App: React.FC = () => {
                                     <Route path="/partners/:id?" element={<PartnerManager />} />
                                     <Route path="/finance" element={<FinanceLedger />} />
                                     <Route path="/team-chat" element={<TeamChat />} />
+                                    <Route path="/audit" element={<AuditLogPage />} />
                                     <Route path="/settings" element={<Settings />} />
                                     <Route path="/showcase" element={<ComponentShowcase />} />
                                     <Route path="*" element={<Navigate to="/" replace />} />

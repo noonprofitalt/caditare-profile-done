@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, FileSearch, User, MapPin, ShieldAlert, ShieldCheck, Upload, ArrowRight, ExternalLink, TrendingUp } from 'lucide-react';
 import { Candidate } from '../types';
-import { ReportService, SystemReport } from '../services/reportService';
+import type { SystemReport } from '../services/reportService';
 import ReactMarkdown from 'react-markdown';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import { CandidateReportPDF } from '../src/components/reports/CandidateReportPDF'; // Adjusted path if necessary
 import { useCandidateReport } from '../src/hooks/useCandidateReport';
 
 interface CandidateReportProps {
@@ -15,19 +13,58 @@ interface CandidateReportProps {
 const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
     const [report, setReport] = useState<SystemReport | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // PDF Hook
     const { reportId, generatedBy } = useCandidateReport(candidate);
 
     const generate = React.useCallback(async () => {
         setIsLoading(true);
-        const data = await ReportService.generateReport(candidate);
-        setReport(data);
-        setIsLoading(false);
+        try {
+            const { ReportService } = await import('../services/reportService');
+            const data = await ReportService.generateReport(candidate);
+            setReport(data);
+        } catch (error) {
+            console.error('Failed to generate report:', error);
+        } finally {
+            setIsLoading(false);
+        }
     }, [candidate]);
 
+    const handleExportPDF = async () => {
+        if (!report) return;
+        setIsExporting(true);
+        try {
+            const { pdf } = await import('@react-pdf/renderer');
+            const { CandidateReportPDF } = await import('../src/components/reports/CandidateReportPDF');
+
+            const blob = await pdf(
+                <CandidateReportPDF
+                    candidate={candidate}
+                    reportId={reportId}
+                    generatedBy={generatedBy}
+                    systemReport={report}
+                />
+            ).toBlob();
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Candidate_Report_${candidate.name.replace(/\s+/g, '_')}_${reportId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Failed to export PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+         
         generate();
     }, [generate]);
 
@@ -81,18 +118,14 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                         <RefreshCw size={14} /> Refresh Analysis
                     </button>
 
-                    <PDFDownloadLink
-                        document={<CandidateReportPDF candidate={candidate} reportId={reportId} generatedBy={generatedBy} systemReport={report || undefined} />}
-                        fileName={`Candidate_Report_${candidate.name.replace(/\s+/g, '_')}_${reportId}.pdf`}
-                        className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all font-bold text-xs no-print"
+                    <button
+                        disabled={isExporting}
+                        onClick={handleExportPDF}
+                        className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all font-bold text-xs no-print disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {({ blob, url, loading, error }) => (
-                            <>
-                                <Printer size={14} />
-                                {loading ? 'Preparing PDF...' : 'Export Formal PDF'}
-                            </>
-                        )}
-                    </PDFDownloadLink>
+                        {isExporting ? <RefreshCw size={14} className="animate-spin" /> : <Printer size={14} />}
+                        {isExporting ? 'Preparing PDF...' : 'Export Formal PDF'}
+                    </button>
                 </div>
             </div>
 

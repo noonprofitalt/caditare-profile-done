@@ -3,6 +3,7 @@ import {
     Invoice, InvoiceStatus, Candidate, WorkflowStage, Employer
 } from '../types';
 import { supabase } from './supabase';
+import { AuditService } from './auditService';
 
 export class FinanceService {
 
@@ -57,7 +58,7 @@ export class FinanceService {
             return null;
         }
 
-        return {
+        const result = {
             id: data.id,
             candidateId: data.candidate_id || 'system',
             employerId: data.employer_id || 'system',
@@ -69,6 +70,16 @@ export class FinanceService {
             description: data.description,
             referenceId: data.reference_id
         };
+
+        AuditService.log('FINANCE_TRANSACTION_CREATED', {
+            transactionId: result.id,
+            type: result.type,
+            amount: result.amount,
+            candidateId: result.candidateId,
+            employerId: result.employerId
+        });
+
+        return result;
     }
 
     // --- INVOICES ---
@@ -131,7 +142,7 @@ export class FinanceService {
             return null;
         }
 
-        return {
+        const result = {
             id: data.id,
             employerId: data.employer_id,
             candidateId: data.candidate_id,
@@ -142,6 +153,15 @@ export class FinanceService {
             items: data.items,
             billingAddress: data.billing_address
         };
+
+        AuditService.log('INVOICE_GENERATED', {
+            invoiceId: result.id,
+            amount: result.amount,
+            candidateId: result.candidateId,
+            employerId: result.employerId
+        });
+
+        return result;
     }
 
     // --- CALCULATIONS (Stateless) ---

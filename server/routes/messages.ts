@@ -195,74 +195,65 @@ router.post('/:channelId/messages',
         const io = req.app.get('io');
 
         for (const mention of mentions) {
-          // 1. Check if it's a direct user mention
-          const userResult = await query(`
-          SELECT user_id, user_name
-          FROM chat_channel_members
-          WHERE channel_id = $1 
-          AND LOWER(user_name) = LOWER($2)
-        `, [channelId, mention]);
+          // 1. Find user in profiles globally (case insensitive name match with spaces removed, or direct UUID)
+          const userMatch = await query(`
+              SELECT id, full_name as "fullName" FROM profiles 
+              WHERE REPLACE(LOWER(full_name), ' ', '') = LOWER($1)
+                 OR id::text = $1
+              LIMIT 1
+            `, [mention]);
 
-          let targets: { user_id: string, user_name?: string }[] = [];
+          if (userMatch.rows.length === 0) continue;
 
-          if (userResult.rows.length > 0) {
-            targets = [userResult.rows[0]];
-          } else {
-            // 2. Check if it's a role mention (e.g. @admin)
-            const roleResult = await query(`
-            SELECT user_id, user_name
-            FROM chat_channel_members
-            WHERE channel_id = $1 
-            AND LOWER(role) = LOWER($2)
-          `, [channelId, mention]);
+          const targetUserId = userMatch.rows[0].id;
+          const targetUserName = userMatch.rows[0].fullName;
 
-            if (roleResult.rows.length > 0) {
-              targets = roleResult.rows;
-            }
+          // Don't notify self
+          if (targetUserId === userId) continue;
+
+          // Create notification using standard INSERT
+          const notifResult = await query(`
+              INSERT INTO chat_notifications (user_id, type, title, message, channel_id, message_id)
+              VALUES ($1, 'mention', $2, $3, $4, $5)
+              RETURNING id
+            `, [
+            targetUserId,
+            `Mentioned by ${userName}`,
+            text.substring(0, 100),
+            channelId,
+            message.id
+          ]);
+
+          const notificationId = notifResult.rows[0].id;
+
+          // Emit real-time notification
+          if (io) {
+            io.to(`user:${targetUserId}`).emit('notification:new', {
+              id: notificationId,
+              type: 'mention',
+              title: 'You were mentioned',
+              message: `${userName} mentioned you in a message`,
+              channelId,
+              messageId: message.id,
+              isRead: false,
+              createdAt: new Date().toISOString()
+            });
           }
 
-          // Send notifications to all targets
-          for (const target of targets) {
-            // Don't notify self
-            if (target.user_id === userId) continue;
-
-            // Create notification
-            const notifResult = await query(`
-             SELECT create_mention_notification($1, $2, $3, $4) as id
-           `, [target.user_id, channelId, message.id, userName]);
-
-            const notificationId = notifResult.rows[0].id;
-
-            // Emit real-time notification
-            if (io) {
-              io.to(`user:${target.user_id}`).emit('notification:new', {
-                id: notificationId,
-                type: 'mention',
-                title: 'You were mentioned',
-                message: `${userName} mentioned you in a message`,
-                channelId,
-                messageId: message.id,
-                isRead: false,
-                createdAt: new Date().toISOString()
-              });
+          // Send Email Notification (Mock)
+          try {
+            const userEmailResult = await query('SELECT email FROM users WHERE id = $1', [targetUserId]);
+            if (userEmailResult.rows.length > 0) {
+              await sendNotificationEmail(
+                userEmailResult.rows[0].email,
+                targetUserName || 'User',
+                userName || 'User',
+                text as string,
+                channelId as string
+              );
             }
-
-            // Send Email Notification (Mock)
-            try {
-              // In a real app involving users table join would be better
-              const userEmailResult = await query('SELECT email FROM users WHERE id = $1', [target.user_id]);
-              if (userEmailResult.rows.length > 0) {
-                await sendNotificationEmail(
-                  userEmailResult.rows[0].email,
-                  target.user_name || 'User',
-                  userName || 'User',
-                  text,
-                  channelId
-                );
-              }
-            } catch (err) {
-              console.error('Failed to send email notification', err);
-            }
+          } catch (err) {
+            console.error('Failed to send email notification', err);
           }
         }
       }
@@ -444,7 +435,7 @@ router.delete('/:id/reactions/:emoji',
       await query(`
       DELETE FROM chat_message_reactions
       WHERE message_id = $1 AND emoji = $2 AND user_id = $3
-    `, [id, decodeURIComponent(emoji), userId]);
+    `, [id, decodeURIComponent(emoji as string), userId]);
 
       res.json({ message: 'Reaction removed successfully' });
     } catch (error) {

@@ -73,8 +73,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
         {/* Continuous Line */}
         <div className="absolute left-[27px] top-2 bottom-2 w-0.5 bg-slate-200"></div>
 
-        {sortedEvents.map((event) => (
-          <div key={event.id || `evt-${Math.random()}`} className="relative flex gap-6 group">
+        {sortedEvents.map((event, index) => (
+          <div key={event.id || `evt-${event.timestamp}-${index}`} className="relative flex gap-6 group">
             {/* Timeline Dot */}
             <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${getEventColor(event.type, event.metadata?.isCritical)}`}>
               {getEventIcon(event.type)}

@@ -4,6 +4,7 @@ import { DemandOrderService } from '../../services/demandOrderService';
 import { JobService } from '../../services/jobService';
 import { PartnerService } from '../../services/partnerService';
 import { X, Package, MapPin, DollarSign, Clock, Users, FileText, Briefcase } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface DemandOrderFormProps {
     employerId: string;
@@ -29,6 +30,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
     onClose,
     onSaved,
 }) => {
+    const { user } = useAuth();
     const isEditing = !!existingOrder;
 
     const [form, setForm] = useState({
@@ -81,7 +83,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                     type: 'Note',
                     content: 'Demand order updated',
                     timestamp: new Date().toISOString(),
-                    actor: 'System', // Would be actual user if auth context was fully wired
+                    actor: user?.name || 'Staff User',
                 },
                 ...(existingOrder?.activityLog || [])
             ] : undefined

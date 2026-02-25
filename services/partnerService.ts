@@ -1,6 +1,7 @@
 import { Employer, EmployerStatus, EmployerActivity } from '../types';
 import { supabase } from './supabase';
 import { OfflineSyncService } from './offlineSyncService';
+import { AuditService } from './auditService';
 
 export class PartnerService {
     static async getEmployers(): Promise<Employer[]> {
@@ -77,6 +78,9 @@ export class PartnerService {
             return null;
         }
 
+        // SYSLOG: Track Audit
+        AuditService.log('EMPLOYER_CREATED', { employerId: data.id, name: dbEmployer.name });
+
         return this.mapDatabaseToEmployer(data);
     }
 
@@ -126,6 +130,9 @@ export class PartnerService {
             return null;
         }
 
+        // SYSLOG: Track Audit
+        AuditService.log('EMPLOYER_UPDATED', { employerId: updated.id, status: updated.status });
+
         return this.mapDatabaseToEmployer(data);
     }
 
@@ -149,6 +156,10 @@ export class PartnerService {
             }
             return false;
         }
+
+        // SYSLOG: Track Audit
+        AuditService.log('EMPLOYER_DELETED', { employerId: id });
+
         return true;
     }
 

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { CandidateDocument, DocumentStatus, DocumentCategory, DocumentType } from '../types';
+import { AuditService } from './auditService';
 
 export class DocumentService {
     private static BUCKET_NAME = 'documents';
@@ -36,6 +37,13 @@ export class DocumentService {
                 .from(this.BUCKET_NAME)
                 .getPublicUrl(filePath);
 
+            AuditService.log('DOCUMENT_UPLOADED', {
+                candidateId,
+                documentType: docType,
+                fileName,
+                path: filePath
+            });
+
             return { path: filePath, url: publicUrl };
 
         } catch (err) {
@@ -57,6 +65,10 @@ export class DocumentService {
                 console.error('Error deleting file:', error);
                 return { success: false, error };
             }
+
+            AuditService.log('DOCUMENT_DELETED', {
+                path
+            });
 
             return { success: true };
         } catch (err) {

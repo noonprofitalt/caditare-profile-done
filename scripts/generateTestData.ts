@@ -119,7 +119,7 @@ function generateQuickAddCandidate(index: number): Candidate {
             title: 'Quick Add Registration',
             description: 'Candidate added via Quick Add form',
             timestamp: new Date().toISOString(),
-            actor: 'Staff User',
+            actor: 'System',
             stage: WorkflowStage.REGISTERED
         }],
         comments: [],
@@ -241,7 +241,7 @@ function generatePartialCandidate(index: number): Candidate {
                 title: 'Quick Add Registration',
                 description: 'Candidate added via Quick Add form',
                 timestamp: new Date(Date.now() - 86400000).toISOString(),
-                actor: 'Staff User',
+                actor: 'System',
                 stage: WorkflowStage.REGISTERED
             },
             {
@@ -250,7 +250,7 @@ function generatePartialCandidate(index: number): Candidate {
                 title: 'Profile Partially Updated',
                 description: 'Additional information added',
                 timestamp: new Date().toISOString(),
-                actor: 'Staff User',
+                actor: 'System',
                 stage: WorkflowStage.REGISTERED
             }
         ],
@@ -419,7 +419,7 @@ function generateCompleteCandidate(index: number): Candidate {
                 title: 'Full Application Submitted',
                 description: 'Candidate registered via Digital Application Form',
                 timestamp: new Date(Date.now() - 172800000).toISOString(),
-                actor: 'Staff User',
+                actor: 'System',
                 stage: WorkflowStage.REGISTERED
             },
             {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Employer, EmployerStatus, EmployerDocument, EmployerActivity } from '../../types';
 import { PartnerService } from '../../services/partnerService';
 import { X, Building2, MapPin, Mail, Phone, DollarSign, FileText, User } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface AddPartnerModalProps {
     onClose: () => void;
@@ -15,6 +16,7 @@ const COUNTRIES = [
 ];
 
 const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) => {
+    const { user } = useAuth();
     const [form, setForm] = useState({
         companyName: '',
         regNumber: '',
@@ -80,7 +82,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
                     type: 'Note',
                     content: 'Partner account created',
                     timestamp: now,
-                    actor: 'System',
+                    actor: user?.name || 'Staff User',
                 } as EmployerActivity,
             ],
         };

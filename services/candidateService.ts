@@ -10,6 +10,7 @@ import { supabase } from './supabase';
 import { logger } from './loggerService';
 import WorkflowEngine from './workflowEngine.v2';
 import { OfflineSyncService } from './offlineSyncService';
+import { AuditService } from './auditService';
 
 export class CandidateService {
 
@@ -143,6 +144,9 @@ export class CandidateService {
             throw error;
         }
 
+        // SYSLOG: Track Audit
+        AuditService.log('CANDIDATE_CREATED', { candidateId: id, name: candidateData.name, candidateCode });
+
         return this.mapRowToCandidate(data);
     }
 
@@ -183,6 +187,15 @@ export class CandidateService {
             }
             throw error;
         }
+
+        // SYSLOG: Track Audit
+        AuditService.log('CANDIDATE_UPDATED', {
+            candidateId: candidate.id,
+            name: candidate.name,
+            candidateCode: candidate.candidateCode,
+            stage: candidate.stage,
+            completionRate: candidate.profileCompletionPercentage
+        });
     }
 
     static async saveCandidates(candidates: Candidate[]): Promise<void> {
@@ -215,6 +228,9 @@ export class CandidateService {
             }
             throw error;
         }
+
+        // SYSLOG: Track Audit
+        AuditService.log('CANDIDATE_DELETED', { candidateId: id });
     }
 
     // --- Helpers for mapping between JSONB and Typed Object ---

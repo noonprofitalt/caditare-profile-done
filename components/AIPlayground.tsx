@@ -6,8 +6,10 @@ import ReactMarkdown from 'react-markdown';
 const SUGGESTED_CHIPS = [
     "Analyze current bottlenecks",
     "Revenue forecast for next 30 days",
+    "Extract business logic for company website",
     "How many candidates are overdue?",
-    "Optimize registration workflow"
+    "Generate recruitment workflow summary",
+    "Optimize registration funnel"
 ];
 
 const AIPlayground: React.FC = () => {

@@ -13,6 +13,8 @@ const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({ url, title, fileT
     const [zoom, setZoom] = React.useState(100);
     const [rotation, setRotation] = React.useState(0);
 
+    const [artifactId] = React.useState(() => Math.random().toString(36).substring(7).toUpperCase());
+
     return (
         <div className="fixed inset-0 bg-slate-900/90 flex flex-col z-[60] backdrop-blur-sm">
             {/* Header */}
@@ -91,7 +93,7 @@ const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({ url, title, fileT
                     </div>
                 </div>
                 <div className="text-[10px] text-slate-500 font-mono tracking-tighter uppercase">
-                    Document Artifact ID: {Math.random().toString(36).substring(7).toUpperCase()}
+                    Document Artifact ID: {artifactId}
                 </div>
             </div>
         </div>

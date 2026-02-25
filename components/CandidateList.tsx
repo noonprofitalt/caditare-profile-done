@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-// @ts-ignore
-import * as reactWindowModule from 'react-window';
-const _rw: any = reactWindowModule;
-const List = _rw.FixedSizeList || _rw.default?.FixedSizeList;
+import { List } from 'react-window';
 import { useCandidates } from '../context/CandidateContext';
 import { Candidate, ProfileCompletionStatus, WorkflowStage } from '../types';
+import { AuditService } from '../services/auditService';
 import { Download, Users, X, ArrowRight, Loader2 } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import FilterBar from './FilterBar';
@@ -59,9 +57,9 @@ const CandidateList: React.FC = () => {
   }, [searchParams]);
 
   // Load Initial Data or Filter Change
-  const loadData = useCallback(async (pageNum: number, isRefresh: boolean = false) => {
-    if (isRefresh) setIsLoading(true);
-    else setIsFetchingMore(true);
+  const loadData = useCallback(async (pageNum: number, isRefresh: boolean = false, isQuiet: boolean = false) => {
+    if (isRefresh && !isQuiet) setIsLoading(true);
+    else if (!isQuiet) setIsFetchingMore(true);
 
     try {
       const { candidates: newBatch, count } = await CandidateService.searchCandidates(
@@ -96,11 +94,9 @@ const CandidateList: React.FC = () => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'candidates' },
         (payload) => {
-          // On any change, softly reload the current page data so we get accurate numbers and latest items
-          // We'll just reset and reload the first page for simplicity on any structural change 
-          // if this is too aggressive we could handle INSERT/UPDATE granularly
-          setPage(0);
-          loadData(0, true);
+          // On any change, softly reload the first page data without showing loading states
+          // This keeps the list fresh without jarring the user
+          loadData(0, true, true);
         }
       )
       .subscribe();
@@ -197,6 +193,12 @@ const CandidateList: React.FC = () => {
     link.download = `candidates-bulk-${new Date().toISOString().split('T')[0]}.${extension}`;
     link.click();
     URL.revokeObjectURL(url);
+
+    AuditService.log('BULK_CANDIDATE_EXPORTED', {
+      format,
+      recordCount: selectedCandidates.length,
+      candidateIds: selectedCandidates.map(c => c.id)
+    });
   };
 
   const toggleIntegrityScan = () => {
@@ -418,8 +420,8 @@ const CandidateList: React.FC = () => {
               style={{ height: listHeight - 40, width: '100%' }}
               rowCount={paginatedCandidates.length + (hasMoreItems ? 1 : 0)}
               rowHeight={window.innerWidth < 768 ? 160 : 72}
-              onItemsRendered={({ visibleStopIndex }: { visibleStopIndex: number }) => {
-                if (visibleStopIndex >= paginatedCandidates.length - 5) {
+              onRowsRendered={({ stopIndex }: { stopIndex: number }) => {
+                if (stopIndex >= paginatedCandidates.length - 5) {
                   loadMoreItems();
                 }
               }}

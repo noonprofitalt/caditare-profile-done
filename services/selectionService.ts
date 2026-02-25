@@ -1,5 +1,6 @@
 import { CandidateSelection, SelectionStage } from '../types';
 import { supabase } from './supabase';
+import { AuditService } from './auditService';
 
 export class SelectionService {
     static async getAll(): Promise<CandidateSelection[]> {
@@ -109,6 +110,12 @@ export class SelectionService {
 
         if (error) {
             console.error('Error adding selection:', error);
+        } else {
+            AuditService.log('CANDIDATE_SELECTED_FOR_JOB', {
+                candidateId: selection.candidateId,
+                demandOrderId: selection.demandOrderId,
+                stage: selection.stage
+            });
         }
     }
 
@@ -129,6 +136,12 @@ export class SelectionService {
                 const row = this.mapSelectionToRow(sel);
                 // delete row.id; // Keep ID
                 await supabase.from('candidate_selections').insert(row);
+
+                AuditService.log('CANDIDATE_SELECTED_FOR_JOB', {
+                    candidateId: sel.candidateId,
+                    demandOrderId: sel.demandOrderId,
+                    stage: sel.stage
+                });
             }
         }
     }
@@ -150,6 +163,11 @@ export class SelectionService {
 
         if (error) {
             console.error('Error updating selection:', error);
+        } else {
+            AuditService.log('SELECTION_UPDATED', {
+                selectionId: updated.id,
+                stage: updated.stage
+            });
         }
     }
 
@@ -169,6 +187,11 @@ export class SelectionService {
             return null;
         }
 
+        AuditService.log('SELECTION_STAGE_ADVANCED', {
+            selectionId,
+            newStage: toStage
+        });
+
         return this.mapRowToSelection(data);
     }
 
@@ -184,6 +207,11 @@ export class SelectionService {
 
         if (error) {
             console.error('Error rejecting candidate:', error);
+        } else {
+            AuditService.log('SELECTION_REJECTED', {
+                selectionId,
+                reason
+            });
         }
     }
 
@@ -193,7 +221,13 @@ export class SelectionService {
             .delete()
             .eq('id', id);
 
-        if (error) console.error('Error deleting selection:', error);
+        if (error) {
+            console.error('Error deleting selection:', error);
+        } else {
+            AuditService.log('SELECTION_DELETED', {
+                selectionId: id
+            });
+        }
     }
 
     static getStageOrder(): SelectionStage[] {

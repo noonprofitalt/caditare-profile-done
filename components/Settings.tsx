@@ -22,6 +22,7 @@ import {
    Key
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { AuditService } from '../services/auditService';
 
 import UserManagement from './UserManagement';
 
@@ -74,6 +75,12 @@ const Settings: React.FC = () => {
       setIntegrityIssues(issues);
       setScanning(false);
       setScanComplete(true);
+
+      AuditService.log('SYSTEM_DIAGNOSTICS_RUN', {
+         issuesFound: issues.length,
+         issuesDetails: issues,
+         targetAreas: ['Jobs', 'Candidates', 'Employers']
+      });
    };
 
    return (

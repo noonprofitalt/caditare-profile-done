@@ -1,6 +1,7 @@
 import { Job, JobStatus } from '../types';
 import { supabase } from './supabase';
 import { OfflineSyncService } from './offlineSyncService';
+import { AuditService } from './auditService';
 
 export class JobService {
     static async getJobs(): Promise<Job[]> {
@@ -128,7 +129,15 @@ export class JobService {
             return null;
         }
 
-        return this.mapDatabaseToJob(data);
+        const result = this.mapDatabaseToJob(data);
+
+        AuditService.log('JOB_CREATED', {
+            jobId: result.id,
+            title: result.title,
+            employerId: result.employerId
+        });
+
+        return result;
     }
 
     static async updateJob(updatedJob: Job): Promise<Job | null> {
@@ -168,7 +177,15 @@ export class JobService {
             return null;
         }
 
-        return this.mapDatabaseToJob(data);
+        const result = this.mapDatabaseToJob(data);
+
+        AuditService.log('JOB_UPDATED', {
+            jobId: result.id,
+            title: result.title,
+            status: result.status
+        });
+
+        return result;
     }
 
     static async deleteJob(id: string): Promise<boolean> {
@@ -191,6 +208,10 @@ export class JobService {
             }
             return false;
         }
+        AuditService.log('JOB_DELETED', {
+            jobId: id
+        });
+
         return true;
     }
 

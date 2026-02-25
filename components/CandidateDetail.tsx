@@ -1,15 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { useCandidates } from '../context/CandidateContext';
+import { useAuth } from '../context/AuthContext';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { pdf } from '@react-pdf/renderer';
-import { CandidateReportPDF } from '../src/components/reports/CandidateReportPDF';
 import { CandidateService } from '../services/candidateService';
 import { JobService } from '../services/jobService';
 import { PartnerService } from '../services/partnerService';
-import { Candidate, WorkflowStage, CandidateDocument, PassportData, PCCData, TimelineEventType, PassportStatus, Job, Employer } from '../types';
-import { User, FileText, History, Bot, AlertCircle, Plus, Trash2, ShieldCheck, ShieldAlert, Edit2, CheckCircle, X, Mail, Globe, MapPin, Calendar, Briefcase, Phone, Award, Clock, RefreshCw } from 'lucide-react';
+import {
+  Candidate,
+  WorkflowStage,
+  CandidateDocument,
+  PassportData,
+  PCCData,
+  TimelineEvent,
+  TimelineEventType,
+  PassportStatus,
+  Job,
+  Employer
+} from '../types';
+import {
+  User,
+  FileText,
+  History,
+  Bot,
+  AlertCircle,
+  Plus,
+  Trash2,
+  ShieldCheck,
+  ShieldAlert,
+  Edit2,
+  CheckCircle,
+  X,
+  Mail,
+  Globe,
+  MapPin,
+  Calendar,
+  Briefcase,
+  Phone,
+  Award,
+  Clock,
+  RefreshCw,
+  Save,
+  Printer,
+  ChevronRight,
+  ArrowLeft,
+  Settings,
+  Download,
+  Terminal,
+  AlertTriangle
+} from 'lucide-react';
 
-// New Components
+// Components
 import CandidateHero from './CandidateHero';
 import TabNavigation, { Tab } from './TabNavigation';
 import QuickActionsWidget from './widgets/QuickActionsWidget';
@@ -17,6 +57,7 @@ import ComplianceWidget from './ComplianceWidget';
 import WorkflowProgressWidget from './widgets/WorkflowProgressWidget';
 import RecentActivityWidget from './widgets/RecentActivityWidget';
 import SLBFEStatusWidget from './widgets/SLBFEStatusWidget';
+
 import MultiPhoneInput from './ui/MultiPhoneInput';
 import MultiEducationSelector from './ui/MultiEducationSelector';
 import MedicalStatusInput from './ui/MedicalStatusInput';
@@ -24,24 +65,27 @@ import JobRoleEntry from './JobRoleEntry';
 import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
 import EmploymentHistoryEntry from './ui/EmploymentHistoryEntry';
 import CandidateReport from './CandidateReport';
-
-// Existing Components
 import DocumentManager from './DocumentManager';
 import TimelineView from './TimelineView';
+
+// Services
 import { ComplianceService } from '../services/complianceService';
 import { ProfileCompletionService } from '../services/profileCompletionService';
 import WorkflowEngine, { WORKFLOW_STAGES } from '../services/workflowEngine';
+
 
 const CandidateDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   // Use global state
   const { candidates, updateCandidateInState, removeCandidateFromState, refreshCandidates } = useCandidates();
+  const { user } = useAuth();
 
   // Derive candidate from global state
-  const [candidate, setCandidate] = useState<Candidate | undefined>(undefined);
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [isLocalLoading, setIsLocalLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isExportingReport, setIsExportingReport] = useState(false);
 
   useEffect(() => {
     const loadCandidate = async () => {
@@ -175,7 +219,7 @@ const CandidateDetail: React.FC = () => {
       type: 'SYSTEM',
       title: 'Profile Updated',
       description: 'Candidate profile information was updated',
-      actor: 'System'
+      actor: user?.name || 'System Admin'
     });
 
     updateCandidateInState(finalCandidate);
@@ -220,7 +264,7 @@ const CandidateDetail: React.FC = () => {
       type: 'SYSTEM',
       title: 'Compliance Data Updated',
       description: 'Passport and PCC information has been updated',
-      actor: 'System'
+      actor: user?.name || 'System Admin'
     });
 
     updateCandidateInState(updatedCandidate);
@@ -241,7 +285,7 @@ const CandidateDetail: React.FC = () => {
       type: 'DOCUMENT',
       title: 'Documents Updated',
       description: 'Candidate documents have been modified',
-      actor: 'System'
+      actor: user?.name || 'System Admin'
     });
 
     updateCandidateInState(updatedCandidate);
@@ -257,7 +301,7 @@ const CandidateDetail: React.FC = () => {
     if (!nextStage) return;
 
     // Use WorkflowEngine to perform transition logic
-    const transitionResult = await WorkflowEngine.performTransition(candidate, nextStage, 'Current User');
+    const transitionResult = await WorkflowEngine.performTransition(candidate, nextStage, user?.name || 'System Admin');
 
     if (transitionResult.success) {
       const updatedCandidate = { ...candidate, stage: nextStage };
@@ -276,7 +320,7 @@ const CandidateDetail: React.FC = () => {
         type: 'WORKFLOW',
         title: `Advanced to ${nextStage}`,
         description: `Candidate advanced from ${candidate.stage} to ${nextStage}`,
-        actor: 'Current User'
+        actor: user?.name || 'System Admin'
       });
 
     } else {
@@ -304,7 +348,7 @@ const CandidateDetail: React.FC = () => {
       type: 'WORKFLOW',
       title: `Rolled back to ${targetStage}`,
       description: `Rollback Reason: ${reason}`,
-      actor: 'Current User'
+      actor: user?.name || 'System Admin'
     });
   };
 
@@ -321,6 +365,14 @@ const CandidateDetail: React.FC = () => {
     if (confirm(`Are you sure you want to delete ${candidate.name}?`)) {
       await CandidateService.deleteCandidate(candidate.id);
       removeCandidateFromState(candidate.id);
+      if (candidate) {
+        await CandidateService.addTimelineEvent(candidate.id, {
+          type: 'STATUS_CHANGE',
+          title: 'Candidate Profile Deleted',
+          description: `Profile permanently removed from system`,
+          actor: user?.name || 'System Admin'
+        });
+      }
       navigate('/candidates');
     }
   };
@@ -328,7 +380,12 @@ const CandidateDetail: React.FC = () => {
   const handleGenerateReport = async () => {
     if (!candidate) return;
 
+    setIsExportingReport(true);
     try {
+      // Dynamically import react-pdf components
+      const { pdf } = await import('@react-pdf/renderer');
+      const { CandidateReportPDF } = await import('../src/components/reports/CandidateReportPDF');
+
       // Generate system report first for strategic assessment and risk scoring
       const { ReportService } = await import('../services/reportService');
       const systemReport = await ReportService.generateReport(candidate);
@@ -337,7 +394,7 @@ const CandidateDetail: React.FC = () => {
         <CandidateReportPDF
           candidate={candidate}
           reportId={`REP-${Date.now()}`}
-          generatedBy="System Administrator"
+          generatedBy={user?.name || 'System Administrator'}
           systemReport={systemReport}
         />
       ).toBlob();
@@ -355,11 +412,13 @@ const CandidateDetail: React.FC = () => {
         type: 'SYSTEM',
         title: 'Report Generated',
         description: 'Candidate Strategic Assessment Report was generated',
-        actor: 'Current User'
+        actor: user?.name || 'System Admin'
       });
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       alert('Failed to generate report. Please try again.');
+    } finally {
+      setIsExportingReport(false);
     }
   };
 
@@ -1588,6 +1647,7 @@ const CandidateDetail: React.FC = () => {
               candidate={candidate}
               onDelete={handleDelete}
               onGenerateReport={handleGenerateReport}
+              isGeneratingReport={isExportingReport}
             />
             <ComplianceWidget
               candidate={candidate}

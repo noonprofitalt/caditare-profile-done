@@ -16,7 +16,7 @@ const QuickAddForm: React.FC = () => {
     const { candidates } = useCandidates();
     const toast = useToast();
     const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const [duplicateMatches, setDuplicateMatches] = useState<any[]>([]);
     const [duplicateFields, setDuplicateFields] = useState<string[]>([]);
 
@@ -69,7 +69,7 @@ const QuickAddForm: React.FC = () => {
         const value = formData[field];
         if (!value) return;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const checkData: any = {};
         if (field === 'nic') checkData.nic = value;
         if (field === 'phone') checkData.phone = value;
