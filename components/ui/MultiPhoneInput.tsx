@@ -28,9 +28,8 @@ const MultiPhoneInput: React.FC<MultiPhoneInputProps> = ({
         return { valid: true };
     };
 
-    // Format phone number for display
     const formatPhoneNumber = (phone: string): string => {
-        const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+        const cleaned = phone.replace(/[\s-()]/g, '');
 
         if (cleaned.startsWith('+94')) {
             // +94 77 123 4567
