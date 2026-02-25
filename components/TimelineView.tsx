@@ -109,16 +109,29 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
       .filter(e => e && e.timestamp)
       .filter(e => {
         if (filter !== 'ALL') {
-          // Basic matching or grouped matching
+          // Grouped matching rules
           if (filter === 'WORKFLOW' && !['WORKFLOW', 'STAGE_TRANSITION', 'STATUS_CHANGE'].includes(e.type)) return false;
-          if (filter !== 'WORKFLOW' && e.type !== filter) return false;
+          if (filter === 'ALERT' && !['ALERT', 'MANUAL_OVERRIDE'].includes(e.type)) return false;
+          if (filter === 'SYSTEM' && !['SYSTEM', 'NOTE'].includes(e.type)) return false;
+
+          if (filter !== 'WORKFLOW' && filter !== 'ALERT' && filter !== 'SYSTEM' && e.type !== filter) return false;
         }
+
         if (searchQuery) {
-          const q = searchQuery.toLowerCase();
-          const matchTitle = e.title?.toLowerCase().includes(q);
-          const matchDesc = e.description?.toLowerCase().includes(q);
-          const matchActor = e.actor?.toLowerCase().includes(q);
-          return matchTitle || matchDesc || matchActor;
+          const q = searchQuery.toLowerCase().trim();
+          if (!q) return true;
+
+          const titleStr = String(e.title || '').toLowerCase();
+          const descStr = String(e.description || '').toLowerCase();
+          const actorStr = String(e.actor || '').toLowerCase();
+          const typeStr = String(e.type || '').replace(/_/g, ' ').toLowerCase();
+          const stageStr = String(e.stage || '').toLowerCase();
+
+          return titleStr.includes(q) ||
+            descStr.includes(q) ||
+            actorStr.includes(q) ||
+            typeStr.includes(q) ||
+            stageStr.includes(q);
         }
         return true;
       })
