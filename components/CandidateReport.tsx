@@ -98,183 +98,151 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
     ] : [];
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
-            <div className="flex items-center justify-between no-print">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-50/50 rounded-lg flex items-center justify-center text-blue-600 border border-blue-100/50">
-                        <FileSearch size={20} />
-                    </div>
-                    <div>
-                        <h3 className="text-base font-semibold text-slate-800 tracking-tight">System Audit & Integrity Report</h3>
-                        <p className="text-slate-500 text-[11px] font-medium uppercase tracking-widest">Live Verification Protocol</p>
-                    </div>
-                </div>
+            <div className="flex items-center justify-between no-print mb-2">
                 <div className="flex items-center gap-2">
+                    <ShieldCheck size={16} className="text-slate-600" />
+                    <h3 className="text-sm font-medium text-slate-800">System Audit & Integrity</h3>
+                </div>
+                <div className="flex items-center gap-3">
                     <button
                         onClick={generate}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-all font-medium text-xs shadow-sm"
+                        className="flex items-center gap-1.5 text-slate-400 hover:text-slate-700 transition-colors text-xs font-medium"
                     >
                         <RefreshCw size={12} /> Refresh
                     </button>
-
                     <button
                         disabled={isExporting}
                         onClick={handleExportPDF}
-                        className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-medium text-xs no-print disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        className="flex items-center gap-1.5 text-slate-400 hover:text-slate-700 transition-colors text-xs font-medium no-print disabled:opacity-50"
                     >
                         {isExporting ? <RefreshCw size={12} className="animate-spin" /> : <Printer size={12} />}
-                        {isExporting ? 'Exporting...' : 'Export PDF'}
+                        Export PDF
                     </button>
                 </div>
             </div>
 
             {/* Content Area */}
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden printable-area relative">
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden printable-area">
 
                 {/* Minimal Top Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/50">
-
-                    <div className="p-4 sm:p-5 flex flex-col justify-center">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                            <ShieldCheck size={12} className="text-blue-500" /> Integrity Score
-                        </p>
-                        <div className="text-2xl font-bold text-slate-800">{report.completionPercentage}%</div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center justify-between gap-4 p-3 px-4">
+                        <span className="text-[11px] text-slate-500 uppercase tracking-widest">Integrity</span>
+                        <span className="text-sm font-medium text-slate-900">{report.completionPercentage}%</span>
                     </div>
 
-                    <div className="p-4 sm:p-5 flex flex-col justify-center">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                            <Activity size={12} className={report.slaStatus.status === 'CRITICAL' ? 'text-red-500' : 'text-emerald-500'} /> Process Velocity
-                        </p>
-                        <div className="text-2xl font-bold text-slate-800 capitalize">{report.slaStatus.status.toLowerCase().replace('_', ' ')}</div>
+                    <div className="flex items-center justify-between gap-4 p-3 px-4">
+                        <span className="text-[11px] text-slate-500 uppercase tracking-widest">Velocity</span>
+                        <span className="text-sm font-medium text-slate-900 capitalize">{report.slaStatus.status.toLowerCase().replace('_', ' ')}</span>
                     </div>
 
-                    <div className="p-4 sm:p-5 flex flex-col justify-center">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                            <CheckCircle size={12} className="text-indigo-500" /> Profile Status
-                        </p>
-                        <div className="text-sm font-bold text-slate-800 uppercase tracking-wide truncate" title={report.overallStatus}>{report.overallStatus}</div>
+                    <div className="flex items-center justify-between gap-4 p-3 px-4">
+                        <span className="text-[11px] text-slate-500 uppercase tracking-widest">Status</span>
+                        <span className="text-sm font-medium text-slate-900 truncate" title={report.overallStatus}>{report.overallStatus}</span>
                     </div>
 
-                    <div className="p-4 sm:p-5 flex flex-col justify-center">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                            <AlertTriangle size={12} className="text-amber-500" /> Audit Flags
-                        </p>
-                        <div className="text-2xl font-bold text-slate-800">{report.missingInfo.length + report.documentGaps.missing.length + report.documentGaps.rejected.length}</div>
+                    <div className="flex items-center justify-between gap-4 p-3 px-4">
+                        <span className="text-[11px] text-slate-500 uppercase tracking-widest">Flags</span>
+                        <span className={`text-sm font-medium ${report.missingInfo.length + report.documentGaps.missing.length + report.documentGaps.rejected.length > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {report.missingInfo.length + report.documentGaps.missing.length + report.documentGaps.rejected.length}
+                        </span>
                     </div>
                 </div>
 
-                <div className="p-5 sm:p-6 space-y-6">
-                    {/* Section 1: Detailed Profile Summary */}
-                    <section>
-                        <div className="flex items-center gap-2 mb-4">
-                            <h4 className="text-sm font-semibold text-slate-800">Profile Information Verification</h4>
-                        </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-slate-50 border border-slate-100 rounded-lg">
+                <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                    {/* Section 1: Profile Summary */}
+                    <div className="flex-1 p-5">
+                        <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Profile Assessment</h4>
+                        <div className="space-y-2">
                             {[
                                 { label: 'Full Name', value: candidate.name },
                                 { label: 'E-mail Address', value: candidate.email },
                                 { label: 'Contact Number', value: candidate.phone },
                                 { label: 'Current Role', value: candidate.role },
-                                { label: 'National ID/NIC', value: candidate.nic || 'NOT PROVIDED', isAlert: !candidate.nic },
-                                { label: 'Date of Birth', value: candidate.dob || 'NOT PROVIDED', isAlert: !candidate.dob },
+                                { label: 'National ID/NIC', value: candidate.nic || 'Missing', isAlert: !candidate.nic },
+                                { label: 'Date of Birth', value: candidate.dob || 'Missing', isAlert: !candidate.dob },
                                 { label: 'Experience', value: `${candidate.experienceYears} Years` },
-                                { label: 'City/Location', value: candidate.city || 'NOT PROVIDED', isAlert: !candidate.city },
+                                { label: 'Location', value: candidate.city || 'Missing', isAlert: !candidate.city },
                             ].map((item, i) => (
-                                <div key={i}>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
-                                    <p className={`text-sm font-bold ${item.isAlert ? 'text-red-600 italic' : 'text-slate-700'}`}>{item.value}</p>
+                                <div key={i} className="flex justify-between items-center text-sm py-1 border-b border-slate-50 last:border-0 last:pb-0">
+                                    <span className="text-slate-500 text-xs">{item.label}</span>
+                                    <span className={`text-xs ${item.isAlert ? 'text-amber-600 font-medium' : 'text-slate-800'}`}>{item.value}</span>
                                 </div>
                             ))}
                         </div>
-                    </section>
+                    </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Section 2: Gap Analysis */}
-                        <div className="space-y-4">
-                            <section>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <h4 className="text-sm font-semibold text-slate-800">Data Audit Flags</h4>
+                    {/* Section 2: Audit Flags */}
+                    <div className="flex-1 p-5">
+                        <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">Identified Risks</h4>
+
+                        <div className="space-y-3">
+                            {/* Field Level Issues */}
+                            {report.dataQuality.map((issue, idx) => (
+                                <div key={`issue-${issue.field}-${idx}`} className="flex items-start justify-between gap-3 text-sm group">
+                                    <div className="flex items-start gap-2.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0"></div>
+                                        <div>
+                                            <p className="text-xs text-slate-800">{issue.field} Data</p>
+                                            <p className="text-[11px] text-slate-500">{issue.issue}</p>
+                                        </div>
+                                    </div>
+                                    <button className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 text-[11px] font-medium transition-opacity">Fix</button>
                                 </div>
+                            ))}
 
-                                <div className="space-y-4">
-                                    {/* Field Level Issues */}
-                                    {report.dataQuality.map((issue, idx) => (
-                                        <div key={`issue-${issue.field}-${issue.issue}-${idx}`} className="flex items-start justify-between gap-4 p-4 bg-amber-50 border border-amber-200 rounded-xl group hover:border-amber-300 hover:shadow-md transition-all">
-                                            <div className="flex items-start gap-4">
-                                                <ShieldAlert size={18} className="text-amber-500 mt-0.5 shrink-0" />
-                                                <div>
-                                                    <p className="text-[11px] font-medium text-amber-900">{issue.field} - {issue.issue}</p>
-                                                    <p className="text-[10px] text-amber-700 mt-0.5">Suggested Action: Verify with candidate.</p>
-                                                </div>
-                                            </div>
-                                            <button className="hidden group-hover:flex no-print items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors shadow-sm">
-                                                <RefreshCw size={12} /> Fix Now
-                                            </button>
+                            {/* Missing Docs */}
+                            {report.documentGaps.missing.map(doc => (
+                                <div key={doc} className="flex items-start justify-between gap-3 text-sm group">
+                                    <div className="flex items-start gap-2.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0"></div>
+                                        <div>
+                                            <p className="text-xs text-slate-800">{doc} Required</p>
+                                            <p className="text-[11px] text-slate-500">Document is missing.</p>
                                         </div>
-                                    ))}
-
-                                    {/* Missing Docs */}
-                                    {report.documentGaps.missing.map(doc => (
-                                        <div key={doc} className="flex items-center justify-between p-4 bg-red-50/30 border border-red-100 rounded-xl group hover:border-red-200 hover:shadow-md transition-all">
-                                            <div className="flex items-center gap-3">
-                                                <FileText size={16} className="text-red-400" />
-                                                <span className="text-sm font-bold text-slate-700">{doc}</span>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-[10px] font-black uppercase text-red-500 bg-red-100 px-2 py-1 rounded">Missing</span>
-                                                <button className="hidden group-hover:flex no-print items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors shadow-sm">
-                                                    <Upload size={12} /> Upload
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    {/* Rejected Docs */}
-                                    {report.documentGaps.rejected.map(doc => (
-                                        <div key={doc.type} className="flex flex-col gap-1 p-4 bg-red-50 border border-red-200 rounded-xl group hover:border-red-300 hover:shadow-md transition-all">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <FileSearch size={16} className="text-red-600" />
-                                                    <span className="text-sm font-black text-red-900 uppercase tracking-tight">{doc.type}</span>
-                                                </div>
-                                                <span className="text-[10px] font-black uppercase text-white bg-red-600 px-2 py-1 rounded">Fix Required</span>
-                                            </div>
-                                            <div className="flex items-start justify-between mt-2">
-                                                <p className="text-xs text-red-700 p-2 bg-white/50 rounded border border-red-100 font-medium italic flex-1">Reason: {doc.reason}</p>
-                                                <button className="hidden group-hover:flex no-print items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors shadow-sm ml-3">
-                                                    <ArrowRight size={12} /> Resolve
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    {report.missingInfo.map(item => (
-                                        <div key={item} className="flex items-center justify-between p-4 bg-red-50/30 border border-red-100 rounded-xl group hover:border-red-200 hover:shadow-md transition-all">
-                                            <div className="flex items-center gap-3">
-                                                <AlertTriangle size={16} className="text-red-500 shrink-0" />
-                                                <span className="text-sm font-bold text-slate-700">{item}</span>
-                                            </div>
-                                            <button className="hidden group-hover:flex no-print items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors shadow-sm">
-                                                <ExternalLink size={12} /> Update
-                                            </button>
-                                        </div>
-                                    ))}
-
-                                    {report.missingInfo.length === 0 && report.documentGaps.missing.length === 0 && report.documentGaps.rejected.length === 0 && (
-                                        <div className="flex items-center justify-center p-8 bg-emerald-50 rounded-lg border border-emerald-100 text-center gap-3">
-                                            <CheckCircle size={20} className="text-emerald-500" />
-                                            <div>
-                                                <p className="text-emerald-800 text-sm font-semibold">Audit Verified</p>
-                                                <p className="text-emerald-600 text-[10px]">No critical gaps detected.</p>
-                                            </div>
-                                        </div>
-                                    )}
+                                    </div>
+                                    <button className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 text-[11px] font-medium transition-opacity">Upload</button>
                                 </div>
-                            </section>
+                            ))}
+
+                            {/* Rejected Docs */}
+                            {report.documentGaps.rejected.map(doc => (
+                                <div key={doc.type} className="flex items-start justify-between gap-3 text-sm group">
+                                    <div className="flex items-start gap-2.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0"></div>
+                                        <div>
+                                            <p className="text-xs text-slate-800">{doc.type} Rejected</p>
+                                            <p className="text-[11px] text-slate-500">{doc.reason}</p>
+                                        </div>
+                                    </div>
+                                    <button className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 text-[11px] font-medium transition-opacity">Resolve</button>
+                                </div>
+                            ))}
+
+                            {/* General Missing Info */}
+                            {report.missingInfo.map(item => (
+                                <div key={item} className="flex items-start justify-between gap-3 text-sm group">
+                                    <div className="flex items-start gap-2.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0"></div>
+                                        <div>
+                                            <p className="text-xs text-slate-800">{item} Needed</p>
+                                            <p className="text-[11px] text-slate-500">Incomplete profile data.</p>
+                                        </div>
+                                    </div>
+                                    <button className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 text-[11px] font-medium transition-opacity">Update</button>
+                                </div>
+                            ))}
+
+                            {/* Everything clean */}
+                            {report.missingInfo.length === 0 && report.documentGaps.missing.length === 0 && report.documentGaps.rejected.length === 0 && report.dataQuality.length === 0 && (
+                                <div className="flex items-center gap-2 text-emerald-600 text-xs py-2">
+                                    <CheckCircle size={14} />
+                                    <span>No audit flags detected. Profile is fully compliant.</span>
+                                </div>
+                            )}
                         </div>
-
-
                     </div>
                 </div>
 
