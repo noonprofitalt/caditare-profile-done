@@ -1628,11 +1628,17 @@ const CandidateDetail: React.FC = () => {
               )
             }
 
-            {/* Timeline Tab */}
+
+            {/* Timeline & Audit Tab */}
             {
               activeTab === 'timeline' && (
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <TimelineView events={candidate.timelineEvents || []} />
+                <div className="space-y-6">
+                  <div className="bg-white rounded-xl border border-slate-200 p-6">
+                    <TimelineView events={candidate.timelineEvents || []} />
+                  </div>
+                  <div className="bg-white rounded-xl border border-slate-200 p-6">
+                    <CandidateReport candidate={candidate} />
+                  </div>
                 </div>
               )
             }
