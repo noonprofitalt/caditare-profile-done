@@ -1,6 +1,6 @@
 import React from 'react';
 import { Candidate } from '../../types';
-import { Clock, ArrowRight } from 'lucide-react';
+import { Clock, ArrowRight, Circle, CheckCircle2, AlertCircle, FileText, MessageSquare, Terminal, Activity, ShieldAlert } from 'lucide-react';
 
 interface RecentActivityWidgetProps {
     candidate: Candidate;
@@ -8,10 +8,15 @@ interface RecentActivityWidgetProps {
 }
 
 const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({ candidate, onViewAll }) => {
-    const recentEvents = (candidate?.timelineEvents || [])
-        .filter(e => e && e.timestamp)
-        .slice(-5)
-        .reverse();
+    // Filter out pure "SYSTEM" noise if we have enough other events to show
+    const allEvents = (candidate?.timelineEvents || [])
+        .filter(e => e && e.timestamp);
+
+    // Prioritize showing meaningful changes, but fall back to anything if count is low
+    const meaningfulEvents = allEvents.filter(e => e.type !== 'SYSTEM');
+    const sourceEvents = meaningfulEvents.length >= 3 ? meaningfulEvents : allEvents;
+
+    const recentEvents = sourceEvents.slice(-5).reverse();
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -28,18 +33,32 @@ const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({ candidate, 
         return date.toLocaleDateString();
     };
 
-    const getEventColor = (type: string) => {
+    const getEventIcon = (type: string) => {
         switch (type) {
-            case 'SYSTEM':
-                return 'bg-blue-500';
-            case 'STAGE_CHANGE':
-                return 'bg-green-500';
-            case 'DOCUMENT':
-                return 'bg-purple-500';
-            case 'COMMENT':
-                return 'bg-yellow-500';
-            default:
-                return 'bg-slate-500';
+            case 'STAGE_TRANSITION': return <ArrowRight size={12} className="text-white" />;
+            case 'WORKFLOW': return <Activity size={12} className="text-white" />;
+            case 'STATUS_CHANGE': return <CheckCircle2 size={12} className="text-white" />;
+            case 'DOCUMENT': return <FileText size={12} className="text-white" />;
+            case 'NOTE': return <MessageSquare size={12} className="text-white" />;
+            case 'ALERT': return <AlertCircle size={12} className="text-white" />;
+            case 'MANUAL_OVERRIDE': return <ShieldAlert size={12} className="text-white" />;
+            case 'SYSTEM': return <Terminal size={12} className="text-white" />;
+            default: return <Circle size={12} className="text-white" />;
+        }
+    };
+
+    const getEventColorClass = (type: string, isCritical?: boolean) => {
+        if (isCritical) return 'bg-red-500 ring-4 ring-red-50';
+        switch (type) {
+            case 'STAGE_TRANSITION':
+            case 'WORKFLOW': return 'bg-blue-500 ring-2 ring-blue-50';
+            case 'STATUS_CHANGE': return 'bg-emerald-500 ring-2 ring-emerald-50';
+            case 'ALERT': return 'bg-orange-500 ring-2 ring-orange-50';
+            case 'MANUAL_OVERRIDE': return 'bg-orange-600 ring-2 ring-orange-50';
+            case 'DOCUMENT': return 'bg-purple-500 ring-2 ring-purple-50';
+            case 'NOTE': return 'bg-amber-500 ring-2 ring-amber-50';
+            case 'SYSTEM': return 'bg-slate-500 ring-2 ring-slate-50';
+            default: return 'bg-slate-400 ring-2 ring-slate-50';
         }
     };
 
@@ -67,39 +86,41 @@ const RecentActivityWidget: React.FC<RecentActivityWidgetProps> = ({ candidate, 
                     No activity yet
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-4 mt-2">
                     {recentEvents.map((event, idx) => (
                         <div key={event.id || idx} className="relative">
                             {/* Connecting Line */}
                             {idx < recentEvents.length - 1 && (
-                                <div className="absolute left-[7px] top-[20px] w-0.5 h-[calc(100%+4px)] bg-slate-200" />
+                                <div className="absolute left-[11px] top-[24px] w-px h-[calc(100%+8px)] bg-slate-200" />
                             )}
 
                             {/* Event Item */}
-                            <div className="flex items-start gap-3">
-                                {/* Dot */}
-                                <div className={`w-4 h-4 rounded-full ${getEventColor(event.type)} flex-shrink-0 mt-0.5 relative z-10`} />
+                            <div className="flex items-start gap-4">
+                                {/* Dot/Icon */}
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 relative z-10 ${getEventColorClass(event.type, event.metadata?.isCritical)}`}>
+                                    {getEventIcon(event.type)}
+                                </div>
 
                                 {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm text-slate-900 font-medium leading-tight">
+                                <div className="flex-1 min-w-0 pb-1">
+                                    <div className="text-sm text-slate-800 font-semibold leading-tight">
                                         {event.title}
                                     </div>
-                                    {event.description && (
-                                        <div className="text-xs text-slate-600 mt-0.5 line-clamp-2">
-                                            {event.description}
-                                        </div>
-                                    )}
-                                    <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex items-center gap-1.5 mt-1 mb-1.5">
                                         <Clock size={10} className="text-slate-400" />
-                                        <span className="text-xs text-slate-500">{formatDate(event.timestamp)}</span>
+                                        <span className="text-[11px] font-medium text-slate-500">{formatDate(event.timestamp)}</span>
                                         {event.actor && (
                                             <>
-                                                <span className="text-slate-400">•</span>
-                                                <span className="text-xs text-slate-500">{event.actor}</span>
+                                                <span className="text-slate-300">•</span>
+                                                <span className="text-[11px] font-medium text-slate-600">{event.actor}</span>
                                             </>
                                         )}
                                     </div>
+                                    {event.description && (
+                                        <div className="text-xs text-slate-500 line-clamp-2 bg-slate-50 p-1.5 rounded-md border border-slate-100">
+                                            {event.description}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

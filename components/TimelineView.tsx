@@ -141,42 +141,39 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
   }, [filteredAndSortedEvents]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full w-full">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full w-full">
       {/* Header & Controls */}
-      <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/50">
+      <div className="p-4 sm:p-5 border-b border-slate-100 bg-white">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-              <Activity size={20} />
-            </div>
+          <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
             Processing Timeline & Audit
           </h3>
 
-          <div className="flex bg-slate-100 p-1 rounded-lg shrink-0 overflow-x-auto w-full md:w-auto hide-scrollbar">
+          <div className="flex bg-slate-50 border border-slate-200 p-0.5 rounded-lg shrink-0 overflow-x-auto w-full md:w-auto hide-scrollbar">
             <button
               onClick={() => setViewMode('timeline')}
-              className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'timeline' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'timeline' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              <Clock size={16} /> <span className="whitespace-nowrap">Rich Timeline</span>
+              <Clock size={14} /> <span className="whitespace-nowrap">Timeline</span>
             </button>
             <button
               onClick={() => setViewMode('audit_table')}
-              className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'audit_table' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'audit_table' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              <Database size={16} /> <span className="whitespace-nowrap">Raw Audit Log</span>
+              <Database size={14} /> <span className="whitespace-nowrap">Table</span>
             </button>
           </div>
         </div>
 
-        <div className="mt-5 flex flex-col lg:flex-row gap-3">
+        <div className="mt-4 flex flex-col lg:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             <input
               type="text"
               placeholder="Search history, actions, or specific staff..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
+              className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-slate-300 focus:bg-white outline-none transition-all"
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 lg:pb-0 hide-scrollbar shrink-0">
@@ -184,7 +181,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
               <button
                 key={f}
                 onClick={() => setFilter(f as EventFilter)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${filter === f ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors border ${filter === f ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
               >
                 {f}
               </button>
@@ -194,7 +191,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
       </div>
 
       {/* Body Area */}
-      <div className="bg-slate-50/30 flex-1 overflow-y-auto">
+      <div className="bg-white flex-1 overflow-y-auto">
         {filteredAndSortedEvents.length === 0 ? (
           <div className="text-center py-20 px-4">
             <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 shadow-sm">
@@ -209,62 +206,60 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
               {Object.entries(groupedEvents).map(([dateGroup, groupEvents]) => (
                 <div key={dateGroup} className="relative">
                   {/* Date Sticky Header */}
-                  <div className="sticky top-0 z-20 flex items-center gap-4 mb-6 pt-2 bg-slate-50/90 backdrop-blur pb-2 -mx-2 px-2">
-                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-200 text-sm font-bold text-slate-700">
-                      <CalendarDays size={14} className="text-blue-500" /> {dateGroup}
+                  <div className="sticky top-0 z-20 flex items-center gap-3 mb-6 pt-2 bg-white pb-2 px-2">
+                    <div className="text-xs font-semibold text-slate-500 tracking-wide flex items-center gap-1.5">
+                      <CalendarDays size={12} className="text-slate-400" /> {dateGroup}
                     </div>
-                    <div className="flex-1 h-px bg-slate-200"></div>
                   </div>
 
-                  <div className="relative pl-6 space-y-6">
+                  <div className="relative pl-6 space-y-5">
                     {/* Continuous Line inside the group */}
-                    <div className="absolute left-[31px] top-4 bottom-0 w-0.5 bg-slate-200"></div>
+                    <div className="absolute left-[31px] top-4 bottom-0 w-px bg-slate-200"></div>
 
                     {groupEvents.map((event, index) => {
                       const isExpanded = expandedEvents.has(event.id);
                       const hasMetadata = event.metadata && Object.keys(event.metadata).length > 0;
 
                       return (
-                        <div key={event.id || `evt-${event.timestamp}-${index}`} className="relative flex gap-5 group items-start">
+                        <div key={event.id || `evt-${event.timestamp}-${index}`} className="relative flex gap-4 group items-start">
                           {/* Timeline Dot */}
-                          <div className={`relative z-10 w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 shadow-md ${getEventColor(event.type, event.metadata?.isCritical)}`}>
+                          <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-[3px] border-white shadow-sm mt-0.5 ${getEventColor(event.type, event.metadata?.isCritical)}`}>
                             {getEventIcon(event.type)}
                           </div>
 
-                          {/* Event Card */}
-                          <div className={`flex-1 bg-white border border-slate-200 rounded-xl p-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md ${event.metadata?.isCritical ? 'border-red-200 bg-red-50/30' : ''}`}>
-                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
+                          {/* Event Content minimal layout */}
+                          <div className={`flex-1 pb-1 transition-all ${event.metadata?.isCritical ? 'bg-red-50/50 p-2 rounded-lg -ml-2' : ''}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 mb-1">
                               <div>
-                                <h4 className={`font-bold text-sm ${event.metadata?.isCritical ? 'text-red-700' : 'text-slate-800'}`}>
+                                <h4 className={`font-semibold text-sm ${event.metadata?.isCritical ? 'text-red-700' : 'text-slate-800'}`}>
                                   {event.title || 'Timeline Event'}
                                 </h4>
-                                <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide ${getEventBadgeClass(event.type)}`}>
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border uppercase tracking-wider ${getEventBadgeClass(event.type)}`}>
                                     {event.type.replace('_', ' ')}
                                   </span>
                                   {event.stage && (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wide">
+                                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wider">
                                       {event.stage}
                                     </span>
                                   )}
                                 </div>
                               </div>
-                              <span className="text-xs text-slate-500 font-medium whitespace-nowrap bg-white px-2 py-1 rounded-md border border-slate-200 shadow-sm flex items-center gap-1">
-                                <Clock size={12} /> {formatDate(event.timestamp)}
+                              <span className="text-[11px] text-slate-400 font-medium whitespace-nowrap flex items-center gap-1 mt-0.5 sm:mt-0">
+                                {formatDate(event.timestamp)}
                               </span>
                             </div>
 
-                            <p className="text-sm text-slate-600 mt-2 mb-3 leading-relaxed">
+                            <p className="text-[13px] text-slate-500 mt-1 mb-2">
                               {event.description || 'No additional details provided.'}
                             </p>
 
-                            <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-1">
-
-                              <div className="flex items-center gap-2 text-xs text-slate-600">
-                                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 text-slate-500 shadow-inner font-semibold">
-                                  {event.actor?.charAt(0).toUpperCase() || <User size={12} />}
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                <div className="w-4 h-4 rounded bg-slate-100 flex items-center justify-center text-slate-400 font-medium">
+                                  {event.actor?.charAt(0).toUpperCase() || <User size={10} />}
                                 </div>
-                                <span title={event.userId ? `User ID: ${event.userId}` : 'Action Performed By'} className="font-medium cursor-help hover:text-blue-600 hover:underline">
+                                <span title={event.userId ? `User ID: ${event.userId}` : 'Action Performed By'} className="cursor-help transition-colors hover:text-slate-800">
                                   {event.actor || 'System'}
                                 </span>
                               </div>
@@ -272,18 +267,17 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
                               {hasMetadata && (
                                 <button
                                   onClick={() => toggleExpand(event.id)}
-                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 px-2.5 py-1.5 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                                  className="text-[11px] font-medium text-blue-500 hover:text-blue-700 flex items-center gap-0.5 transition-colors"
                                 >
-                                  {isExpanded ? <><ChevronUp size={14} /> Hide Data</> : <><ChevronDown size={14} /> View Data</>}
+                                  {isExpanded ? <><ChevronUp size={12} /> Hide Data</> : <><ChevronDown size={12} /> View Data</>}
                                 </button>
                               )}
                             </div>
 
                             {/* Expanded Metadata Viewer */}
                             {isExpanded && hasMetadata && (
-                              <div className="mt-3 p-3 bg-[#0a192f] rounded-xl overflow-x-auto border border-slate-800 shadow-inner relative">
-                                <span className="absolute top-2 right-3 text-[10px] uppercase font-bold text-slate-500 tracking-wider">Raw Metadata</span>
-                                <pre className="text-xs font-mono text-emerald-400/90 leading-relaxed mt-4">
+                              <div className="mt-2 p-2 bg-slate-50 rounded-md overflow-x-auto border border-slate-100">
+                                <pre className="text-[10px] font-mono text-slate-600 leading-relaxed">
                                   {JSON.stringify(event.metadata, null, 2)}
                                 </pre>
                               </div>
@@ -300,49 +294,49 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
             // RAW AUDIT TABLE
             <div className="overflow-x-auto min-h-full">
               <table className="w-full text-left text-sm whitespace-nowrap min-w-[800px]">
-                <thead className="bg-slate-100 border-b border-slate-200 text-slate-600 text-xs uppercase font-bold tracking-wider sticky top-0 z-10 shadow-sm">
+                <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 text-[11px] uppercase font-semibold tracking-wider sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-3">Date / Time</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Action Details</th>
-                    <th className="px-4 py-3">Stage Context</th>
-                    <th className="px-4 py-3">Performed By</th>
-                    <th className="px-4 py-3 text-right">Raw Data</th>
+                    <th className="px-5 py-3">Date / Time</th>
+                    <th className="px-5 py-3">Type</th>
+                    <th className="px-5 py-3">Action Details</th>
+                    <th className="px-5 py-3">Stage Context</th>
+                    <th className="px-5 py-3">Performed By</th>
+                    <th className="px-5 py-3 text-right">Raw Data</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {filteredAndSortedEvents.map((event) => (
                     <tr key={event.id} className={`hover:bg-slate-50 transition-colors ${event.metadata?.isCritical ? 'bg-red-50/50' : ''}`}>
-                      <td className="px-4 py-3 text-slate-600 tabular-nums">
+                      <td className="px-5 py-3 text-slate-500 tabular-nums text-xs">
                         {new Date(event.timestamp).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wide ${getEventBadgeClass(event.type)}`}>
+                      <td className="px-5 py-3">
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-semibold uppercase tracking-wider ${getEventBadgeClass(event.type)}`}>
                           {event.type.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <p className={`font-semibold ${event.metadata?.isCritical ? 'text-red-800' : 'text-slate-800'}`}>{event.title}</p>
-                        <p className="text-xs text-slate-500 max-w-[200px] truncate" title={event.description}>{event.description}</p>
+                      <td className="px-5 py-3">
+                        <p className={`font-medium text-sm ${event.metadata?.isCritical ? 'text-red-700' : 'text-slate-700'}`}>{event.title}</p>
+                        <p className="text-xs text-slate-400 max-w-[200px] truncate" title={event.description}>{event.description}</p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         {event.stage ? (
-                          <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">{event.stage}</span>
+                          <span className="text-[11px] font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{event.stage}</span>
                         ) : (
-                          <span className="text-[11px] text-slate-400 italic">Global Scope</span>
+                          <span className="text-[11px] text-slate-300 italic">Global</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full flex items-center justify-center bg-white border border-slate-200 text-[10px] font-bold text-slate-600 shadow-sm">
+                          <span className="w-5 h-5 rounded flex items-center justify-center bg-slate-50 border border-slate-100 text-[10px] font-medium text-slate-500">
                             {event.actor?.charAt(0).toUpperCase() || '?'}
                           </span>
-                          <span title={event.userId || 'System'} className="font-medium text-slate-700 cursor-help hover:text-blue-600 hover:underline">
+                          <span title={event.userId || 'System'} className="text-xs font-medium text-slate-600 cursor-help transition-colors hover:text-slate-800">
                             {event.actor || 'System'}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-5 py-3 text-right">
                         {event.metadata && Object.keys(event.metadata).length > 0 ? (
                           <button
                             onClick={() => {
