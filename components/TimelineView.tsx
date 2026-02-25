@@ -76,18 +76,18 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
   };
 
   const getEventColor = (type: string, isCritical?: boolean) => {
-    if (isCritical) return 'bg-red-500 ring-4 ring-red-50';
+    if (isCritical) return 'bg-red-500 ring-2 ring-red-50';
     const safeType = type || 'SYSTEM';
     switch (safeType) {
       case 'STAGE_TRANSITION':
-      case 'WORKFLOW': return 'bg-blue-600 ring-4 ring-blue-50';
-      case 'STATUS_CHANGE': return 'bg-emerald-500 ring-4 ring-emerald-50';
-      case 'ALERT': return 'bg-orange-500 ring-4 ring-orange-50';
-      case 'MANUAL_OVERRIDE': return 'bg-orange-600 ring-4 ring-orange-50';
-      case 'DOCUMENT': return 'bg-purple-500 ring-4 ring-purple-50';
-      case 'NOTE': return 'bg-amber-500 ring-4 ring-amber-50';
-      case 'SYSTEM': return 'bg-slate-600 ring-4 ring-slate-50';
-      default: return 'bg-slate-400 ring-4 ring-slate-50';
+      case 'WORKFLOW': return 'bg-blue-600 ring-2 ring-blue-50';
+      case 'STATUS_CHANGE': return 'bg-emerald-500 ring-2 ring-emerald-50';
+      case 'ALERT': return 'bg-orange-500 ring-2 ring-orange-50';
+      case 'MANUAL_OVERRIDE': return 'bg-orange-600 ring-2 ring-orange-50';
+      case 'DOCUMENT': return 'bg-purple-500 ring-2 ring-purple-50';
+      case 'NOTE': return 'bg-amber-500 ring-2 ring-amber-50';
+      case 'SYSTEM': return 'bg-slate-600 ring-2 ring-slate-50';
+      default: return 'bg-slate-400 ring-2 ring-slate-50';
     }
   };
 
@@ -141,42 +141,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
   }, [filteredAndSortedEvents]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full">
       {/* Header & Controls */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 bg-white">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-            Processing Timeline & Audit
-          </h3>
+      <div className="pb-4 mb-4 border-b border-slate-100 bg-white">
+        <div className="flex flex-col lg:flex-row md:items-center justify-between gap-3">
 
-          <div className="flex bg-slate-50 border border-slate-200 p-0.5 rounded-lg shrink-0 overflow-x-auto w-full md:w-auto hide-scrollbar">
-            <button
-              onClick={() => setViewMode('timeline')}
-              className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'timeline' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              <Clock size={14} /> <span className="whitespace-nowrap">Timeline</span>
-            </button>
-            <button
-              onClick={() => setViewMode('audit_table')}
-              className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'audit_table' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              <Database size={14} /> <span className="whitespace-nowrap">Table</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-col lg:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-            <input
-              type="text"
-              placeholder="Search history, actions, or specific staff..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-slate-300 focus:bg-white outline-none transition-all"
-            />
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 lg:pb-0 hide-scrollbar shrink-0">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 hide-scrollbar shrink-0">
             {['ALL', 'WORKFLOW', 'DOCUMENT', 'ALERT', 'SYSTEM'].map((f) => (
               <button
                 key={f}
@@ -187,10 +157,39 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
               </button>
             ))}
           </div>
+
+          <div className="flex items-center gap-3 w-full lg:w-auto">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input
+                type="text"
+                placeholder="Search history..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-1 focus:ring-slate-300 focus:bg-white outline-none transition-all min-w-[200px]"
+              />
+            </div>
+
+            <div className="flex bg-slate-50 border border-slate-200 p-0.5 rounded-lg shrink-0 hide-scrollbar">
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={`flex-1 md:flex-none px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'timeline' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                title="View Timeline"
+              >
+                <Clock size={14} />
+              </button>
+              <button
+                onClick={() => setViewMode('audit_table')}
+                className={`flex-1 md:flex-none px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'audit_table' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                title="View Raw Audit Table"
+              >
+                <Database size={14} />
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
-
-      {/* Body Area */}
       <div className="bg-white flex-1 overflow-y-auto">
         {filteredAndSortedEvents.length === 0 ? (
           <div className="text-center py-20 px-4">
@@ -223,7 +222,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
                       return (
                         <div key={event.id || `evt-${event.timestamp}-${index}`} className="relative flex gap-4 group items-start">
                           {/* Timeline Dot */}
-                          <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-[3px] border-white shadow-sm mt-0.5 ${getEventColor(event.type, event.metadata?.isCritical)}`}>
+                          <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 border-white mt-0.5 ${getEventColor(event.type, event.metadata?.isCritical)}`}>
                             {getEventIcon(event.type)}
                           </div>
 
@@ -359,7 +358,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
           )
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

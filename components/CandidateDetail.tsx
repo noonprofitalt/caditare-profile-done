@@ -429,12 +429,11 @@ const CandidateDetail: React.FC = () => {
     }
   };
 
-  // Define tabs
+  // Define tabs (combined Timeline & Audit)
   const tabs: Tab[] = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'documents', label: 'Documents', icon: FileText, count: candidate?.documents?.length || 0 },
-    { id: 'timeline', label: 'Timeline', icon: History, count: candidate?.timelineEvents?.length || 0 },
-    { id: 'audit', label: 'System Audit', icon: ShieldCheck }
+    { id: 'timeline', label: 'Timeline & Audit', icon: History, count: candidate?.timelineEvents?.length || 0 }
   ];
 
   // Loading state
@@ -495,7 +494,7 @@ const CandidateDetail: React.FC = () => {
       <TabNavigation activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as any)} tabs={tabs} />
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-6 py-6" id="main-content-tabs">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content (70%) */}
           <div className="lg:col-span-2 space-y-6">
@@ -1638,14 +1637,6 @@ const CandidateDetail: React.FC = () => {
               )
             }
 
-            {/* System Audit Tab */}
-            {
-              activeTab === 'audit' && (
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <CandidateReport candidate={candidate} />
-                </div>
-              )
-            }
           </div >
 
           {/* Sidebar (30%) */}
@@ -1706,7 +1697,13 @@ const CandidateDetail: React.FC = () => {
               onAdvance={handleAdvanceStage}
               onRollback={handleRollback}
             />
-            <RecentActivityWidget candidate={candidate} onViewAll={() => setActiveTab('timeline')} />
+            <RecentActivityWidget
+              candidate={candidate}
+              onViewAll={() => {
+                setActiveTab('timeline');
+                document.getElementById('main-content-tabs')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
           </div >
         </div >
       </div >
