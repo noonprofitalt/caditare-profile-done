@@ -419,7 +419,7 @@ function generateCompleteCandidate(index: number): Candidate {
                 title: 'Full Application Submitted',
                 description: 'Candidate registered via Digital Application Form',
                 timestamp: new Date(Date.now() - 172800000).toISOString(),
-                actor: randomElement(['External Applicant', 'Recruiter (User B)', 'Admin (User A)']),
+                actor: randomElement(['Operations (User C)', 'Recruiter (User B)', 'Admin (User A)']),
                 stage: WorkflowStage.REGISTERED
             },
             {

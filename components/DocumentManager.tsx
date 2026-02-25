@@ -101,7 +101,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       url, // Use the persistent public URL
       storagePath: path, // Store the storage path for future deletion
       uploadedAt: new Date().toISOString(),
-      uploadedBy: user?.name || 'System Admin',
+      uploadedBy: user?.name || 'Internal Staff',
       uploadedById: user?.id,
       fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
       fileType: file.type,

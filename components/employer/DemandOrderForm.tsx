@@ -83,7 +83,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                     type: 'Note',
                     content: 'Demand order updated',
                     timestamp: new Date().toISOString(),
-                    actor: user?.name || 'Staff User',
+                    actor: user?.name || 'Internal Staff',
                     userId: user?.id,
                 },
                 ...(existingOrder?.activityLog || [])

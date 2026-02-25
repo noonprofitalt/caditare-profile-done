@@ -219,7 +219,7 @@ const CandidateDetail: React.FC = () => {
       type: 'SYSTEM',
       title: 'Profile Updated',
       description: 'Candidate profile information was updated',
-      actor: user?.name || 'System Admin',
+      actor: user?.name || 'Internal Staff',
       userId: user?.id
     });
 
@@ -265,7 +265,7 @@ const CandidateDetail: React.FC = () => {
       type: 'SYSTEM',
       title: 'Compliance Data Updated',
       description: 'Passport and PCC information has been updated',
-      actor: user?.name || 'System Admin',
+      actor: user?.name || 'Internal Staff',
       userId: user?.id
     });
 
@@ -287,7 +287,7 @@ const CandidateDetail: React.FC = () => {
       type: 'DOCUMENT',
       title: 'Documents Updated',
       description: 'Candidate documents have been modified',
-      actor: user?.name || 'System Admin',
+      actor: user?.name || 'Internal Staff',
       userId: user?.id
     });
 
@@ -323,7 +323,7 @@ const CandidateDetail: React.FC = () => {
         type: 'WORKFLOW',
         title: `Advanced to ${nextStage}`,
         description: `Candidate advanced from ${candidate.stage} to ${nextStage}`,
-        actor: user?.name || 'System Admin',
+        actor: user?.name || 'Internal Staff',
         userId: user?.id
       });
 
@@ -352,7 +352,7 @@ const CandidateDetail: React.FC = () => {
       type: 'WORKFLOW',
       title: `Rolled back to ${targetStage}`,
       description: `Rollback Reason: ${reason}`,
-      actor: user?.name || 'System Admin',
+      actor: user?.name || 'Internal Staff',
       userId: user?.id
     });
   };
@@ -400,7 +400,7 @@ const CandidateDetail: React.FC = () => {
         <CandidateReportPDF
           candidate={candidate}
           reportId={`REP-${Date.now()}`}
-          generatedBy={user?.name || 'System Administrator'}
+          generatedBy={user?.name || 'Internal Staff'}
           systemReport={systemReport}
         />
       ).toBlob();
@@ -418,7 +418,7 @@ const CandidateDetail: React.FC = () => {
         type: 'SYSTEM',
         title: 'Report Generated',
         description: 'Candidate Strategic Assessment Report was generated',
-        actor: user?.name || 'System Admin',
+        actor: user?.name || 'Internal Staff',
         userId: user?.id
       });
     } catch (error) {

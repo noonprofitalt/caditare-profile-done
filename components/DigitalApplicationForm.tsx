@@ -387,7 +387,7 @@ const DigitalApplicationForm: React.FC = () => {
                     title: 'Full Application Submitted',
                     description: 'Candidate registered via Digital Application Form.',
                     timestamp: new Date().toISOString(),
-                    actor: user?.name || 'External Applicant',
+                    actor: user?.name || 'Internal Staff',
                     userId: user?.id,
                     stage: WorkflowStage.REGISTERED
                 }],
