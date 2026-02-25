@@ -228,7 +228,7 @@ const DigitalApplicationForm: React.FC = () => {
     const canEditPersonal = true; // !isUpgradeMode || !isStageAtLeast(WorkflowStage.APPLIED);
     const canEditCompliance = true; // !isUpgradeMode || !isStageAtLeast(WorkflowStage.VISA_RECEIVED);
 
-     
+
     const handleInputChange = (field: string, value: any) => {
         const personalFields = ['firstName', 'middleName', 'name', 'nic', 'drivingLicenseNo', 'dob'];
         if (personalFields.includes(field) && !canEditPersonal) return; // Guard
@@ -249,11 +249,11 @@ const DigitalApplicationForm: React.FC = () => {
         });
     };
 
-     
+
     const handleNestedChange = (field: string, nestedField: string, value: any) => {
         setFormData(prev => ({
             ...prev,
-             
+
             [field]: { ...((prev as any)[field]), [nestedField]: value }
         }));
     };
@@ -388,6 +388,7 @@ const DigitalApplicationForm: React.FC = () => {
                     description: 'Candidate registered via Digital Application Form.',
                     timestamp: new Date().toISOString(),
                     actor: user?.name || 'Staff User',
+                    userId: user?.id,
                     stage: WorkflowStage.REGISTERED
                 }],
                 documents: [],

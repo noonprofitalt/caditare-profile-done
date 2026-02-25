@@ -128,6 +128,7 @@ export interface DocumentLog {
   id: string;
   action: 'UPLOAD' | 'APPROVE' | 'REJECT' | 'REQUEST_CORRECTION' | 'DOWNLOAD';
   user: string;
+  userId?: string;
   timestamp: string;
   details?: string;
 }
@@ -140,6 +141,7 @@ export interface CandidateDocument {
   url?: string;
   uploadedAt?: string;
   uploadedBy?: string;
+  uploadedById?: string;
   fileSize?: string;
   fileType?: string;
   version: number;
@@ -157,6 +159,7 @@ export interface TimelineEvent {
   description: string;
   timestamp: string; // ISO String 
   actor: string; // Name of staff or 'System'
+  userId?: string; // ID of the user who performed the action
   isCritical?: boolean; // For delays/alerts
   stage?: WorkflowStage; // Stage context when event happened
   // Metadata for advanced tracking (e.g. rollback reason, error details)
@@ -168,7 +171,8 @@ export interface WorkflowLog {
   fromStage: WorkflowStage;
   toStage: WorkflowStage;
   timestamp: string;
-  user: string;
+  actor: string;
+  userId?: string;
   reason?: string;
 }
 
@@ -598,10 +602,11 @@ export interface EmployerDocument {
 
 export interface EmployerActivity {
   id: string;
-  type: 'Note' | 'Email' | 'Call' | 'Meeting' | 'Agreement_Update';
+  type: 'Note' | 'Email' | 'Call' | 'Meeting' | 'Agreement_Update' | 'Creation' | 'Update';
   content: string;
   timestamp: string;
   actor: string;
+  userId?: string;
 }
 
 export interface Employer {

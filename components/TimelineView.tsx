@@ -97,7 +97,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
                 </span>
                 <div className="flex items-center gap-1 text-[10px] text-slate-400">
                   <User size={10} />
-                  {event.actor || 'System'}
+                  <span title={event.userId ? `User ID: ${event.userId}` : 'System User'} className="cursor-help border-b border-dashed border-slate-300">
+                    {event.actor || 'System'}
+                  </span>
                 </div>
               </div>
             </div>

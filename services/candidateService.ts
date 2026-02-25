@@ -394,6 +394,7 @@ export class CandidateService {
             title: event.title || 'Action Performed',
             description: event.description || '',
             actor: event.actor || 'System',
+            userId: event.userId,
             stage: candidate.stage,
             metadata: event.metadata
         };

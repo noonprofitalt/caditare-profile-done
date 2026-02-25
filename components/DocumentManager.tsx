@@ -88,6 +88,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       id: `log-${Date.now()}`,
       action: 'UPLOAD',
       user: user?.name || 'System Admin',
+      userId: user?.id,
       timestamp: new Date().toISOString(),
       details: `Uploaded v${(existingDoc?.version || 0) + 1} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
     };
@@ -101,6 +102,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       storagePath: path, // Store the storage path for future deletion
       uploadedAt: new Date().toISOString(),
       uploadedBy: user?.name || 'System Admin',
+      uploadedById: user?.id,
       fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
       fileType: file.type,
       version: (existingDoc?.version || 0) + 1,
@@ -121,6 +123,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       id: `log-${Date.now()}`,
       action,
       user: user?.name || 'System Admin',
+      userId: user?.id,
       timestamp: new Date().toISOString(),
       details: reason ? `Reason: ${reason}` : undefined
     };
@@ -444,7 +447,12 @@ const VerifyModal: React.FC<VerifyModalProps> = ({ selectedDoc, onClose, onVerif
                 {selectedDoc.logs.map(log => (
                   <div key={log.id} className="text-xs border-l-2 border-slate-200 pl-3 py-1">
                     <p className="font-semibold text-slate-700">{log.action}</p>
-                    <p className="text-slate-500">{log.user} • {log.timestamp}</p>
+                    <p className="text-slate-500">
+                      <span title={log.userId ? `User ID: ${log.userId}` : 'System User'} className="cursor-help border-b border-dashed border-slate-300">
+                        {log.user}
+                      </span>
+                      {' '}• {log.timestamp}
+                    </p>
                     {log.details && <p className="text-slate-400 mt-1 italic">{log.details}</p>}
                   </div>
                 ))}

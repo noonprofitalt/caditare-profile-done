@@ -83,6 +83,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
                     content: 'Partner account created',
                     timestamp: now,
                     actor: user?.name || 'Staff User',
+                    userId: user?.id,
                 } as EmployerActivity,
             ],
         };

@@ -84,6 +84,7 @@ const DemandOrderForm: React.FC<DemandOrderFormProps> = ({
                     content: 'Demand order updated',
                     timestamp: new Date().toISOString(),
                     actor: user?.name || 'Staff User',
+                    userId: user?.id,
                 },
                 ...(existingOrder?.activityLog || [])
             ] : undefined
