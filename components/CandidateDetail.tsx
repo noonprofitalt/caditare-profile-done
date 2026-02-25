@@ -429,11 +429,12 @@ const CandidateDetail: React.FC = () => {
     }
   };
 
-  // Define tabs (combined Timeline & Audit)
+  // Define tabs
   const tabs: Tab[] = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'documents', label: 'Documents', icon: FileText, count: candidate?.documents?.length || 0 },
-    { id: 'timeline', label: 'Timeline & Audit', icon: History, count: candidate?.timelineEvents?.length || 0 }
+    { id: 'timeline', label: 'Timeline', icon: History, count: candidate?.timelineEvents?.length || 0 },
+    { id: 'audit', label: 'System Audit', icon: ShieldCheck }
   ];
 
   // Loading state
@@ -1629,16 +1630,20 @@ const CandidateDetail: React.FC = () => {
             }
 
 
-            {/* Timeline & Audit Tab */}
+            {/* Timeline Tab */}
             {
               activeTab === 'timeline' && (
-                <div className="space-y-6">
-                  <div className="bg-white rounded-xl border border-slate-200 p-6">
-                    <TimelineView events={candidate.timelineEvents || []} />
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-6">
-                    <CandidateReport candidate={candidate} />
-                  </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-6">
+                  <TimelineView events={candidate.timelineEvents || []} />
+                </div>
+              )
+            }
+
+            {/* System Audit Tab */}
+            {
+              activeTab === 'audit' && (
+                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                  <CandidateReport candidate={candidate} />
                 </div>
               )
             }

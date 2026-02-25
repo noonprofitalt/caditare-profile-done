@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, FileSearch, User, MapPin, ShieldAlert, ShieldCheck, Upload, ArrowRight, ExternalLink, TrendingUp } from 'lucide-react';
+import { FileText, CheckCircle, AlertTriangle, Info, Printer, RefreshCw, FileSearch, User, MapPin, ShieldAlert, ShieldCheck, Upload, ArrowRight, ExternalLink, TrendingUp, Activity } from 'lucide-react';
 import { Candidate } from '../types';
 import type { SystemReport } from '../services/reportService';
 import ReactMarkdown from 'react-markdown';
@@ -64,7 +64,7 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
     };
 
     useEffect(() => {
-         
+
         generate();
     }, [generate]);
 
@@ -98,139 +98,79 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
     ] : [];
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            {/* Action Header */}
-            <div className="flex items-center justify-between no-print bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                        <FileSearch size={24} />
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Header */}
+            <div className="flex items-center justify-between no-print">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-50/50 rounded-lg flex items-center justify-center text-blue-600 border border-blue-100/50">
+                        <FileSearch size={20} />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800">System Audit & Integrity Report</h3>
-                        <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Verified System Integrity Protocol</p>
+                        <h3 className="text-base font-semibold text-slate-800 tracking-tight">System Audit & Integrity Report</h3>
+                        <p className="text-slate-500 text-[11px] font-medium uppercase tracking-widest">Live Verification Protocol</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <button
                         onClick={generate}
-                        className="flex items-center gap-2 px-4 py-2 text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all font-bold text-xs"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-all font-medium text-xs shadow-sm"
                     >
-                        <RefreshCw size={14} /> Refresh Analysis
+                        <RefreshCw size={12} /> Refresh
                     </button>
 
                     <button
                         disabled={isExporting}
                         onClick={handleExportPDF}
-                        className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all font-bold text-xs no-print disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-medium text-xs no-print disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                     >
-                        {isExporting ? <RefreshCw size={14} className="animate-spin" /> : <Printer size={14} />}
-                        {isExporting ? 'Preparing PDF...' : 'Export Formal PDF'}
+                        {isExporting ? <RefreshCw size={12} className="animate-spin" /> : <Printer size={12} />}
+                        {isExporting ? 'Exporting...' : 'Export PDF'}
                     </button>
                 </div>
             </div>
 
-            {/* Main Report Page */}
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden printable-area max-w-5xl mx-auto relative">
-                {/* Confidentiality Watermark */}
-                <div className="absolute inset-0 pointer-events-none opacity-[0.03] rotate-[-45deg] flex items-center justify-center overflow-hidden">
-                    <span className="text-9xl font-black whitespace-nowrap uppercase tracking-tighter">Confidential Audit Report</span>
-                </div>
+            {/* Content Area */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden printable-area relative">
 
-                {/* Report Header */}
-                <div className="bg-slate-900 text-white p-10 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                {/* Minimal Top Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/50">
 
-                    <div className="flex justify-between items-start mb-10 relative z-10">
-                        <div>
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10">
-                                    <ShieldCheck size={20} className="text-blue-400" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-300">System Performance Audit</span>
-                            </div>
-                            <h2 className="text-4xl font-black tracking-tight mb-2">RECRUITMENT INTEGRITY AUDIT</h2>
-                            <p className="text-slate-400 text-sm font-medium flex items-center gap-2">
-                                <MapPin size={14} /> Country of Deployment: <span className="text-white font-bold">{candidate.preferredCountries?.[0] || 'GENERAL'}</span>
-                            </p>
-                        </div>
-                        <div className="text-right">
-                            <div className={`${getRiskStyles(report.riskScore)} px-4 py-2 rounded-full text-[10px] font-black tracking-widest uppercase mb-4 inline-block border`}>
-                                Risk Level: {report.riskScore}
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Audit Reference</p>
-                            <p className="text-xs font-mono text-slate-300">{report.timestamp.replace(/[:.-]/g, '').slice(0, 14)}-{candidate.id.slice(0, 6)}</p>
-                        </div>
+                    <div className="p-4 sm:p-5 flex flex-col justify-center">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <ShieldCheck size={12} className="text-blue-500" /> Integrity Score
+                        </p>
+                        <div className="text-2xl font-bold text-slate-800">{report.completionPercentage}%</div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
-                        {/* Interactive Visual Card 1: Integrity Score */}
-                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <CheckCircle size={80} />
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 z-10 relative">Integrity Score</p>
-                            <div className="h-24 w-full relative z-10 flex items-center justify-between gap-2">
-                                <div className="text-3xl xl:text-4xl font-black text-white shrink-0">{report.completionPercentage}%</div>
-                                <div className="w-16 h-16 xl:w-24 xl:h-24 shrink-0">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={integrityData}
-                                                innerRadius={25}
-                                                outerRadius={35}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                                stroke="none"
-                                            >
-                                                {integrityData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                                ))}
-                                            </Pie>
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="p-4 sm:p-5 flex flex-col justify-center">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <Activity size={12} className={report.slaStatus.status === 'CRITICAL' ? 'text-red-500' : 'text-emerald-500'} /> Process Velocity
+                        </p>
+                        <div className="text-2xl font-bold text-slate-800 capitalize">{report.slaStatus.status.toLowerCase().replace('_', ' ')}</div>
+                    </div>
 
-                        {/* Interactive Visual Card 2: SLA Health */}
-                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 relative overflow-hidden hover:bg-white/10 transition-colors cursor-default">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Process Velocity</p>
-                            <div className="h-24 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={slaData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
-                                        <XAxis type="number" hide />
-                                        <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                                        <Bar dataKey="days" radius={[0, 4, 4, 0]} barSize={12} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                                <div className={`w-2 h-2 rounded-full ${report.slaStatus.status === 'CRITICAL' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-                                <span className="text-[10px] text-slate-300 font-bold uppercase">{report.slaStatus.status.replace('_', ' ')}</span>
-                            </div>
-                        </div>
+                    <div className="p-4 sm:p-5 flex flex-col justify-center">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <CheckCircle size={12} className="text-indigo-500" /> Profile Status
+                        </p>
+                        <div className="text-sm font-bold text-slate-800 uppercase tracking-wide truncate" title={report.overallStatus}>{report.overallStatus}</div>
+                    </div>
 
-                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 flex flex-col justify-between">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Profile Status</p>
-                            <p className="text-lg xl:text-xl font-bold text-white uppercase tracking-wider line-clamp-2 truncate" title={report.overallStatus}>{report.overallStatus}</p>
-                        </div>
-                        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 flex flex-col justify-between">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Audit Issues</p>
-                            <p className="text-lg xl:text-xl font-bold text-white truncate">{report.missingInfo.length + report.documentGaps.missing.length + report.documentGaps.rejected.length} Flagged</p>
-                        </div>
+                    <div className="p-4 sm:p-5 flex flex-col justify-center">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <AlertTriangle size={12} className="text-amber-500" /> Audit Flags
+                        </p>
+                        <div className="text-2xl font-bold text-slate-800">{report.missingInfo.length + report.documentGaps.missing.length + report.documentGaps.rejected.length}</div>
                     </div>
                 </div>
 
-                <div className="p-10 space-y-12">
+                <div className="p-5 sm:p-6 space-y-6">
                     {/* Section 1: Detailed Profile Summary */}
                     <section>
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
-                                <User size={16} />
-                            </div>
-                            <h4 className="text-sm font-black text-slate-900 tracking-widest uppercase">01. Profile Information Verification</h4>
+                        <div className="flex items-center gap-2 mb-4">
+                            <h4 className="text-sm font-semibold text-slate-800">Profile Information Verification</h4>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6 bg-slate-50/50 p-8 rounded-2xl border border-slate-100">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-slate-50 border border-slate-100 rounded-lg">
                             {[
                                 { label: 'Full Name', value: candidate.name },
                                 { label: 'E-mail Address', value: candidate.email },
@@ -249,15 +189,12 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                         </div>
                     </section>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Section 2: Gap Analysis */}
-                        <div className="space-y-10">
+                        <div className="space-y-4">
                             <section>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center text-red-600">
-                                        <AlertTriangle size={16} />
-                                    </div>
-                                    <h4 className="text-sm font-black text-slate-900 tracking-widest uppercase">02. Data Audit Flags</h4>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <h4 className="text-sm font-semibold text-slate-800">Data Audit Flags</h4>
                                 </div>
 
                                 <div className="space-y-4">
@@ -267,8 +204,8 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                                             <div className="flex items-start gap-4">
                                                 <ShieldAlert size={18} className="text-amber-500 mt-0.5 shrink-0" />
                                                 <div>
-                                                    <p className="text-xs font-bold text-amber-900 uppercase tracking-tighter">{issue.field} - {issue.issue}</p>
-                                                    <p className="text-[10px] text-amber-700 font-medium mt-1">Suggested Action: Verify with candidate.</p>
+                                                    <p className="text-[11px] font-medium text-amber-900">{issue.field} - {issue.issue}</p>
+                                                    <p className="text-[10px] text-amber-700 mt-0.5">Suggested Action: Verify with candidate.</p>
                                                 </div>
                                             </div>
                                             <button className="hidden group-hover:flex no-print items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors shadow-sm">
@@ -325,32 +262,22 @@ const CandidateReport: React.FC<CandidateReportProps> = ({ candidate }) => {
                                     ))}
 
                                     {report.missingInfo.length === 0 && report.documentGaps.missing.length === 0 && report.documentGaps.rejected.length === 0 && (
-                                        <div className="flex flex-col items-center justify-center p-12 bg-emerald-50 rounded-[2rem] border border-emerald-100 text-center">
-                                            <CheckCircle size={40} className="text-emerald-500 mb-4" />
-                                            <p className="text-emerald-900 font-bold">Audit Verified</p>
-                                            <p className="text-emerald-700 text-xs mt-1">No critical gaps detected.</p>
+                                        <div className="flex items-center justify-center p-8 bg-emerald-50 rounded-lg border border-emerald-100 text-center gap-3">
+                                            <CheckCircle size={20} className="text-emerald-500" />
+                                            <div>
+                                                <p className="text-emerald-800 text-sm font-semibold">Audit Verified</p>
+                                                <p className="text-emerald-600 text-[10px]">No critical gaps detected.</p>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             </section>
                         </div>
 
-                        <div className="mt-8 bg-slate-900 text-white rounded-[2rem] p-8 shadow-xl">
-                            <div className="flex items-center gap-3 mb-4">
-                                <Info size={16} className="text-blue-400" />
-                                <h5 className="font-black text-xs uppercase tracking-widest">Audit Instructions</h5>
-                            </div>
-                            <p className="text-xs text-slate-400 leading-relaxed">
-                                Case Officers must resolve all "Fix Required" items before
-                                finalizing the <b>Verification</b> stage.
-                            </p>
-                        </div>
+
                     </div>
                 </div>
 
-                <div className="hidden print:flex flex-col items-center justify-center p-10 border-t border-slate-200 bg-slate-50 mt-auto">
-                    <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase mb-2">Generated by Suhara ERP CORE Cloud</p>
-                </div>
             </div>
         </div>
     );
