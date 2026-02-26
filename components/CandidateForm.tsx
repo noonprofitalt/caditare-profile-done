@@ -29,11 +29,11 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     dob: initialData?.dob || '',
     gender: initialData?.gender || '',
     phone: initialData?.phone || '',
-    secondaryPhone: initialData?.secondaryPhone || '',
+    secondaryPhone: initialData?.secondaryPhone || (initialData?.additionalContactNumbers && initialData.additionalContactNumbers.length > 0 ? initialData.additionalContactNumbers[0] : ''),
     whatsapp: initialData?.whatsapp || initialData?.phone || '',
     email: initialData?.email || '',
     address: initialData?.address || '',
-    city: initialData?.city || '',
+    city: initialData?.city || initialData?.location || initialData?.district || '',
     education: Array.isArray(initialData?.education) ? initialData.education : (initialData?.education ? [initialData.education] : []),
 
     // Professional & Operational (Preserved)
@@ -69,6 +69,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     agreementStatus: initialData?.slbfeData?.agreementStatus || 'Pending',
     spouseName: initialData?.spouseName || '',
     passports: initialData?.passports || [],
+    officeUseOnly: initialData?.officeUseOnly || { customerCareOfficer: '', fileHandlingOfficer: '', date: '', charges: '' },
   });
 
   // Re-added missing states for JSX compatibility
@@ -196,10 +197,10 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
       skills: formData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s),
       preferredCountries: formData.preferredCountries,
       jobRoles: jobRoles,
-      stageData: stageDataUpdate,
       slbfeData: slbfeDataUpdate,
       passports: formData.passports, // Include passports in submission
       documents: updatedDocuments, // Pass updated docs back
+      officeUseOnly: formData.officeUseOnly,
     };
 
     onSubmit(processedData);
@@ -1066,6 +1067,49 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 </div>
               </div>
 
+            </div>
+          </div>
+
+          {/* OFFICE USE ONLY SECTION */}
+          <div className="space-y-6">
+            <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4">
+              Office Use Only
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-xl border border-slate-200">
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Customer Care Officer</label>
+                <input
+                  value={formData.officeUseOnly?.customerCareOfficer || ''}
+                  onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, customerCareOfficer: e.target.value } }))}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">File Handling Officer</label>
+                <input
+                  value={formData.officeUseOnly?.fileHandlingOfficer || ''}
+                  onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, fileHandlingOfficer: e.target.value } }))}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Date</label>
+                <input
+                  type="date"
+                  value={formData.officeUseOnly?.date || ''}
+                  onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, date: e.target.value } }))}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Charges</label>
+                <input
+                  value={formData.officeUseOnly?.charges || ''}
+                  onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, charges: e.target.value } }))}
+                  placeholder="e.g. 1350000 + Ticket + Medical"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
 

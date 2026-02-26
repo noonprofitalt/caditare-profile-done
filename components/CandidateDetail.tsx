@@ -1613,6 +1613,87 @@ const CandidateDetail: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {/* SECTION 1.6: OFFICE USE ONLY */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-6 h-1 bg-violet-500 rounded-full"></span>
+                    1.6 Office Use Only
+                  </h3>
+
+                  {isEditingProfile ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-xl border border-slate-200 border-dashed">
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Customer Care Officer</label>
+                        <input
+                          type="text"
+                          value={editedProfile.officeUseOnly?.customerCareOfficer || ''}
+                          onChange={(e) => setEditedProfile({
+                            ...editedProfile,
+                            officeUseOnly: { ...(editedProfile.officeUseOnly || { customerCareOfficer: '', fileHandlingOfficer: '', date: '', charges: '' }), customerCareOfficer: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 text-sm border rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">File Handling Officer</label>
+                        <input
+                          type="text"
+                          value={editedProfile.officeUseOnly?.fileHandlingOfficer || ''}
+                          onChange={(e) => setEditedProfile({
+                            ...editedProfile,
+                            officeUseOnly: { ...(editedProfile.officeUseOnly || { customerCareOfficer: '', fileHandlingOfficer: '', date: '', charges: '' }), fileHandlingOfficer: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 text-sm border rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Date</label>
+                        <input
+                          type="date"
+                          value={editedProfile.officeUseOnly?.date || ''}
+                          onChange={(e) => setEditedProfile({
+                            ...editedProfile,
+                            officeUseOnly: { ...(editedProfile.officeUseOnly || { customerCareOfficer: '', fileHandlingOfficer: '', date: '', charges: '' }), date: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 text-sm border rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Charges</label>
+                        <input
+                          type="text"
+                          value={editedProfile.officeUseOnly?.charges || ''}
+                          onChange={(e) => setEditedProfile({
+                            ...editedProfile,
+                            officeUseOnly: { ...(editedProfile.officeUseOnly || { customerCareOfficer: '', fileHandlingOfficer: '', date: '', charges: '' }), charges: e.target.value }
+                          })}
+                          placeholder="e.g. 1350000 + Ticket + Medical"
+                          className="w-full mt-1 p-2 text-sm border rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-xl border border-slate-200 border-dashed">
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Customer Care Officer</label>
+                        <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.officeUseOnly?.customerCareOfficer || '-'}</div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">File Handling Officer</label>
+                        <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.officeUseOnly?.fileHandlingOfficer || '-'}</div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Date</label>
+                        <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.officeUseOnly?.date || '-'}</div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Charges</label>
+                        <div className="text-sm font-bold text-indigo-600 mt-1">{candidate?.officeUseOnly?.charges || '-'}</div>
+                      </div>
+                    </div>
+                  )}
+                </section>
               </div>
             )
             }

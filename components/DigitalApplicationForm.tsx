@@ -92,7 +92,8 @@ const DigitalApplicationForm: React.FC = () => {
         workflowLogs: [],
         timelineEvents: [],
         comments: [],
-        documents: []
+        documents: [],
+        officeUseOnly: { customerCareOfficer: '', fileHandlingOfficer: '', date: '', charges: '' }
     }));
 
     const [educationRows, setEducationRows] = useState([
@@ -153,13 +154,18 @@ const DigitalApplicationForm: React.FC = () => {
                     setIsUpgradeMode(true);
                     setExistingCandidate(candidate);
 
-                    // Pre-fill form data
-                    setFormData({
+                    // Pre-fill form data with functional state update to preserve defaults
+                    setFormData(prev => ({
+                        ...prev,
                         ...candidate,
-                        firstName: candidate.firstName || candidate.name.split(' ')[0],
+                        firstName: candidate.firstName || candidate.name?.split(' ')[0] || '',
                         middleName: candidate.middleName || '',
-                        name: candidate.name, // Explicitly set Full Name
-                    });
+                        name: candidate.name || '', // Explicitly set Full Name
+                        position: candidate.position || candidate.role || '', // Map QuickAdd role to FullForm position
+                        district: candidate.district || candidate.city || candidate.location || '',
+                        country: candidate.country || candidate.targetCountry || '',
+                        targetCountry: candidate.targetCountry || candidate.country || '',
+                    }));
 
                     // Pre-fill additional states
                     if (candidate.education) setSelectedEducation(candidate.education);
@@ -172,7 +178,11 @@ const DigitalApplicationForm: React.FC = () => {
                         );
                         setJobRoles(mappedRoles);
                     }
-                    if (candidate.additionalContactNumbers) setAdditionalContacts(candidate.additionalContactNumbers);
+                    if (candidate.additionalContactNumbers && candidate.additionalContactNumbers.length > 0) {
+                        setAdditionalContacts(candidate.additionalContactNumbers);
+                    } else if (candidate.secondaryPhone) {
+                        setAdditionalContacts([candidate.secondaryPhone]);
+                    }
 
                     // Pre-fill medical status
                     if (candidate.stageData?.medicalStatus) {
@@ -332,11 +342,17 @@ const DigitalApplicationForm: React.FC = () => {
             employmentHistory,
             children: childrenRows,
             role: formData.position || 'General Worker',
+            position: formData.position || 'General Worker',
             location: formData.district || '',
+            city: formData.district || '',
+            district: formData.district || '',
+            country: formData.country || formData.targetCountry || '',
+            targetCountry: formData.country || formData.targetCountry || '',
             preferredCountries: preferredCountries,
             education: selectedEducation,
             jobRoles: jobRoles,
             additionalContactNumbers: additionalContacts,
+            secondaryPhone: additionalContacts.length > 0 ? additionalContacts[0] : '',
             passports,
             passportData: passports.length > 0 ? passports[0] : undefined, // Main passport for backward compat
             pccData,
@@ -1571,11 +1587,49 @@ const DigitalApplicationForm: React.FC = () => {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Customer Care Officer</label>
+                                <input
+                                    type="text"
+                                    value={formData.officeUseOnly?.customerCareOfficer || ''}
+                                    onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, customerCareOfficer: e.target.value } }))}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">File Handling Officer</label>
+                                <input
+                                    type="text"
+                                    value={formData.officeUseOnly?.fileHandlingOfficer || ''}
+                                    onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, fileHandlingOfficer: e.target.value } }))}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.officeUseOnly?.date || ''}
+                                    onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, date: e.target.value } }))}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Charges</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. 1350000 + Ticket + Medical"
+                                    value={formData.officeUseOnly?.charges || ''}
+                                    onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, charges: e.target.value } }))}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            {/* Selection and Remark from legacy */}
+                            <div>
                                 <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Selection</label>
                                 <select
                                     value={formData.officeSelection || 'Select'}
                                     onChange={(e) => handleInputChange('officeSelection', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="Select">Select</option>
                                     <option value="Reject">Reject</option>
@@ -1585,9 +1639,9 @@ const DigitalApplicationForm: React.FC = () => {
                                 <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Remark</label>
                                 <input
                                     type="text"
-                                    value={formData.officeRemark}
+                                    value={formData.officeRemark || ''}
                                     onChange={(e) => handleInputChange('officeRemark', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
                         </div>

@@ -271,6 +271,13 @@ export interface StageHistoryEntry {
   notes?: string;
 }
 
+export interface OfficeUseOnly {
+  customerCareOfficer?: string;
+  fileHandlingOfficer?: string;
+  date?: string;
+  charges?: string;
+}
+
 export interface PersonalInfo {
   fullName: string;
   firstName?: string;
@@ -428,6 +435,7 @@ export interface Candidate {
   officeRemark?: string;
   refNo?: string;
   targetCountry?: string;
+  officeUseOnly?: OfficeUseOnly;
 
   // Normalized Structure
   personalInfo: PersonalInfo;
