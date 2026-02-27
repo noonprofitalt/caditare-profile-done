@@ -50,7 +50,7 @@ const JobRoleEntry: React.FC<JobRoleEntryProps> = ({ jobRoles, onChange }) => {
                 <div className="space-y-3">
                     {jobRoles.map((role, index) => (
                         <div
-                            key={`${role.title || 'new'}-${role.experienceYears}-${index}`}
+                            key={index}
                             className="bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-300 transition-all shadow-sm hover:shadow-md"
                         >
                             <div className="flex items-start justify-between mb-3">

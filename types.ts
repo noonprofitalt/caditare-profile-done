@@ -91,6 +91,68 @@ export interface StageData {
   paymentStatus?: 'Pending' | 'Partial' | 'Completed';
   paymentNotes?: string;
   paymentHistory?: PaymentRecord[];
+
+  // Phase 4-6 Tracking Data
+  wpReferenceNumber?: string;
+  travelInsurancePolicyNumber?: string;
+  travelInsuranceCoverageEndDate?: string;
+  flightNumber?: string;
+  flightPNR?: string;
+  flightDepartureTime?: string;
+  workingVideoLink?: string;
+  selfIntroductionVideoLink?: string;
+  additionalVideoLinks?: string[];
+}
+
+// --- EMBASSY DETAILS (EMB APPLIED DETAILS on paper form) ---
+export interface EmbassyDetails {
+  eNo?: string;                    // Embassy Number (E NO)
+  seNo?: string;                   // SE Number
+  appliedDate?: string;            // Applied Date
+  appointmentDate?: string;        // Appointment Date/Time
+  stampDate?: string;              // Stamp Date
+  stampResult?: 'Pending' | 'Stamped' | 'Rejected';
+  rejectReason?: string;
+  awarenessProgramDate?: string;
+  awarenessProgramSigned?: boolean;
+}
+
+// --- ADVANCE PAYMENT TRACKING (matches paper form ADVANCE table) ---
+export enum AdvancePaymentType {
+  REGISTER_FEE = 'Register Fee',
+  OFFER = 'Offer',
+  WORK_PERMIT = 'Work Permit',
+  EMB_USD = 'Embassy USD',
+  BALANCE_PAY = 'Balance Pay',
+  TICKET = 'Ticket',
+  DEPOSIT = 'Deposit',
+  OTHER = 'Other',
+}
+
+export interface AdvancePayment {
+  id: string;
+  type: AdvancePaymentType;
+  informed?: boolean;              // "Informed" column on form
+  informedDate?: string;
+  signDate?: string;               // "Sign Date" column
+  invoiceNo?: string;              // "Invoice No" column
+  amount?: number;                 // "Amount (RS)" column
+  remarks?: string;                // "Remarks" column
+}
+
+// --- WORKFLOW MILESTONES (bottom tracking row on paper form) ---
+export interface WorkflowMilestones {
+  offerAppliedDate?: string;
+  offerReceivedDate?: string;
+  wpAppliedDate?: string;
+  wpReceivedDate?: string;
+  embAppliedDate?: string;
+  embAppointmentDate?: string;
+  stampRejectDate?: string;
+  stampResult?: string;
+  slbfeTrainingDate?: string;
+  slbfeRegistrationDate?: string;
+  departureDate?: string;
 }
 
 export enum DocumentType {
@@ -109,6 +171,40 @@ export enum DocumentType {
   POLICE_CLEARANCE = 'Police Clearance',
   VISA_COPY = 'Visa Copy',
   AIR_TICKET = 'Air Ticket Copy',
+
+  // Phase 4: Selection & WP
+  OFFER_LETTER = 'Offer Letter',
+  SIGNED_OFFER_LETTER = 'Signed Offer Letter',
+  IGI_RECORDS = 'IGI Records',
+  WORK_PERMIT = 'Work Permit (WP)',
+  APPLICATION_CV = 'Application CV',
+
+  // Medical & Security additions
+  VACCINATION_RECORDS = 'Vaccination Records',
+
+  // Additional certificates from paper form
+  BIRTH_CERTIFICATE = 'Birth Certificate',
+  EXPERIENCE_LETTERS = 'Experience Letters',
+  NVQ_TRADE_TEST = 'NVQ/Trade Test Certificates',
+  COURSE_CERTIFICATES = 'Course Certificates',
+  WORKING_PHOTO = 'Working Photo',
+  SELF_INTRO_VIDEO_DOC = 'Self Introduction Video',
+  WORKING_VIDEO_DOC = 'Working Video',
+  FAMILY_BACKGROUND_REPORT = 'Family Background Report',
+  POLICE_REPORT_LOCAL = 'Police Report (Local)',
+  POLICE_REPORT_HQ = 'Police Report (HQ/FM)',
+  ADVANCE_PAYMENT_RECEIPT = 'Advance Payment Receipt',
+
+  // Phase 5: Embassy & Visa Processing
+  D_FORM = 'D-Form',
+  EMBASSY_APPOINTMENT_LETTER = 'Embassy Appointment Letter',
+  USD_PAYMENT_RECEIPT = 'USD Payment Receipt',
+  TRAVEL_INSURANCE = 'Travel Insurance',
+
+  // Phase 6: SLBFE & Final Departure
+  SLBFE_INSURANCE = 'SLBFE Insurance',
+  BUREAU_DOCUMENTS_SET = 'Bureau Documents Set',
+  FLIGHT_TICKET = 'Flight Ticket',
 }
 
 export enum DocumentStatus {
@@ -122,6 +218,11 @@ export enum DocumentStatus {
 export enum DocumentCategory {
   MANDATORY_REGISTRATION = 'Mandatory at Registration',
   LATER_PROCESS = 'Later Process Documents',
+  // Phase-aligned categories
+  MEDICAL_SECURITY = 'Medical & Security',
+  SELECTION_WP = 'Selection & Work Permit',
+  EMBASSY_VISA = 'Embassy & Visa Processing',
+  SLBFE_DEPARTURE = 'SLBFE & Departure',
 }
 
 export interface DocumentLog {
@@ -282,6 +383,8 @@ export interface PersonalInfo {
   fullName: string;
   firstName?: string;
   middleName?: string;
+  surname?: string;
+  otherNames?: string;
   nic?: string;
   dob?: string;
   age?: number;
@@ -295,6 +398,8 @@ export interface PersonalInfo {
   district?: string;
   province?: string;
   nationality?: string;
+  placeOfBirth?: string;
+  passportProfession?: string;
   drivingLicenseNo?: string;
   height?: { feet: number; inches: number };
   weight?: number;
@@ -352,6 +457,7 @@ export interface MedicalRecord {
   result: string;
   notes?: string;
   clinic?: string;
+  expiryDate?: string;
   reportUrl?: string;
 }
 
@@ -376,7 +482,16 @@ export interface AuditInfo {
 
 export interface Candidate {
   id: string;
-  candidateCode: string; // New: Format GW-YYYY-XXXX
+  candidateCode: string; // Internal system code: Format GW-YYYY-XXXX
+
+  // === REG NO — PRIMARY COMPANY IDENTIFIER (red ink on paper forms) ===
+  regNo: string;           // e.g. "SPA 19-260225", "SR 600", "SEP 695", "3216605924"
+  regDate?: string;        // Registration date (ISO)
+
+  // === STAFF ASSIGNMENT (from form header) ===
+  foreignAgent?: string;       // Foreign Agent name
+  coordinatorName?: string;    // Coordinator assigned
+  dhOfficer?: string;          // Document Handling Officer
 
   // Legacy fields for backward compatibility
   name: string;
@@ -388,11 +503,14 @@ export interface Candidate {
   nic?: string;
   secondaryEmail?: string;
   skills?: string[];
+  notes?: string;
   stage: WorkflowStage;
 
   // Additional Legacy fields for forms
   firstName?: string;
   middleName?: string;
+  surname?: string;
+  otherNames?: string;
   dob?: string;
   gender?: string;
   address?: string;
@@ -472,8 +590,33 @@ export interface Candidate {
 
   signature?: string;
 
+  // === EMBASSY & ADVANCE PAYMENT (from paper form) ===
+  embassyDetails?: EmbassyDetails;
+  advancePayments?: AdvancePayment[];
+  usdRateEmb?: number;       // USD Rate EMB
+  usdRateFA?: number;        // USD Rate F/A
+  workflowMilestones?: WorkflowMilestones;
+  departureDate?: string;    // Final departure date
+  placeOfBirth?: string;     // Place of birth (as per passport)
+  passportProfession?: string; // Profession (as per passport)
+  passportRemark?: string;   // Remark field from passport section of paper form
+  companyName?: string;      // Company name from paper form header
+  remarkLog?: RemarkEntry[]; // Date/Remark log (handwritten notes on paper forms)
+  // Family AGE/ID fields (matching paper form columns)
+  fatherAge?: number;
+  fatherNic?: string;
+  motherAge?: number;
+  motherNic?: string;
+  spouseAge?: number;
+  spouseNic?: string;
+
   // Audit
   audit: AuditInfo;
+}
+
+export interface RemarkEntry {
+  date: string;
+  remark: string;
 }
 
 

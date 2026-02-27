@@ -11,7 +11,9 @@ const lastNames = ['Fernando', 'Silva', 'Perera', 'Jayawardena', 'Wickramasinghe
 const districts = ['Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya', 'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kurunegala', 'Anuradhapura'];
 const provinces = ['Western', 'Central', 'Southern', 'Northern', 'Eastern', 'North Western', 'North Central', 'Uva', 'Sabaragamuwa'];
 
-const positions = ['Housemaid', 'Driver', 'Caregiver', 'Nanny', 'Cook', 'Cleaner', 'Factory Worker', 'Construction Worker', 'Security Guard'];
+const positions = ['Housemaid', 'Driver', 'Caregiver', 'Nanny', 'Cook', 'Cleaner', 'Factory Worker', 'Construction Worker', 'Security Guard', 'Heavy Duty Driver', 'Bus Driver', 'Forklift Operator'];
+
+const regNoPrefixes = ['SPA', 'SR', 'SEP', 'GW', 'KG', 'MT'];
 
 function randomElement<T>(array: T[]): T {
     return array[Math.floor(Math.random() * array.length)];
@@ -49,6 +51,8 @@ function generateQuickAddCandidate(index: number): Candidate {
     return {
         id: `quick-${Date.now()}-${index}`,
         candidateCode: `GW-${new Date().getFullYear()}-${index.toString().padStart(4, '0')}`,
+        regNo: `${randomElement(regNoPrefixes)} ${Math.floor(100 + Math.random() * 900)}`,
+        regDate: randomDate(new Date(2024, 0, 1), new Date()),
         name,
         phone,
         nic,
@@ -154,6 +158,8 @@ function generatePartialCandidate(index: number): Candidate {
     return {
         id: `partial-${Date.now()}-${index}`,
         candidateCode: `GW-${new Date().getFullYear()}-${(index + 100).toString().padStart(4, '0')}`,
+        regNo: `${randomElement(regNoPrefixes)} ${Math.floor(100 + Math.random() * 900)}`,
+        regDate: randomDate(new Date(2024, 6, 1), new Date()),
         name,
         phone,
         nic,
@@ -287,6 +293,8 @@ function generateCompleteCandidate(index: number): Candidate {
     return {
         id: `complete-${Date.now()}-${index}`,
         candidateCode: `GW-${new Date().getFullYear()}-${(index + 200).toString().padStart(4, '0')}`,
+        regNo: `${randomElement(regNoPrefixes)} ${index + 200}-${new Date().getFullYear().toString().slice(2)}${(new Date().getMonth() + 1).toString().padStart(2, '0')}${new Date().getDate().toString().padStart(2, '0')}`,
+        regDate: randomDate(new Date(2024, 0, 1), new Date()),
         name,
         phone,
         nic,

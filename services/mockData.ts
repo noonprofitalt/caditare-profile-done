@@ -77,10 +77,29 @@ const generateRequiredDocs = (): CandidateDocument[] => {
   addDoc(DocumentType.EDU_LEARNING, DocumentCategory.MANDATORY_REGISTRATION);
   addDoc(DocumentType.EDU_PROFESSIONAL, DocumentCategory.MANDATORY_REGISTRATION);
 
-  // Later Process
-  addDoc(DocumentType.MEDICAL_REPORT, DocumentCategory.LATER_PROCESS);
-  addDoc(DocumentType.POLICE_CLEARANCE, DocumentCategory.LATER_PROCESS);
+  // Medical & Security
+  addDoc(DocumentType.MEDICAL_REPORT, DocumentCategory.MEDICAL_SECURITY);
+  addDoc(DocumentType.POLICE_CLEARANCE, DocumentCategory.MEDICAL_SECURITY);
+  addDoc(DocumentType.VACCINATION_RECORDS, DocumentCategory.MEDICAL_SECURITY);
+
+  // Selection & Work Permit
+  addDoc(DocumentType.OFFER_LETTER, DocumentCategory.SELECTION_WP);
+  addDoc(DocumentType.SIGNED_OFFER_LETTER, DocumentCategory.SELECTION_WP);
+  addDoc(DocumentType.APPLICATION_CV, DocumentCategory.SELECTION_WP);
+  addDoc(DocumentType.IGI_RECORDS, DocumentCategory.SELECTION_WP);
+  addDoc(DocumentType.WORK_PERMIT, DocumentCategory.SELECTION_WP);
+
+  // Embassy & Visa
+  addDoc(DocumentType.D_FORM, DocumentCategory.EMBASSY_VISA);
+  addDoc(DocumentType.EMBASSY_APPOINTMENT_LETTER, DocumentCategory.EMBASSY_VISA);
+  addDoc(DocumentType.USD_PAYMENT_RECEIPT, DocumentCategory.EMBASSY_VISA);
+  addDoc(DocumentType.TRAVEL_INSURANCE, DocumentCategory.EMBASSY_VISA);
   addDoc(DocumentType.VISA_COPY, DocumentCategory.LATER_PROCESS);
+
+  // SLBFE & Departure
+  addDoc(DocumentType.SLBFE_INSURANCE, DocumentCategory.SLBFE_DEPARTURE);
+  addDoc(DocumentType.BUREAU_DOCUMENTS_SET, DocumentCategory.SLBFE_DEPARTURE);
+  addDoc(DocumentType.FLIGHT_TICKET, DocumentCategory.SLBFE_DEPARTURE);
   addDoc(DocumentType.AIR_TICKET, DocumentCategory.LATER_PROCESS);
 
   return docs;

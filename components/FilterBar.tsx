@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProfileCompletionStatus, WorkflowStage } from '../types';
+import { ProfileCompletionStatus, WorkflowStage, Country } from '../types';
 import { Filter, X } from 'lucide-react';
 
 interface FilterBarProps {
@@ -7,6 +7,8 @@ interface FilterBarProps {
     onStatusChange: (status: ProfileCompletionStatus | 'ALL') => void;
     activeStage: WorkflowStage | 'ALL';
     onStageChange: (stage: WorkflowStage | 'ALL') => void;
+    activeCountries: string[];
+    onCountryChange: (countries: string[]) => void;
     searchQuery: string;
     onSearchChange: (query: string) => void;
     candidateCounts: {
@@ -24,6 +26,8 @@ const FilterBar: React.FC<FilterBarProps> = ({
     onStatusChange,
     activeStage,
     onStageChange,
+    activeCountries,
+    onCountryChange,
     searchQuery,
     onSearchChange,
     candidateCounts,
@@ -126,6 +130,32 @@ const FilterBar: React.FC<FilterBarProps> = ({
                             {tab.label}
                         </button>
                     ))}
+                </div>
+
+                {/* Country Filter */}
+                <div className="flex items-center gap-2 overflow-x-auto pt-1">
+                    <span className="text-sm font-medium text-slate-600 whitespace-nowrap">Countries:</span>
+                    {Object.values(Country).map((country) => {
+                        const isActive = activeCountries.includes(country);
+                        return (
+                            <button
+                                key={country}
+                                onClick={() => {
+                                    if (isActive) {
+                                        onCountryChange(activeCountries.filter(c => c !== country));
+                                    } else {
+                                        onCountryChange([...activeCountries, country]);
+                                    }
+                                }}
+                                className={`px-2.5 py-1.5 rounded-lg border transition-all whitespace-nowrap text-[10px] uppercase font-black tracking-tight ${isActive
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-sm'
+                                    : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200'
+                                    }`}
+                            >
+                                {country}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>

@@ -11,6 +11,8 @@ import { logger } from './loggerService';
 import WorkflowEngine from './workflowEngine.v2';
 import { OfflineSyncService } from './offlineSyncService';
 import { AuditService } from './auditService';
+import { DataSyncService } from './dataSyncService';
+
 
 export class CandidateService {
 
@@ -36,7 +38,8 @@ export class CandidateService {
         filters?: {
             status?: string | 'ALL',
             stage?: WorkflowStage | 'ALL',
-            query?: string
+            query?: string,
+            countries?: string[]
         }
     ): Promise<{ candidates: Candidate[], count: number }> {
         let queryBuilder = supabase
@@ -54,7 +57,16 @@ export class CandidateService {
 
         if (filters?.query) {
             const searchTerm = `%${filters.query}%`;
-            queryBuilder = queryBuilder.or(`name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},nic.ilike.${searchTerm}`);
+            // Searching name, email, phone, nic, and candidate_code (which maps to regNo)
+            queryBuilder = queryBuilder.or(`name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},nic.ilike.${searchTerm},candidate_code.ilike.${searchTerm}`);
+        }
+
+        if (filters?.countries && filters.countries.length > 0) {
+            // Use 'OR' logic for countries: show candidates matching ANY of the selected countries
+            const orFilter = filters.countries
+                .map(country => `data->preferredCountries.cs.["${country}"]`)
+                .join(',');
+            queryBuilder = queryBuilder.or(orFilter);
         }
 
         const { data, error, count } = await queryBuilder
@@ -104,21 +116,26 @@ export class CandidateService {
             ...candidateData,
             id,
             candidateCode,
+            regNo: candidateData.regNo || candidateCode, // REG NO defaults to candidateCode if not provided
+            regDate: candidateData.regDate || new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
+
+        // Standardize data structure before saving
+        const syncedCandidate = DataSyncService.fullSync(fullCandidate as any);
 
         const row = {
             id,
             candidate_code: candidateCode,
-            name: candidateData.name,
-            email: candidateData.email || null,
-            phone: candidateData.phone,
-            stage: candidateData.stage || WorkflowStage.REGISTERED,
-            stage_status: candidateData.stageStatus || StageStatus.PENDING,
-            nic: candidateData.nic || null,
-            dob: candidateData.dob || null,
-            gender: candidateData.gender || null,
-            data: fullCandidate,
+            name: syncedCandidate.name,
+            email: syncedCandidate.email || null,
+            phone: syncedCandidate.phone,
+            stage: syncedCandidate.stage || WorkflowStage.REGISTERED,
+            stage_status: syncedCandidate.stageStatus || StageStatus.PENDING,
+            nic: syncedCandidate.nic || null,
+            dob: syncedCandidate.dob || null,
+            gender: syncedCandidate.gender || null,
+            data: syncedCandidate,
             updated_at: new Date().toISOString()
         };
 
@@ -167,7 +184,9 @@ export class CandidateService {
     }
 
     static async updateCandidate(candidate: Candidate): Promise<void> {
-        const row = this.mapCandidateToRow(candidate);
+        // Ensure data parity before update
+        const syncedCandidate = DataSyncService.fullSync(candidate);
+        const row = this.mapCandidateToRow(syncedCandidate);
 
         // OPTIMISTIC OFFLINE MODE
         if (!OfflineSyncService.isAppOnline()) {
@@ -241,18 +260,80 @@ export class CandidateService {
         // The 'data' column holds the complex nested structure
         const json = row.data || {};
 
-        return {
+        // Extract top-level flat fields with row-level overrides
+        const name = row.name || json.name || 'Unknown Candidate';
+        const email = row.email || json.email || '';
+        const phone = row.phone || json.phone || '';
+        const nic = row.nic || json.nic || '';
+        const dob = row.dob || json.dob || '';
+        const gender = row.gender || json.gender || '';
+
+        // Construct personalInfo with fallbacks from flat fields
+        const personalInfo = {
+            fullName: name,
+            firstName: json.firstName || '',
+            middleName: json.middleName || '',
+            nic,
+            dob,
+            gender,
+            address: json.address || '',
+            city: json.city || '',
+            district: json.district || '',
+            province: json.province || '',
+            divisionalSecretariat: json.divisionalSecretariat || '',
+            gsDivision: json.gsDivision || '',
+            drivingLicenseNo: json.drivingLicenseNo || '',
+            height: json.height,
+            weight: json.weight,
+            religion: json.religion || '',
+            maritalStatus: json.maritalStatus || 'Single',
+            spouseName: json.spouseName || '',
+            fatherName: json.fatherName || '',
+            motherName: json.motherName || '',
+            school: json.school || '',
+            ...(json.personalInfo || {}),
+        };
+
+        // Construct contactInfo with fallbacks from flat fields
+        const contactInfo = {
+            primaryPhone: phone,
+            whatsappPhone: json.whatsapp || '',
+            email,
+            additionalPhones: Array.isArray(json.additionalContactNumbers) ? json.additionalContactNumbers : [],
+            ...(json.contactInfo || {}),
+        };
+
+        // Construct professionalProfile with fallbacks from flat fields
+        const professionalProfile = {
+            jobRoles: Array.isArray(json.jobRoles) ? json.jobRoles : [],
+            experienceYears: json.experienceYears || 0,
+            skills: Array.isArray(json.skills) ? json.skills : [],
+            education: Array.isArray(json.education) ? json.education : [],
+            educationalQualifications: Array.isArray(json.educationalQualifications) ? json.educationalQualifications : [],
+            employmentHistory: Array.isArray(json.employmentHistory) ? json.employmentHistory : [],
+            school: json.school || '',
+            ...(json.professionalProfile || {}),
+        };
+
+        const candidate = {
             ...json,
             id: row.id,
             candidateCode: row.candidate_code || json.candidateCode || 'N/A',
-            name: row.name || json.name || 'Unknown Candidate',
-            email: row.email || json.email || '',
-            phone: row.phone || json.phone || '',
-            nic: row.nic || json.nic || '',
-            dob: row.dob || json.dob || '',
-            gender: row.gender || json.gender || '',
+            regNo: json.regNo || row.candidate_code || json.candidateCode || 'N/A',
+            regDate: json.regDate || row.created_at || new Date().toISOString(),
+            name,
+            email,
+            phone,
+            nic,
+            dob,
+            gender,
             stage: (row.stage || json.stage || WorkflowStage.REGISTERED) as WorkflowStage,
             stageStatus: (row.stage_status || json.stageStatus || StageStatus.PENDING) as StageStatus,
+
+            // Normalized nested objects (with flat fallbacks baked in)
+            personalInfo,
+            contactInfo,
+            professionalProfile,
 
             // Ensure nested objects exist
             skills: Array.isArray(json.skills) ? json.skills : [],
@@ -275,6 +356,9 @@ export class CandidateService {
                 ...(json.audit || {})
             }
         };
+
+        // FINAL SYNC PASS: Ensure any mismatches between row and json are resolved
+        return DataSyncService.fullSync(candidate);
     }
 
     private static mapCandidateToRow(candidate: Candidate): any {

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Candidate, CandidateDocument, DocumentStatus, DocumentCategory, DocumentLog, DocumentType as DocType } from '../types';
 import { NotificationService } from '../services/notificationService';
-import { UploadCloud, CheckCircle, AlertCircle, FileText, Clock, XCircle, Eye, Download, History, Lock, ShieldCheck, Maximize2 } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, FileText, Clock, XCircle, Eye, Download, History, Lock, ShieldCheck, Maximize2, Archive } from 'lucide-react';
+import JSZip from 'jszip';
 import DocumentPreviewer from './ui/DocumentPreviewer';
 import { DocumentService } from '../services/documentService';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +16,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   const [selectedDoc, setSelectedDoc] = useState<CandidateDocument | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'upload' | 'verify' | 'history'>('list');
   const [dragActive, setDragActive] = useState(false);
+  const [isUploadingZip, setIsUploadingZip] = useState(false);
 
   // Document Type to Category Mapping
   const docTypeToCategory: Record<DocType, DocumentCategory> = {
@@ -26,9 +28,38 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     [DocType.EDU_AL]: DocumentCategory.MANDATORY_REGISTRATION,
     [DocType.EDU_LEARNING]: DocumentCategory.MANDATORY_REGISTRATION,
     [DocType.EDU_PROFESSIONAL]: DocumentCategory.MANDATORY_REGISTRATION,
-    [DocType.MEDICAL_REPORT]: DocumentCategory.LATER_PROCESS,
-    [DocType.POLICE_CLEARANCE]: DocumentCategory.LATER_PROCESS,
+    // Medical & Security
+    [DocType.MEDICAL_REPORT]: DocumentCategory.MEDICAL_SECURITY,
+    [DocType.POLICE_CLEARANCE]: DocumentCategory.MEDICAL_SECURITY,
+    [DocType.VACCINATION_RECORDS]: DocumentCategory.MEDICAL_SECURITY,
+    // Additional certificates from paper form
+    [DocType.BIRTH_CERTIFICATE]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.EXPERIENCE_LETTERS]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.NVQ_TRADE_TEST]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.COURSE_CERTIFICATES]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.WORKING_PHOTO]: DocumentCategory.SELECTION_WP,
+    [DocType.SELF_INTRO_VIDEO_DOC]: DocumentCategory.SELECTION_WP,
+    [DocType.WORKING_VIDEO_DOC]: DocumentCategory.SELECTION_WP,
+    [DocType.FAMILY_BACKGROUND_REPORT]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.POLICE_REPORT_LOCAL]: DocumentCategory.MEDICAL_SECURITY,
+    [DocType.POLICE_REPORT_HQ]: DocumentCategory.MEDICAL_SECURITY,
+    [DocType.ADVANCE_PAYMENT_RECEIPT]: DocumentCategory.LATER_PROCESS,
+    // Selection & Work Permit
+    [DocType.OFFER_LETTER]: DocumentCategory.SELECTION_WP,
+    [DocType.SIGNED_OFFER_LETTER]: DocumentCategory.SELECTION_WP,
+    [DocType.APPLICATION_CV]: DocumentCategory.SELECTION_WP,
+    [DocType.IGI_RECORDS]: DocumentCategory.SELECTION_WP,
+    [DocType.WORK_PERMIT]: DocumentCategory.SELECTION_WP,
+    // Embassy & Visa
+    [DocType.D_FORM]: DocumentCategory.EMBASSY_VISA,
+    [DocType.EMBASSY_APPOINTMENT_LETTER]: DocumentCategory.EMBASSY_VISA,
+    [DocType.USD_PAYMENT_RECEIPT]: DocumentCategory.EMBASSY_VISA,
+    [DocType.TRAVEL_INSURANCE]: DocumentCategory.EMBASSY_VISA,
     [DocType.VISA_COPY]: DocumentCategory.LATER_PROCESS,
+    // SLBFE & Departure
+    [DocType.SLBFE_INSURANCE]: DocumentCategory.SLBFE_DEPARTURE,
+    [DocType.BUREAU_DOCUMENTS_SET]: DocumentCategory.SLBFE_DEPARTURE,
+    [DocType.FLIGHT_TICKET]: DocumentCategory.SLBFE_DEPARTURE,
     [DocType.AIR_TICKET]: DocumentCategory.LATER_PROCESS,
   };
 
@@ -49,10 +80,14 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     } as CandidateDocument;
   });
 
-  // Stats - use full list to count properly
-  const mandatoryDocs = fullDocumentList.filter(d => d.category === DocumentCategory.MANDATORY_REGISTRATION);
-  const completedMandatory = mandatoryDocs.filter(d => d.status === DocumentStatus.APPROVED).length;
-  const isWorkflowBlocked = completedMandatory < mandatoryDocs.length;
+  // Stats
+  const totalDocs = fullDocumentList.length;
+  const approvedDocs = fullDocumentList.filter(d => d.status === DocumentStatus.APPROVED).length;
+  const registrationDocs = fullDocumentList.filter(d => d.category === DocumentCategory.MANDATORY_REGISTRATION);
+  const completedRegistration = registrationDocs.filter(d => d.status === DocumentStatus.APPROVED).length;
+  const pendingDocs = fullDocumentList.filter(d => d.status === DocumentStatus.PENDING).length;
+  const issueDocs = fullDocumentList.filter(d => d.status === DocumentStatus.REJECTED || d.status === DocumentStatus.CORRECTION_REQUIRED).length;
+  const progressPercent = totalDocs > 0 ? Math.round((approvedDocs / totalDocs) * 100) : 0;
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -70,6 +105,149 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileUpload(doc.type, doc.category, e.dataTransfer.files[0]);
+    }
+  };
+
+  const getDocTypeFromFileName = (filename: string): DocType | null => {
+    const fn = filename.toLowerCase();
+
+    if (fn.includes('passport') && !fn.includes('photo')) return DocType.PASSPORT;
+    if (fn.includes('cv') || fn.includes('resume')) return DocType.CV;
+    if (fn.includes('photo') && fn.includes('passport')) return DocType.PASSPORT_PHOTOS;
+    if (fn.includes('photo')) return DocType.FULL_PHOTO;
+    if (fn.includes('o/l') || fn.includes('ol cert')) return DocType.EDU_OL;
+    if (fn.includes('a/l') || fn.includes('al cert')) return DocType.EDU_AL;
+    if (fn.includes('medical')) return DocType.MEDICAL_REPORT;
+    if (fn.includes('vaccin')) return DocType.VACCINATION_RECORDS;
+    if (fn.includes('police')) return fn.includes('local') ? DocType.POLICE_REPORT_LOCAL : DocType.POLICE_CLEARANCE;
+    if (fn.includes('visa')) return DocType.VISA_COPY;
+    if (fn.includes('ticket')) return fn.includes('air') ? DocType.AIR_TICKET : DocType.FLIGHT_TICKET;
+    if (fn.includes('offer')) return fn.includes('signed') ? DocType.SIGNED_OFFER_LETTER : DocType.OFFER_LETTER;
+    if (fn.includes('work permit') || fn.includes('wp')) return DocType.WORK_PERMIT;
+    if (fn.includes('birth')) return DocType.BIRTH_CERTIFICATE;
+    if (fn.includes('experience')) return DocType.EXPERIENCE_LETTERS;
+    if (fn.includes('nvq')) return DocType.NVQ_TRADE_TEST;
+    if (fn.includes('course')) return DocType.COURSE_CERTIFICATES;
+    if (fn.includes('family')) return DocType.FAMILY_BACKGROUND_REPORT;
+    if (fn.includes('advance')) return DocType.ADVANCE_PAYMENT_RECEIPT;
+    if (fn.includes('d-form') || fn.includes('d form')) return DocType.D_FORM;
+    if (fn.includes('insurance')) return fn.includes('travel') ? DocType.TRAVEL_INSURANCE : DocType.SLBFE_INSURANCE;
+
+    return null;
+  };
+
+  const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingZip(true);
+    NotificationService.addNotification({
+      type: 'INFO',
+      title: 'Extracting ZIP',
+      message: 'Reading contents of the ZIP file...'
+    });
+
+    try {
+      const zip = new JSZip();
+      const zipContent = await zip.loadAsync(file);
+
+      const filesToUpload: { file: File; type: DocType; category: DocumentCategory; existingDoc?: CandidateDocument }[] = [];
+
+      for (const [relativePath, zipEntry] of Object.entries(zipContent.files)) {
+        if (zipEntry.dir) continue;
+        const docType = getDocTypeFromFileName(zipEntry.name);
+        if (!docType) continue;
+
+        const category = docTypeToCategory[docType];
+        const blob = await zipEntry.async("blob");
+
+        const ext = zipEntry.name.split('.').pop() || 'tmp';
+        const f = new File([blob], zipEntry.name, { type: blob.type || `application/${ext}` });
+
+        filesToUpload.push({
+          file: f,
+          type: docType,
+          category,
+          existingDoc: candidate.documents?.find(d => d.type === docType)
+        });
+      }
+
+      if (filesToUpload.length === 0) {
+        NotificationService.addNotification({
+          type: 'WARNING',
+          title: 'No Matching Files',
+          message: 'No files in the ZIP matched expected document types.'
+        });
+        setIsUploadingZip(false);
+        return;
+      }
+
+      NotificationService.addNotification({
+        type: 'INFO',
+        title: 'Uploading Documents',
+        message: `Starting upload of ${filesToUpload.length} recognized documents...`
+      });
+
+      const newAuthDocsList: CandidateDocument[] = [...(candidate.documents || [])];
+      let uploadCount = 0;
+
+      for (const item of filesToUpload) {
+        const { path, url, error } = await DocumentService.uploadDocument(item.file, candidate.id, item.type);
+        if (error) continue;
+
+        const newLog: DocumentLog = {
+          id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          action: 'UPLOAD',
+          user: user?.name || 'System Admin',
+          userId: user?.id,
+          timestamp: new Date().toISOString(),
+          details: `Bulk uploaded from ZIP v${(item.existingDoc?.version || 0) + 1} (${(item.file.size / 1024 / 1024).toFixed(2)} MB)`
+        };
+
+        const updatedDoc: CandidateDocument = {
+          id: item.existingDoc?.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          type: item.type,
+          category: item.category,
+          status: DocumentStatus.PENDING,
+          url, // Use the persistent public URL
+          storagePath: path, // Store the storage path for future deletion
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: user?.name || 'Internal Staff',
+          uploadedById: user?.id,
+          fileSize: `${(item.file.size / 1024 / 1024).toFixed(2)} MB`,
+          fileType: item.file.type,
+          version: (item.existingDoc?.version || 0) + 1,
+          logs: [newLog, ...(item.existingDoc?.logs || [])],
+          rejectionReason: undefined
+        };
+
+        const index = newAuthDocsList.findIndex(d => d.type === item.type);
+        if (index !== -1) {
+          newAuthDocsList[index] = updatedDoc;
+        } else {
+          newAuthDocsList.push(updatedDoc);
+        }
+        uploadCount++;
+      }
+
+      // Trigger parent update
+      onUpdate(newAuthDocsList);
+
+      NotificationService.addNotification({
+        type: 'SUCCESS',
+        title: 'Bulk Upload Complete',
+        message: `Successfully uploaded ${uploadCount} documents from ZIP.`
+      });
+
+    } catch (err) {
+      console.error('ZIP processing error', err);
+      NotificationService.addNotification({
+        type: 'WARNING',
+        title: 'ZIP File Error',
+        message: 'Failed to extract or read the ZIP file.'
+      });
+    } finally {
+      setIsUploadingZip(false);
     }
   };
 
@@ -209,7 +387,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
                 id="file-upload"
                 className="hidden"
                 onChange={(e) => e.target.files && e.target.files[0] && handleFileUpload(selectedDoc.type, selectedDoc.category, e.target.files[0])}
-                accept=".pdf,.jpg,.png,.jpeg"
+                accept=".pdf,.jpg,.png,.jpeg,.zip,application/zip,application/x-zip-compressed"
               />
               <label htmlFor="file-upload" className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 font-medium">
                 Browse Files
@@ -253,40 +431,88 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <ShieldCheck className="text-blue-600" /> Document Verification Module
-          </h3>
-          <p className="text-sm text-slate-500">Secure storage • Audit Trail Enabled • Role-Based Access</p>
-        </div>
-
-        {isWorkflowBlocked && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-medium">
-            <Lock size={16} /> Workflow Blocked: Missing Mandatory Docs
+      <div className="p-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50/30">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <ShieldCheck className="text-blue-600" /> Document Verification
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">Secure storage • Audit Trail • Role-Based Access</p>
           </div>
-        )}
+          <div className="flex items-center gap-4">
+            <div>
+              <input
+                type="file"
+                id="bulk-zip-upload"
+                className="hidden"
+                accept=".zip,application/zip,application/x-zip-compressed"
+                onChange={handleZipUpload}
+                disabled={isUploadingZip}
+              />
+              <label
+                htmlFor="bulk-zip-upload"
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-premium cursor-pointer ${isUploadingZip
+                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm'
+                  }`}
+              >
+                {isUploadingZip ? (
+                  <Clock size={14} className="animate-spin text-blue-500" />
+                ) : (
+                  <Archive size={14} className="text-blue-600" />
+                )}
+                {isUploadingZip ? 'Extracting ZIP...' : 'Bulk ZIP Upload'}
+              </label>
+            </div>
+
+            <div className="h-8 w-px bg-slate-200 hidden md:block" />
+
+            <div className="text-right">
+              <p className="text-xs text-slate-500 font-medium">Overall Progress</p>
+              <p className="text-lg font-bold text-slate-800">{approvedDocs}<span className="text-slate-400 font-normal">/{totalDocs}</span></p>
+            </div>
+            <div className="w-24 h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${progressPercent >= 80 ? 'bg-green-500' :
+                  progressPercent >= 40 ? 'bg-blue-500' :
+                    'bg-amber-500'
+                  }`}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${progressPercent >= 80 ? 'bg-green-50 text-green-700' :
+              progressPercent >= 40 ? 'bg-blue-50 text-blue-700' :
+                'bg-amber-50 text-amber-700'
+              }`}>{progressPercent}%</span>
+          </div>
+        </div>
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-200">
-        <div className="p-4 text-center">
-          <p className="text-xs text-slate-400 uppercase font-semibold">Mandatory Docs</p>
-          <p className="text-xl font-bold text-slate-800">{completedMandatory} / {mandatoryDocs.length}</p>
+      <div className="grid grid-cols-4 divide-x divide-slate-100 border-b border-slate-200">
+        <div className="p-3.5 text-center">
+          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Registration</p>
+          <p className={`text-lg font-bold ${completedRegistration === registrationDocs.length ? 'text-green-600' : 'text-slate-800'}`}>
+            {completedRegistration}<span className="text-slate-400 font-normal text-sm">/{registrationDocs.length}</span>
+          </p>
         </div>
-        <div className="p-4 text-center">
-          <p className="text-xs text-slate-400 uppercase font-semibold">Pending Review</p>
-          <p className="text-xl font-bold text-yellow-600">{candidate.documents?.filter(d => d.status === DocumentStatus.PENDING).length || 0}</p>
+        <div className="p-3.5 text-center">
+          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Approved</p>
+          <p className="text-lg font-bold text-green-600">{approvedDocs}</p>
         </div>
-        <div className="p-4 text-center">
-          <p className="text-xs text-slate-400 uppercase font-semibold">Rejected / Fix</p>
-          <p className="text-xl font-bold text-red-600">{candidate.documents?.filter(d => d.status === DocumentStatus.REJECTED || d.status === DocumentStatus.CORRECTION_REQUIRED).length || 0}</p>
+        <div className="p-3.5 text-center">
+          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pending</p>
+          <p className={`text-lg font-bold ${pendingDocs > 0 ? 'text-yellow-600' : 'text-slate-300'}`}>{pendingDocs}</p>
+        </div>
+        <div className="p-3.5 text-center">
+          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Issues</p>
+          <p className={`text-lg font-bold ${issueDocs > 0 ? 'text-red-600' : 'text-slate-300'}`}>{issueDocs}</p>
         </div>
       </div>
 
       {/* Document List */}
       <div className="p-6">
-        {[DocumentCategory.MANDATORY_REGISTRATION, DocumentCategory.LATER_PROCESS].map((category) => (
+        {[DocumentCategory.MANDATORY_REGISTRATION, DocumentCategory.MEDICAL_SECURITY, DocumentCategory.SELECTION_WP, DocumentCategory.EMBASSY_VISA, DocumentCategory.SLBFE_DEPARTURE, DocumentCategory.LATER_PROCESS].map((category) => (
           <div key={category} className="mb-8 last:mb-0">
             <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
               {category}

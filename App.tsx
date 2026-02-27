@@ -79,6 +79,7 @@ const PageLoader = () => {
 };
 
 import MobileNav from './components/MobileNav';
+import GlobalSearch from './components/GlobalSearch';
 
 const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
@@ -95,6 +96,7 @@ const App: React.FC = () => {
           <CandidateProvider>
             <ToastProvider>
               <HashRouter>
+                <GlobalSearch />
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route

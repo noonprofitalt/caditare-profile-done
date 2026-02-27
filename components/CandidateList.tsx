@@ -29,6 +29,7 @@ const CandidateList: React.FC = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [activeStatus, setActiveStatus] = useState<ProfileCompletionStatus | 'ALL'>('ALL');
   const [activeStage, setActiveStage] = useState<WorkflowStage | 'ALL'>('ALL');
+  const [activeCountries, setActiveCountries] = useState<string[]>([]);
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [isIntegrityScanActive, setIsIntegrityScanActive] = useState(false);
   const [listHeight, setListHeight] = useState(600);
@@ -54,6 +55,11 @@ const CandidateList: React.FC = () => {
         setActiveStage(stage);
       }
     }
+
+    const countriesParam = searchParams.get('countries');
+    if (countriesParam) {
+      setActiveCountries(countriesParam.split(','));
+    }
   }, [searchParams]);
 
   // Load Initial Data or Filter Change
@@ -68,7 +74,8 @@ const CandidateList: React.FC = () => {
         {
           status: activeStatus,
           stage: activeStage,
-          query: debouncedSearchQuery
+          query: debouncedSearchQuery,
+          countries: activeCountries
         }
       );
 
@@ -80,7 +87,7 @@ const CandidateList: React.FC = () => {
       setIsLoading(false);
       setIsFetchingMore(false);
     }
-  }, [activeStatus, activeStage, debouncedSearchQuery]);
+  }, [activeStatus, activeStage, debouncedSearchQuery, activeCountries]);
 
   useEffect(() => {
     setPage(0);
@@ -134,29 +141,36 @@ const CandidateList: React.FC = () => {
 
   const handleStatusChange = (status: ProfileCompletionStatus | 'ALL') => {
     setActiveStatus(status);
-    updateURL(status, activeStage);
+    updateURL(status, activeStage, activeCountries);
   };
 
   const handleStageChange = (stage: WorkflowStage | 'ALL') => {
     setActiveStage(stage);
-    updateURL(activeStatus, stage);
+    updateURL(activeStatus, stage, activeCountries);
   };
 
-  const updateURL = (status: ProfileCompletionStatus | 'ALL', stage: WorkflowStage | 'ALL') => {
+  const handleCountryChange = (countries: string[]) => {
+    setActiveCountries(countries);
+    updateURL(activeStatus, activeStage, countries);
+  };
+
+  const updateURL = (status: ProfileCompletionStatus | 'ALL', stage: WorkflowStage | 'ALL', countries: string[]) => {
     const params = new URLSearchParams();
     if (status !== 'ALL') params.set('status', status.toLowerCase());
     if (stage !== 'ALL') params.set('stage', stage.toLowerCase());
+    if (countries.length > 0) params.set('countries', countries.join(','));
     navigate(`?${params.toString()}`, { replace: true });
   };
 
   const handleClearFilters = () => {
     setActiveStatus('ALL');
     setActiveStage('ALL');
+    setActiveCountries([]);
     setSearchQuery('');
     navigate('', { replace: true });
   };
 
-  const hasActiveFilters = activeStatus !== 'ALL' || activeStage !== 'ALL' || searchQuery !== '';
+  const hasActiveFilters = activeStatus !== 'ALL' || activeStage !== 'ALL' || searchQuery !== '' || activeCountries.length > 0;
 
   const handleSelectCandidate = (id: string) => {
     setSelectedCandidateIds(prev =>
@@ -232,15 +246,23 @@ const CandidateList: React.FC = () => {
                 }`} />
             </div>
             <div className="truncate flex-1">
-              <Link to={`/candidates/${candidate.id}`} className="font-black text-slate-900 hover:text-blue-600 truncate block text-sm uppercase tracking-tight">
-                {candidate.name}
+              <Link to={`/candidates/${candidate.id}`} className="font-black text-slate-900 hover:text-blue-600 truncate block text-lg uppercase tracking-tight">
+                {candidate.regNo || candidate.candidateCode || 'NO REG'}
               </Link>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[9px] bg-slate-100 text-slate-600 font-black px-1.5 py-0.5 rounded uppercase tracking-widest">
-                  {candidate.nic || 'NO NIC'}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase truncate">
-                  {candidate.role || 'Personnel'}
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                {(candidate.preferredCountries && candidate.preferredCountries.length > 0) ? (
+                  candidate.preferredCountries.map((country: string) => (
+                    <span key={country} className="text-[9px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-200">
+                      {country}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-[9px] bg-slate-50 text-slate-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-100">
+                    No Destination
+                  </span>
+                )}
+                <span className="text-[10px] text-slate-400 font-bold uppercase truncate ml-1">
+                  • {candidate.role || 'Personnel'}
                 </span>
               </div>
             </div>
@@ -322,6 +344,8 @@ const CandidateList: React.FC = () => {
         onStatusChange={handleStatusChange}
         activeStage={activeStage}
         onStageChange={handleStageChange}
+        activeCountries={activeCountries}
+        onCountryChange={handleCountryChange}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         candidateCounts={candidateCounts}

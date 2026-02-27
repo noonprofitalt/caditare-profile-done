@@ -72,6 +72,8 @@ import TimelineView from './TimelineView';
 import { ComplianceService } from '../services/complianceService';
 import { ProfileCompletionService } from '../services/profileCompletionService';
 import WorkflowEngine, { WORKFLOW_STAGES } from '../services/workflowEngine';
+import { DataSyncService } from '../services/dataSyncService';
+
 
 
 const CandidateDetail: React.FC = () => {
@@ -156,80 +158,59 @@ const CandidateDetail: React.FC = () => {
   const startEditing = () => {
     if (!candidate) return;
 
-    // Ensure personalInfo has all components populated from top-level fallbacks if missing
-    const initialPersonalInfo = {
-      ...(candidate.personalInfo || {}),
-      firstName: candidate.personalInfo?.firstName || candidate.firstName || '',
-      middleName: candidate.personalInfo?.middleName || candidate.middleName || '',
-      fullName: candidate.personalInfo?.fullName || candidate.name || ''
-    };
+    // Ensure data is synchronized before editing
+    const syncedCandidate = DataSyncService.fullSync(candidate);
 
-    setEditedProfile({
-      ...candidate,
-      personalInfo: initialPersonalInfo
-    });
+    setEditedProfile(syncedCandidate);
     setIsEditingProfile(true);
   };
-
-  const saveProfile = () => {
+  const saveProfile = async () => {
     if (!candidate || !editedProfile) return;
 
-    // Construct the full name from components to ensure it stays in sync
-    const personal = editedProfile.personalInfo || candidate.personalInfo || {};
-    const firstName = (personal as any).firstName || '';
-    const middleName = (personal as any).middleName || '';
-    const existingFullName = (personal as any).fullName;
+    try {
+      // Use DataSyncService to ensure bidirectional parity
+      const updatedCandidate = DataSyncService.fullSync({
+        ...candidate,
+        ...editedProfile,
+        // Special handling for slbfeData specific to this component's logic
+        slbfeData: {
+          biometricStatus: 'Pending',
+          medicalStatus: 'Pending',
+          ...(candidate.slbfeData || {}),
+          ...(editedProfile.slbfeData || {})
+        } as any,
+        // Ensure complex arrays are preserved if missing in editedProfile
+        advancePayments: (editedProfile as any).advancePayments || candidate.advancePayments || [],
+        workflowMilestones: {
+          ...(candidate.workflowMilestones || {}),
+          ...((editedProfile as any).workflowMilestones || {}),
+        },
+        remarkLog: (editedProfile as any).remarkLog || (candidate as any).remarkLog || [],
+      });
 
-    const fullName = existingFullName || `${firstName} ${middleName ? middleName + ' ' : ''}`.trim();
+      // Recalculate completion
+      const finalCandidate = ProfileCompletionService.updateCompletionData(updatedCandidate);
 
-    const updatedCandidate: Candidate = {
-      ...candidate,
-      ...editedProfile,
-      personalInfo: {
-        ...(candidate.personalInfo || {}),
-        ...(editedProfile.personalInfo || {}),
-        fullName: (fullName || '') as string,
-        children: editedProfile.personalInfo?.children || candidate.personalInfo?.children || []
-      },
-      contactInfo: {
-        ...(candidate.contactInfo || {}),
-        ...(editedProfile.contactInfo || {})
-      },
-      professionalProfile: {
-        ...(candidate.professionalProfile || {}),
-        ...(editedProfile.professionalProfile || {})
-      },
-      medicalData: {
-        ...(candidate.medicalData || {}),
-        ...(editedProfile.medicalData || {})
-      },
-      slbfeData: {
-        biometricStatus: 'Pending',
-        medicalStatus: 'Pending',
-        ...(candidate.slbfeData || {}),
-        ...(editedProfile.slbfeData || {})
-      } as any
-    };
+      await CandidateService.updateCandidate(finalCandidate);
 
-    // Recalculate completion
-    const finalCandidate = ProfileCompletionService.updateCompletionData(updatedCandidate);
+      updateCandidateInState(finalCandidate);
+      setCandidate(finalCandidate);
+      setIsEditingProfile(false);
 
-    CandidateService.updateCandidate(finalCandidate);
-    CandidateService.addTimelineEvent(candidate.id, {
-      type: 'SYSTEM',
-      title: 'Profile Updated',
-      description: 'Candidate profile information was updated',
-      actor: user?.name || 'Internal Staff',
-      userId: user?.id
-    });
-
-    updateCandidateInState(finalCandidate);
-    setCandidate(finalCandidate);
-    setIsEditingProfile(false);
+      await CandidateService.addTimelineEvent(candidate.id, {
+        type: 'SYSTEM',
+        title: 'Profile Updated',
+        description: 'Candidate profile information was updated',
+        actor: user?.name || 'Internal Staff',
+        userId: user?.id
+      });
+    } catch (e) {
+      console.error('Error saving profile:', e);
+    }
   };
 
   // Handle compliance update
-  const handleComplianceUpdate = (data: {
+  const handleComplianceUpdate = async (data: {
     passport: Partial<PassportData>;
     pcc: Partial<PCCData>
   }) => {
@@ -260,39 +241,52 @@ const CandidateDetail: React.FC = () => {
     // Recalculate profile completion
     updatedCandidate = ProfileCompletionService.updateCompletionData(updatedCandidate);
 
-    CandidateService.updateCandidate(updatedCandidate);
-    CandidateService.addTimelineEvent(candidate.id, {
-      type: 'SYSTEM',
-      title: 'Compliance Data Updated',
-      description: 'Passport and PCC information has been updated',
-      actor: user?.name || 'Internal Staff',
-      userId: user?.id
-    });
-
     updateCandidateInState(updatedCandidate);
     setCandidate(updatedCandidate);
+
+    try {
+      await CandidateService.updateCandidate(updatedCandidate);
+      await CandidateService.addTimelineEvent(candidate.id, {
+        type: 'SYSTEM',
+        title: 'Compliance Data Updated',
+        description: 'Passport and PCC information has been updated',
+        actor: user?.name || 'Internal Staff',
+        userId: user?.id
+      });
+    } catch (err) {
+      console.error('Failed to update compliance data', err);
+    }
   };
 
   // Handle document update
-  const handleDocumentUpdate = (updatedDocs: CandidateDocument[]) => {
+  const handleDocumentUpdate = async (updatedDocs: CandidateDocument[]) => {
     if (!candidate) return;
 
-    const updatedCandidate: Candidate = {
-      ...candidate,
-      documents: updatedDocs
-    };
-
-    CandidateService.updateCandidate(updatedCandidate);
-    CandidateService.addTimelineEvent(candidate.id, {
+    const newEvent: TimelineEvent = {
+      id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
       type: 'DOCUMENT',
       title: 'Documents Updated',
       description: 'Candidate documents have been modified',
       actor: user?.name || 'Internal Staff',
-      userId: user?.id
-    });
+      userId: user?.id,
+      stage: candidate.stage
+    };
+
+    const updatedCandidate: Candidate = {
+      ...candidate,
+      documents: updatedDocs,
+      timelineEvents: [newEvent, ...(candidate.timelineEvents || [])]
+    };
 
     updateCandidateInState(updatedCandidate);
     setCandidate(updatedCandidate);
+
+    try {
+      await CandidateService.updateCandidate(updatedCandidate);
+    } catch (err) {
+      console.error('Failed to update documents', err);
+    }
   };
 
   // Strict Workflow Actions
@@ -529,232 +523,396 @@ const CandidateDetail: React.FC = () => {
                   )}
                 </div>
 
-                {/* SECTION 1.1: PERSONAL DETAILS (NAME) */}
-                <section>
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-blue-500 rounded-full"></span>
-                    1.1 Personal Details (Name)
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">First Name</label>
-                      {isEditingProfile ? (
-                        <input
-                          type="text"
-                          value={editedProfile.personalInfo?.firstName || ''}
-                          onChange={(e) => setEditedProfile({
-                            ...editedProfile,
-                            personalInfo: { ...editedProfile.personalInfo!, firstName: e.target.value }
-                          })}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      ) : (
-                        <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate?.personalInfo?.firstName || candidate?.firstName || '-'}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Middle Name</label>
-                      {isEditingProfile ? (
-                        <input
-                          type="text"
-                          value={editedProfile.personalInfo?.middleName || ''}
-                          onChange={(e) => setEditedProfile({
-                            ...editedProfile,
-                            personalInfo: { ...editedProfile.personalInfo!, middleName: e.target.value }
-                          })}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      ) : (
-                        <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate?.personalInfo?.middleName || candidate?.middleName || '-'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="col-span-1 md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
-                      {isEditingProfile ? (
-                        <input
-                          type="text"
-                          value={editedProfile.personalInfo?.fullName || ''}
-                          onChange={(e) => setEditedProfile({
-                            ...editedProfile,
-                            personalInfo: { ...editedProfile.personalInfo!, fullName: e.target.value }
-                          })}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50/30"
-                          placeholder="Full Name as per Passport"
-                        />
-                      ) : (
-                        <div className="p-2.5 bg-blue-50/50 rounded-lg text-sm font-bold text-slate-900 border border-blue-100">
-                          {candidate?.personalInfo?.fullName || candidate?.name || '-'}
-                        </div>
-                      )}
-                    </div>
+                {/* === REG NO BADGE — PRIMARY IDENTIFIER (Red ink on paper forms) === */}
+                <div className="mb-6 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1 rounded-md shadow-sm">REG NO</div>
+                    {isEditingProfile ? (
+                      <input
+                        type="text"
+                        value={editedProfile.regNo || candidate.regNo || ''}
+                        onChange={(e) => setEditedProfile({ ...editedProfile, regNo: e.target.value })}
+                        placeholder="e.g. SPA 19-260225"
+                        className="text-2xl font-black text-red-700 bg-white border-2 border-red-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-red-500 outline-none tracking-wide"
+                        style={{ minWidth: '220px' }}
+                      />
+                    ) : (
+                      <span className="text-2xl font-black text-red-700 tracking-wide">{candidate.regNo || candidate.candidateCode || '-'}</span>
+                    )}
                   </div>
-                </section>
+                  <div className="flex items-center gap-6 text-xs text-slate-500">
+                    <div>
+                      <span className="font-bold uppercase">Reg Date: </span>
+                      {isEditingProfile ? (
+                        <input
+                          type="date"
+                          value={editedProfile.regDate ? editedProfile.regDate.split('T')[0] : candidate.regDate ? candidate.regDate.split('T')[0] : ''}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, regDate: e.target.value })}
+                          className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1"
+                        />
+                      ) : (
+                        <span className="font-medium text-slate-700 ml-1">{candidate.regDate ? new Date(candidate.regDate).toLocaleDateString() : '-'}</span>
+                      )}
+                    </div>
+                    {isEditingProfile ? (
+                      <div className="flex flex-wrap gap-3">
+                        <div>
+                          <span className="font-bold uppercase">Agent: </span>
+                          <input type="text" value={editedProfile.foreignAgent || candidate.foreignAgent || ''} onChange={(e) => setEditedProfile({ ...editedProfile, foreignAgent: e.target.value })} placeholder="Foreign Agent" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
+                        </div>
+                        <div>
+                          <span className="font-bold uppercase">Coordinator: </span>
+                          <input type="text" value={editedProfile.coordinatorName || candidate.coordinatorName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, coordinatorName: e.target.value })} placeholder="Name" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
+                        </div>
+                        <div>
+                          <span className="font-bold uppercase">Company: </span>
+                          <input type="text" value={(editedProfile as any).companyName || (candidate as any).companyName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, companyName: e.target.value } as any)} placeholder="Company" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
+                        </div>
+                        <div>
+                          <span className="font-bold uppercase">D/H Officer: </span>
+                          <input type="text" value={editedProfile.dhOfficer || candidate.dhOfficer || ''} onChange={(e) => setEditedProfile({ ...editedProfile, dhOfficer: e.target.value })} placeholder="Officer" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {candidate.foreignAgent && <div><span className="font-bold uppercase">Agent: </span><span className="font-medium text-slate-700">{candidate.foreignAgent}</span></div>}
+                        {candidate.coordinatorName && <div><span className="font-bold uppercase">Coordinator: </span><span className="font-medium text-slate-700">{candidate.coordinatorName}</span></div>}
+                        {(candidate as any).companyName && <div><span className="font-bold uppercase">Company: </span><span className="font-medium text-slate-700">{(candidate as any).companyName}</span></div>}
+                        {candidate.dhOfficer && <div><span className="font-bold uppercase">D/H Officer: </span><span className="font-medium text-slate-700">{candidate.dhOfficer}</span></div>}
+                      </>
+                    )}
+                  </div>
+                </div>
 
-                {/* SECTION 1.2: PASSPORT DETAILS */}
-                <section className="mt-8 pt-8 border-t border-slate-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                      <span className="w-6 h-1 bg-purple-500 rounded-full"></span>
-                      1.2 Passport Details
-                    </h3>
-                  </div>
+                {/* SECTION 1.1: PASSPORT DATA (Sri Lankan Passport Bio Page Structure) */}
+                <section>
+                  <h3 className="text-base font-bold text-slate-800 tracking-tight mb-5 flex items-center gap-2">
+                    <ShieldCheck size={18} className="text-blue-500" />
+                    Passport Data
+                  </h3>
 
                   {isEditingProfile ? (
-                    <div className="space-y-4">
-                      {(editedProfile.passports || []).map((passport, idx) => (
-                        <div key={idx} className="bg-slate-50 p-4 rounded-lg border border-slate-200 relative group">
-                          {idx > 0 && (
-                            <button
-                              onClick={() => {
-                                const passports = [...(editedProfile.passports || [])];
-                                const updated = passports.filter((_, i) => i !== idx);
-                                setEditedProfile({ ...editedProfile, passports: updated });
-                              }}
-                              className="absolute top-2 right-2 text-slate-400 hover:text-red-500 p-1"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          )}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Passport Number</label>
-                              <input
-                                type="text"
-                                value={passport.passportNumber}
-                                onChange={(e) => {
-                                  const passports = [...(editedProfile.passports || [])];
-                                  passports[idx] = { ...passport, passportNumber: e.target.value };
-                                  setEditedProfile({ ...editedProfile, passports });
-                                }}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                placeholder="e.g. N1234567"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Country</label>
-                              <input
-                                type="text"
-                                value={passport.country}
-                                onChange={(e) => {
-                                  const passports = [...(editedProfile.passports || [])];
-                                  passports[idx] = { ...passport, country: e.target.value };
-                                  setEditedProfile({ ...editedProfile, passports });
-                                }}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Issued Date</label>
-                              <input
-                                type="date"
-                                value={passport.issuedDate ? new Date(passport.issuedDate).toISOString().split('T')[0] : ''}
-                                onChange={(e) => {
-                                  const passports = [...(editedProfile.passports || [])];
-                                  passports[idx] = { ...passport, issuedDate: e.target.value };
-                                  setEditedProfile({ ...editedProfile, passports });
-                                }}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Expiry Date</label>
-                              <input
-                                type="date"
-                                value={passport.expiryDate ? new Date(passport.expiryDate).toISOString().split('T')[0] : ''}
-                                onChange={(e) => {
-                                  const passports = [...(editedProfile.passports || [])];
-                                  const expiryDate = e.target.value;
-                                  // Auto-evaluate status
-                                  const evaluation = ComplianceService.evaluatePassport(
-                                    expiryDate,
-                                    passport.passportNumber,
-                                    passport.country,
-                                    passport.issuedDate
-                                  );
-                                  passports[idx] = {
-                                    ...passport,
-                                    expiryDate,
-                                    status: evaluation.status,
-                                    validityDays: evaluation.validityDays
-                                  };
-                                  setEditedProfile({ ...editedProfile, passports });
-                                }}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                              />
-                            </div>
-                          </div>
+                    <div className="bg-gradient-to-br from-amber-50/40 to-slate-50 p-5 rounded-xl border border-amber-200/80 space-y-4">
+                      {/* Row 1: Type, Country Code, Passport No */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Type</label>
+                          <input type="text" value="PB" disabled className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono" />
                         </div>
-                      ))}
-                      <button
-                        onClick={() => {
-                          const passports = [...(editedProfile.passports || [])];
-                          passports.push({
-                            passportNumber: '',
-                            country: 'Sri Lanka',
-                            issuedDate: '',
-                            expiryDate: '',
-                            status: PassportStatus.VALID,
-                            validityDays: 0
-                          });
-                          setEditedProfile({ ...editedProfile, passports });
-                        }}
-                        className="w-full py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 font-bold flex items-center justify-center gap-2 border border-purple-200 border-dashed text-sm"
-                      >
-                        <Plus size={16} /> Add Another Passport
-                      </button>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Country Code</label>
+                          <input type="text" value="LKA" disabled className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Passport No.</label>
+                          <input
+                            type="text"
+                            value={(editedProfile.passports || [])[0]?.passportNumber || ''}
+                            onChange={(e) => {
+                              const passports = [...(editedProfile.passports || [{ passportNumber: '', country: 'Sri Lanka', issuedDate: '', expiryDate: '', status: PassportStatus.VALID, validityDays: 0 }])];
+                              passports[0] = { ...passports[0], passportNumber: e.target.value.toUpperCase() };
+                              setEditedProfile({ ...editedProfile, passports });
+                            }}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-mono font-bold"
+                            placeholder="e.g. N11296133"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 2: Surname */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Surname</label>
+                        <input
+                          type="text"
+                          value={editedProfile.personalInfo?.surname || editedProfile.personalInfo?.firstName || ''}
+                          onChange={(e) => setEditedProfile({
+                            ...editedProfile,
+                            personalInfo: { ...editedProfile.personalInfo!, surname: e.target.value.toUpperCase(), firstName: e.target.value.toUpperCase() }
+                          })}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-bold uppercase"
+                          placeholder="e.g. BOGAHAWATHTHA"
+                        />
+                      </div>
+
+                      {/* Row 3: Other Names */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Other Names</label>
+                        <input
+                          type="text"
+                          value={editedProfile.personalInfo?.otherNames || editedProfile.personalInfo?.middleName || ''}
+                          onChange={(e) => setEditedProfile({
+                            ...editedProfile,
+                            personalInfo: { ...editedProfile.personalInfo!, otherNames: e.target.value.toUpperCase(), middleName: e.target.value.toUpperCase(), fullName: e.target.value.toUpperCase() }
+                          })}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-bold uppercase"
+                          placeholder="e.g. LAHIRU SHIWANTHA SRI"
+                        />
+                      </div>
+
+                      {/* Row 4: National Status + Profession */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">National Status</label>
+                          <input type="text" value="SRI LANKAN" disabled className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-bold" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Profession</label>
+                          <input
+                            type="text"
+                            value={(editedProfile as any).passportProfession || ''}
+                            onChange={(e) => setEditedProfile({ ...editedProfile, passportProfession: e.target.value } as any)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            placeholder="As per passport"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 5: DOB + ID No. */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Date of Birth</label>
+                          <input
+                            type="date"
+                            value={editedProfile.personalInfo?.dob || ''}
+                            onChange={(e) => setEditedProfile({
+                              ...editedProfile,
+                              personalInfo: { ...editedProfile.personalInfo!, dob: e.target.value }
+                            })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">ID No. (NIC)</label>
+                          <input
+                            type="text"
+                            value={editedProfile.personalInfo?.nic || ''}
+                            onChange={(e) => setEditedProfile({
+                              ...editedProfile,
+                              personalInfo: { ...editedProfile.personalInfo!, nic: e.target.value }
+                            })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 font-mono"
+                            placeholder="e.g. 840631346V"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 6: Sex + Place of Birth */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Sex</label>
+                          <select
+                            value={editedProfile.personalInfo?.gender || ''}
+                            onChange={(e) => setEditedProfile({
+                              ...editedProfile,
+                              personalInfo: { ...editedProfile.personalInfo!, gender: e.target.value }
+                            })}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">Select</option>
+                            <option value="M">M</option>
+                            <option value="F">F</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Place of Birth</label>
+                          <input
+                            type="text"
+                            value={(editedProfile as any).placeOfBirth || ''}
+                            onChange={(e) => setEditedProfile({ ...editedProfile, placeOfBirth: e.target.value.toUpperCase() } as any)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 uppercase"
+                            placeholder="e.g. POLONNARUWA"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 7: Date of Issue + Date of Expiry */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Date of Issue</label>
+                          <input
+                            type="date"
+                            value={(editedProfile.passports || [])[0]?.issuedDate ? new Date((editedProfile.passports || [])[0].issuedDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => {
+                              const passports = [...(editedProfile.passports || [{ passportNumber: '', country: 'Sri Lanka', issuedDate: '', expiryDate: '', status: PassportStatus.VALID, validityDays: 0 }])];
+                              passports[0] = { ...passports[0], issuedDate: e.target.value };
+                              setEditedProfile({ ...editedProfile, passports });
+                            }}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Date of Expiry</label>
+                          <input
+                            type="date"
+                            value={(editedProfile.passports || [])[0]?.expiryDate ? new Date((editedProfile.passports || [])[0].expiryDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => {
+                              const passports = [...(editedProfile.passports || [{ passportNumber: '', country: 'Sri Lanka', issuedDate: '', expiryDate: '', status: PassportStatus.VALID, validityDays: 0 }])];
+                              const evaluation = ComplianceService.evaluatePassport(e.target.value, passports[0].passportNumber, passports[0].country, passports[0].issuedDate);
+                              passports[0] = { ...passports[0], expiryDate: e.target.value, status: evaluation.status, validityDays: evaluation.validityDays };
+                              setEditedProfile({ ...editedProfile, passports });
+                            }}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 8: Authority */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Authority</label>
+                        <input type="text" value="AUTHORITY COLOMBO" disabled className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500" />
+                      </div>
+
+                      {/* Row 9: Passport Remark */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Passport Remark</label>
+                        <textarea
+                          value={(editedProfile as any).passportRemark || ''}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, passportRemark: e.target.value } as any)}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 resize-none"
+                          rows={2}
+                          placeholder="e.g. unmarried, no foreign job experience, govt register no..."
+                        />
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {(candidate.passports && candidate.passports.length > 0) ? (
                         candidate.passports.map((passport, idx) => (
-                          <div key={idx} className="bg-white p-4 rounded-lg border border-slate-200">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Passport Number</label>
-                                <div className="text-sm font-bold text-slate-800">{passport.passportNumber || '-'}</div>
+                          <div key={idx} className="bg-gradient-to-br from-amber-50/30 to-slate-50/80 rounded-xl border border-amber-200/60 overflow-hidden shadow-sm">
+                            {/* Passport Header */}
+                            <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-5 py-2.5 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="text-amber-300 text-lg">🇱🇰</div>
+                                <div>
+                                  <div className="text-[9px] text-blue-200 uppercase tracking-widest">Democratic Socialist Republic of</div>
+                                  <div className="text-xs font-bold text-white tracking-wide">SRI LANKA</div>
+                                </div>
                               </div>
-                              <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Country</label>
-                                <div className="text-sm text-slate-800">{passport.country || '-'}</div>
+                              <div className="text-right">
+                                <div className="text-[9px] text-blue-200 uppercase">Passport No.</div>
+                                <div className="text-sm font-bold text-amber-300 font-mono tracking-wider">{passport.passportNumber || '-'}</div>
                               </div>
-                              <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Issued Date</label>
-                                <div className="text-sm text-slate-800">{passport.issuedDate || '-'}</div>
+                            </div>
+
+                            {/* Passport Body */}
+                            <div className="px-5 py-4 space-y-3">
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Type</label>
+                                  <div className="text-sm font-bold text-slate-800 font-mono">PB</div>
+                                </div>
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Country Code</label>
+                                  <div className="text-sm font-bold text-slate-800 font-mono">LKA</div>
+                                </div>
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Passport No.</label>
+                                  <div className="text-sm font-bold text-slate-900 font-mono">{passport.passportNumber || '-'}</div>
+                                </div>
                               </div>
-                              <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Expiry Date</label>
-                                <div className="text-sm text-slate-800 mb-1">{passport.expiryDate || '-'}</div>
-                                {passport.expiryDate && (
-                                  <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${passport.status === PassportStatus.VALID ? 'bg-green-50 text-green-700 border-green-200' :
-                                    passport.status === PassportStatus.EXPIRING ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                      'bg-red-50 text-red-700 border-red-200'
-                                    }`}>
-                                    {passport.status === PassportStatus.VALID ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
-                                    {passport.status} • {passport.validityDays} Days Left
-                                  </div>
-                                )}
+
+                              <div className="pt-1 border-t border-amber-100">
+                                <label className="text-[9px] font-medium text-slate-400 uppercase">Surname</label>
+                                <div className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
+                                  {candidate?.personalInfo?.surname || candidate?.personalInfo?.firstName || candidate?.firstName || '-'}
+                                </div>
                               </div>
+
+                              <div>
+                                <label className="text-[9px] font-medium text-slate-400 uppercase">Other Names</label>
+                                <div className="text-base font-bold text-slate-800 uppercase">
+                                  {candidate?.personalInfo?.otherNames || candidate?.personalInfo?.middleName || candidate?.middleName || '-'}
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4 pt-1 border-t border-amber-100">
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">National Status</label>
+                                  <div className="text-sm font-bold text-slate-800">SRI LANKAN</div>
+                                </div>
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Profession</label>
+                                  <div className="text-sm font-medium text-slate-700">{(candidate as any)?.passportProfession || '-'}</div>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Date of Birth</label>
+                                  <div className="text-sm font-bold text-slate-800">{candidate?.personalInfo?.dob || candidate?.dob || '-'}</div>
+                                </div>
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">ID No.</label>
+                                  <div className="text-sm font-bold text-slate-800 font-mono">{candidate?.personalInfo?.nic || candidate?.nic || '-'}</div>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Sex</label>
+                                  <div className="text-sm font-bold text-slate-800">{candidate?.personalInfo?.gender || candidate?.gender || '-'}</div>
+                                </div>
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Place of Birth</label>
+                                  <div className="text-sm font-bold text-slate-800 uppercase">{(candidate as any)?.placeOfBirth || '-'}</div>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4 pt-1 border-t border-amber-100">
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Date of Issue</label>
+                                  <div className="text-sm font-medium text-slate-800">{passport.issuedDate || '-'}</div>
+                                </div>
+                                <div>
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Date of Expiry</label>
+                                  <div className="text-sm font-medium text-slate-800 mb-1">{passport.expiryDate || '-'}</div>
+                                  {passport.expiryDate && (
+                                    <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${passport.status === PassportStatus.VALID ? 'bg-green-50 text-green-700 border-green-200' :
+                                      passport.status === PassportStatus.EXPIRING ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                        'bg-red-50 text-red-700 border-red-200'
+                                      }`}>
+                                      {passport.status === PassportStatus.VALID ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
+                                      {passport.status} • {passport.validityDays} Days Left
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="pt-1 border-t border-amber-100">
+                                <label className="text-[9px] font-medium text-slate-400 uppercase">Authority</label>
+                                <div className="text-sm font-medium text-slate-600">AUTHORITY COLOMBO</div>
+                              </div>
+
+                              {(candidate as any)?.passportRemark && (
+                                <div className="pt-1 border-t border-amber-100">
+                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Remark</label>
+                                  <div className="text-xs text-slate-600 italic leading-relaxed">{(candidate as any).passportRemark}</div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* MRZ Zone */}
+                            <div className="bg-slate-100 px-5 py-3 border-t border-slate-200 font-mono text-[11px] tracking-[0.15em] text-slate-500 leading-relaxed overflow-x-auto">
+                              <div>PB{passport.country === 'Sri Lanka' ? 'LKA' : ''}{(candidate?.personalInfo?.surname || candidate?.personalInfo?.firstName || '').replace(/\s/g, '')}&lt;&lt;{(candidate?.personalInfo?.otherNames || candidate?.personalInfo?.middleName || '').replace(/\s/g, '&lt;')}&lt;&lt;&lt;&lt;</div>
+                              <div>{passport.passportNumber || '?????????'}LKA{(candidate?.personalInfo?.dob || '').replace(/-/g, '').slice(2)}{candidate?.personalInfo?.gender || '?'}{(passport.expiryDate || '').replace(/-/g, '').slice(2)}{(candidate?.personalInfo?.nic || '').replace(/[^0-9V]/gi, '')}&lt;&lt;&lt;&lt;</div>
                             </div>
                           </div>
                         ))
                       ) : (
-                        <div className="p-4 bg-slate-50 rounded-lg text-sm text-slate-500 italic text-center border border-slate-200 border-dashed">
-                          No passport details available
+                        <div className="p-6 bg-slate-50 rounded-lg text-sm text-slate-500 italic text-center border border-slate-200 border-dashed">
+                          No passport data available — Click "Edit Profile" to add passport details
                         </div>
                       )}
                     </div>
                   )}
                 </section>
 
+
                 {/* SECTION 1.3: ADMINISTRATIVE DETAILS */}
                 <section className="mt-8 pt-8 border-t border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-indigo-500 rounded-full"></span>
-                    1.3 Administrative Details
+                  <h3 className="text-base font-bold text-slate-800 tracking-tight mb-5 flex items-center gap-2">
+                    <MapPin size={18} className="text-indigo-500" />
+                    Administrative Details
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="col-span-1 md:col-span-2">
@@ -852,9 +1010,9 @@ const CandidateDetail: React.FC = () => {
 
                 {/* SECTION 1.4: PERSONAL & PHYSICAL ATTRIBUTES */}
                 <section className="mt-8 pt-8 border-t border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-green-500 rounded-full"></span>
-                    1.4 Personal & Physical Attributes
+                  <h3 className="text-base font-bold text-slate-800 tracking-tight mb-5 flex items-center gap-2">
+                    <User size={18} className="text-green-500" />
+                    Personal & Physical Attributes
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
                     <div>
@@ -980,15 +1138,20 @@ const CandidateDetail: React.FC = () => {
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Religion</label>
                       {isEditingProfile ? (
-                        <input
-                          type="text"
+                        <select
                           value={editedProfile.personalInfo?.religion || ''}
                           onChange={(e) => setEditedProfile({
                             ...editedProfile,
                             personalInfo: { ...editedProfile.personalInfo!, religion: e.target.value }
                           })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        />
+                        >
+                          <option value="">Select Religion</option>
+                          <option value="Sinhala">Sinhala</option>
+                          <option value="Tamil">Tamil</option>
+                          <option value="Muslim">Muslim</option>
+                          <option value="Christian">Christian</option>
+                        </select>
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
                           {candidate?.personalInfo?.religion || (candidate as any)?.religion || '-'}
@@ -1044,9 +1207,9 @@ const CandidateDetail: React.FC = () => {
 
                 {/* SECTION 1.5: CONTACT INFORMATION */}
                 <section className="mt-8 pt-8 border-t border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-orange-500 rounded-full"></span>
-                    1.5 Contact Information
+                  <h3 className="text-base font-bold text-slate-800 tracking-tight mb-5 flex items-center gap-2">
+                    <Phone size={18} className="text-orange-500" />
+                    Contact Information
                   </h3>
 
                   <div className="mb-4">
@@ -1436,65 +1599,47 @@ const CandidateDetail: React.FC = () => {
                   )}
                 </div>
 
-                {/* Family Information */}
+                {/* Family Information - MATCHED TO PAPER FORM */}
                 <div className="mb-6 pt-6 border-t border-slate-200">
                   <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
                     <span className="w-1 h-4 bg-rose-500 rounded" />
-                    Family & Dependents
+                    Family Details
+                    <span className="text-[10px] font-normal text-slate-400 ml-2">CIVIL STATUS: {isEditingProfile ? '' : (candidate?.personalInfo?.maritalStatus || candidate?.personalInfo?.civilStatus || '-')}</span>
                   </h3>
                   {isEditingProfile ? (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                          {/* Marital Status moved to Personal Section */}
+                    <div className="space-y-4">
+                      {/* Family Members Table (matching paper form: Name, AGE, ID) */}
+                      <div className="bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden">
+                        <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-3 py-2 border-b border-slate-200">
+                          <div>Relation</div>
+                          <div>Full Name</div>
+                          <div>Age</div>
+                          <div>ID No.</div>
+                        </div>
+                        {/* Father */}
+                        <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2 border-b border-slate-100 items-center">
+                          <div className="text-xs font-bold text-slate-600">Father's Name</div>
+                          <input type="text" value={editedProfile.personalInfo?.fatherName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, fatherName: e.target.value } })} className="text-sm p-1.5 border border-slate-200 rounded mr-2" placeholder="Full Name" />
+                          <input type="number" value={(editedProfile as any).fatherAge || ''} onChange={(e) => setEditedProfile({ ...editedProfile, fatherAge: parseInt(e.target.value) || undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
+                          <input type="text" value={(editedProfile as any).fatherNic || ''} onChange={(e) => setEditedProfile({ ...editedProfile, fatherNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
+                        </div>
+                        {/* Mother */}
+                        <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2 border-b border-slate-100 items-center">
+                          <div className="text-xs font-bold text-slate-600">Mother's Name</div>
+                          <input type="text" value={editedProfile.personalInfo?.motherName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, motherName: e.target.value } })} className="text-sm p-1.5 border border-slate-200 rounded mr-2" placeholder="Full Name" />
+                          <input type="number" value={(editedProfile as any).motherAge || ''} onChange={(e) => setEditedProfile({ ...editedProfile, motherAge: parseInt(e.target.value) || undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
+                          <input type="text" value={(editedProfile as any).motherNic || ''} onChange={(e) => setEditedProfile({ ...editedProfile, motherNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
+                        </div>
+                        {/* Spouse */}
+                        <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2 items-center">
+                          <div className="text-xs font-bold text-slate-600">Spouse's Name</div>
+                          <input type="text" value={editedProfile.personalInfo?.spouseName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, spouseName: e.target.value } })} className="text-sm p-1.5 border border-slate-200 rounded mr-2" placeholder="Full Name" />
+                          <input type="number" value={(editedProfile as any).spouseAge || ''} onChange={(e) => setEditedProfile({ ...editedProfile, spouseAge: parseInt(e.target.value) || undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
+                          <input type="text" value={(editedProfile as any).spouseNic || ''} onChange={(e) => setEditedProfile({ ...editedProfile, spouseNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
                         </div>
                       </div>
 
-                      {/* Parent & Spouse Names (Edit Mode) */}
-                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                        <div>
-                          <label className="text-xs font-bold text-slate-500 uppercase">Father's Name</label>
-                          <input
-                            type="text"
-                            value={editedProfile.personalInfo?.fatherName || ''}
-                            onChange={(e) => setEditedProfile({
-                              ...editedProfile,
-                              personalInfo: { ...editedProfile.personalInfo!, fatherName: e.target.value }
-                            })}
-                            className="w-full mt-1 p-1.5 text-sm border rounded"
-                            placeholder="Father's Full Name"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-slate-500 uppercase">Mother's Name</label>
-                          <input
-                            type="text"
-                            value={editedProfile.personalInfo?.motherName || ''}
-                            onChange={(e) => setEditedProfile({
-                              ...editedProfile,
-                              personalInfo: { ...editedProfile.personalInfo!, motherName: e.target.value }
-                            })}
-                            className="w-full mt-1 p-1.5 text-sm border rounded"
-                            placeholder="Mother's Full Name"
-                          />
-                        </div>
-                        {editedProfile.personalInfo?.maritalStatus === 'Married' && (
-                          <div className="md:col-span-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Spouse's Name</label>
-                            <input
-                              type="text"
-                              value={editedProfile.personalInfo?.spouseName || ''}
-                              onChange={(e) => setEditedProfile({
-                                ...editedProfile,
-                                personalInfo: { ...editedProfile.personalInfo!, spouseName: e.target.value }
-                              })}
-                              className="w-full mt-1 p-1.5 text-sm border rounded"
-                              placeholder="Spouse's Full Name"
-                            />
-                          </div>
-                        )}
-                      </div>
-
+                      {/* Children Details */}
                       <div className="space-y-3 pt-4 border-t border-slate-100">
                         <div className="flex justify-between items-center">
                           <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Children Details</label>
@@ -1514,49 +1659,14 @@ const CandidateDetail: React.FC = () => {
                         </div>
                         {(editedProfile.personalInfo?.children || []).map((child: any, idx: number) => (
                           <div key={idx} className="grid grid-cols-3 gap-2 p-2 bg-slate-50 rounded border border-slate-100">
-                            <input
-                              placeholder="Name"
-                              value={child.name || ''}
-                              onChange={(e) => {
-                                const children = [...(editedProfile.personalInfo?.children || [])];
-                                children[idx] = { ...child, name: e.target.value };
-                                setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } });
-                              }}
-                              className="text-sm p-1 border rounded"
-                            />
-                            <select
-                              value={child.gender || 'M'}
-                              onChange={(e) => {
-                                const children = [...(editedProfile.personalInfo?.children || [])];
-                                children[idx] = { ...child, gender: e.target.value };
-                                setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } });
-                              }}
-                              className="text-sm p-1 border rounded"
-                            >
+                            <input placeholder="Name" value={child.name || ''} onChange={(e) => { const children = [...(editedProfile.personalInfo?.children || [])]; children[idx] = { ...child, name: e.target.value }; setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } }); }} className="text-sm p-1 border rounded" />
+                            <select value={child.gender || 'M'} onChange={(e) => { const children = [...(editedProfile.personalInfo?.children || [])]; children[idx] = { ...child, gender: e.target.value }; setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } }); }} className="text-sm p-1 border rounded">
                               <option value="M">Male</option>
                               <option value="F">Female</option>
                             </select>
                             <div className="flex gap-2">
-                              <input
-                                type="number"
-                                placeholder="Age"
-                                value={child.age || 0}
-                                onChange={(e) => {
-                                  const children = [...(editedProfile.personalInfo?.children || [])];
-                                  children[idx] = { ...child, age: parseInt(e.target.value) || 0 };
-                                  setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } });
-                                }}
-                                className="text-sm p-1 border rounded w-full"
-                              />
-                              <button
-                                onClick={() => {
-                                  const children = (editedProfile.personalInfo?.children || []).filter((_: any, i: number) => i !== idx);
-                                  setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } });
-                                }}
-                                className="text-red-500 p-1"
-                              >
-                                &times;
-                              </button>
+                              <input type="number" placeholder="Age" value={child.age || 0} onChange={(e) => { const children = [...(editedProfile.personalInfo?.children || [])]; children[idx] = { ...child, age: parseInt(e.target.value) || 0 }; setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } }); }} className="text-sm p-1 border rounded w-full" />
+                              <button onClick={() => { const children = (editedProfile.personalInfo?.children || []).filter((_: any, i: number) => i !== idx); setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } }); }} className="text-red-500 p-1">&times;</button>
                             </div>
                           </div>
                         ))}
@@ -1564,42 +1674,43 @@ const CandidateDetail: React.FC = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                          {/* Marital Status moved to Personal Section */}
+                      {/* Family Members Table (read-only, matching paper form) */}
+                      <div className="bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden">
+                        <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-3 py-2 border-b border-slate-200">
+                          <div>Relation</div>
+                          <div>Full Name</div>
+                          <div>Age</div>
+                          <div>ID No.</div>
                         </div>
-                        <div>
-                          <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Children Count</label>
-                          <div className="text-sm text-slate-900 mt-1">{candidate.personalInfo?.children?.length || (candidate as any).numberOfChildren || 0}</div>
+                        <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2.5 border-b border-slate-100 items-center">
+                          <div className="text-xs font-bold text-slate-600">Father's Name</div>
+                          <div className="text-sm font-medium text-slate-900">{candidate?.personalInfo?.fatherName || '-'}</div>
+                          <div className="text-sm text-slate-700">{(candidate as any)?.fatherAge || '-'}</div>
+                          <div className="text-sm text-slate-700 font-mono">{(candidate as any)?.fatherNic || '-'}</div>
+                        </div>
+                        <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2.5 border-b border-slate-100 items-center">
+                          <div className="text-xs font-bold text-slate-600">Mother's Name</div>
+                          <div className="text-sm font-medium text-slate-900">{candidate?.personalInfo?.motherName || '-'}</div>
+                          <div className="text-sm text-slate-700">{(candidate as any)?.motherAge || '-'}</div>
+                          <div className="text-sm text-slate-700 font-mono">{(candidate as any)?.motherNic || '-'}</div>
+                        </div>
+                        <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2.5 items-center">
+                          <div className="text-xs font-bold text-slate-600">Spouse's Name</div>
+                          <div className="text-sm font-medium text-slate-900">{candidate?.personalInfo?.spouseName || '-'}</div>
+                          <div className="text-sm text-slate-700">{(candidate as any)?.spouseAge || '-'}</div>
+                          <div className="text-sm text-slate-700 font-mono">{(candidate as any)?.spouseNic || '-'}</div>
                         </div>
                       </div>
 
-                      {/* Parent & Spouse Names (View Mode) */}
-                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                        <div>
-                          <label className="text-xs font-bold text-slate-500 uppercase">Father's Name</label>
-                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.personalInfo?.fatherName || '-'}</div>
-                        </div>
-                        <div>
-                          <label className="text-xs font-bold text-slate-500 uppercase">Mother's Name</label>
-                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.personalInfo?.motherName || '-'}</div>
-                        </div>
-                        {candidate?.personalInfo?.maritalStatus === 'Married' && (
-                          <div className="col-span-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Spouse's Name</label>
-                            <div className="text-sm font-medium text-slate-900 mt-1">{candidate?.personalInfo?.spouseName || '-'}</div>
-                          </div>
-                        )}
-                      </div>
-
+                      {/* Children Details (read-only) */}
                       <div className="pt-4 border-t border-slate-100">
-                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-3">Children Details</label>
+                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-3">Children Details ({candidate?.personalInfo?.children?.length || 0})</label>
                         <div className="space-y-2">
                           {(candidate?.personalInfo?.children || []).length > 0 ? (
                             (candidate?.personalInfo?.children || []).map((child: any, idx: number) => (
                               <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded border border-slate-200 text-xs shadow-sm">
                                 <div className="flex gap-4">
-                                  <span className="font-bold text-slate-700">{child.gender || 'Child'}</span>
+                                  <span className="font-bold text-slate-700">{child.name || child.gender || 'Child'}</span>
                                   <span className="text-slate-500">DOB: {child.dob || '-'}</span>
                                 </div>
                                 <span className="text-blue-600 font-bold">{child.age || 0} Years</span>
@@ -1614,11 +1725,766 @@ const CandidateDetail: React.FC = () => {
                   )}
                 </div>
 
-                {/* SECTION 1.6: OFFICE USE ONLY */}
+                {/* SECTION 1.55: PHASE 4-6 SYSTEM DATA */}
                 <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-violet-500 rounded-full"></span>
-                    1.6 Office Use Only
+                    <span className="w-6 h-1 bg-cyan-500 rounded-full"></span>
+                    Phase 4-6 System Data
+                  </h3>
+
+                  {isEditingProfile ? (
+                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 border-dashed space-y-6">
+                      {/* WP & Selection Editable */}
+                      <div>
+                        <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-3">Work Permit & Selection</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">WP Reference Number</label>
+                            <input
+                              type="text"
+                              value={editedProfile.stageData?.wpReferenceNumber || candidate.stageData?.wpReferenceNumber || ''}
+                              onChange={(e) => setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, wpReferenceNumber: e.target.value } as any
+                              })}
+                              placeholder="e.g. WP/2026/PL-1234"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Working Video Link</label>
+                            <input
+                              type="text"
+                              value={editedProfile.stageData?.workingVideoLink || candidate.stageData?.workingVideoLink || ''}
+                              onChange={(e) => setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, workingVideoLink: e.target.value } as any
+                              })}
+                              placeholder="https://drive.google.com/..."
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Self Intro Video Link</label>
+                            <input
+                              type="text"
+                              value={editedProfile.stageData?.selfIntroductionVideoLink || candidate.stageData?.selfIntroductionVideoLink || ''}
+                              onChange={(e) => setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, selfIntroductionVideoLink: e.target.value } as any
+                              })}
+                              placeholder="https://drive.google.com/..."
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional Video Links Editable */}
+                      <div className="pt-4 border-t border-slate-200">
+                        <div className="flex justify-between items-center mb-3">
+                          <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">Additional Video Links</h5>
+                          <button
+                            onClick={() => {
+                              const currentLinks = editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || [];
+                              setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, additionalVideoLinks: [...currentLinks, ''] } as any
+                              });
+                            }}
+                            className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded-md transition-colors"
+                          >
+                            <Plus size={12} /> Add Link
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {(editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || []).map((link, index) => (
+                            <div key={index} className="flex gap-2">
+                              <input
+                                type="text"
+                                value={link}
+                                onChange={(e) => {
+                                  const currentLinks = [...(editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || [])];
+                                  currentLinks[index] = e.target.value;
+                                  setEditedProfile({
+                                    ...editedProfile,
+                                    stageData: { ...candidate.stageData, ...editedProfile.stageData, additionalVideoLinks: currentLinks } as any
+                                  });
+                                }}
+                                placeholder="https://drive.google.com/..."
+                                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                              />
+                              <button
+                                onClick={() => {
+                                  const currentLinks = [...(editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || [])];
+                                  currentLinks.splice(index, 1);
+                                  setEditedProfile({
+                                    ...editedProfile,
+                                    stageData: { ...candidate.stageData, ...editedProfile.stageData, additionalVideoLinks: currentLinks } as any
+                                  });
+                                }}
+                                className="px-3 py-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-transparent"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ))}
+                          {(editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || []).length === 0 && (
+                            <p className="text-xs text-slate-400 italic">No additional video links added.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Embassy & Visa Editable */}
+                      <div className="pt-4 border-t border-slate-200">
+                        <h5 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-3">Embassy & Visa Processing</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Travel Insurance Policy</label>
+                            <input
+                              type="text"
+                              value={editedProfile.stageData?.travelInsurancePolicyNumber || candidate.stageData?.travelInsurancePolicyNumber || ''}
+                              onChange={(e) => setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, travelInsurancePolicyNumber: e.target.value } as any
+                              })}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Coverage End Date</label>
+                            <input
+                              type="date"
+                              value={editedProfile.stageData?.travelInsuranceCoverageEndDate || candidate.stageData?.travelInsuranceCoverageEndDate || ''}
+                              onChange={(e) => setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, travelInsuranceCoverageEndDate: e.target.value } as any
+                              })}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Flight & Departure Editable */}
+                      <div className="pt-4 border-t border-slate-200">
+                        <h5 className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-3">Flight & Departure</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Flight Number</label>
+                            <input
+                              type="text"
+                              value={editedProfile.stageData?.flightNumber || candidate.stageData?.flightNumber || ''}
+                              onChange={(e) => setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, flightNumber: e.target.value } as any
+                              })}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">PNR</label>
+                            <input
+                              type="text"
+                              value={editedProfile.stageData?.flightPNR || candidate.stageData?.flightPNR || ''}
+                              onChange={(e) => setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, flightPNR: e.target.value } as any
+                              })}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Departure Time</label>
+                            <input
+                              type="datetime-local"
+                              value={editedProfile.stageData?.flightDepartureTime ? new Date(editedProfile.stageData.flightDepartureTime).toISOString().slice(0, 16) : candidate.stageData?.flightDepartureTime ? new Date(candidate.stageData.flightDepartureTime).toISOString().slice(0, 16) : ''}
+                              onChange={(e) => setEditedProfile({
+                                ...editedProfile,
+                                stageData: { ...candidate.stageData, ...editedProfile.stageData, flightDepartureTime: e.target.value ? new Date(e.target.value).toISOString() : undefined } as any
+                              })}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-5">
+                      {/* WP & Selection Read Only */}
+                      <div>
+                        <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-2">Work Permit & Selection</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">WP Reference Number</label>
+                            <div className="text-sm font-bold text-slate-900 mt-1 font-mono">{candidate.stageData?.wpReferenceNumber || '-'}</div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Working Video</label>
+                            <div className="text-sm mt-1">
+                              {candidate.stageData?.workingVideoLink ? (
+                                <a href={candidate.stageData.workingVideoLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
+                                  <Globe size={14} /> Open Link
+                                </a>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Self Intro Video</label>
+                            <div className="text-sm mt-1">
+                              {candidate.stageData?.selfIntroductionVideoLink ? (
+                                <a href={candidate.stageData.selfIntroductionVideoLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
+                                  <Globe size={14} /> Open Link
+                                </a>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional Video Links Read Only */}
+                      {(candidate.stageData?.additionalVideoLinks && candidate.stageData.additionalVideoLinks.length > 0) && (
+                        <div className="pt-3 border-t border-slate-200">
+                          <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-2">Additional Video Links</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {candidate.stageData.additionalVideoLinks.map((link, index) => (
+                              <div key={index}>
+                                <label className="text-xs font-medium text-slate-500 uppercase">Additional Video {index + 1}</label>
+                                <div className="text-sm mt-1">
+                                  <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-medium hover:underline flex items-center gap-1">
+                                    <Globe size={14} /> Open Link
+                                  </a>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Embassy & Visa Read Only */}
+                      <div className="pt-3 border-t border-slate-200">
+                        <h5 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-2">Embassy & Visa Processing</h5>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Travel Insurance Policy</label>
+                            <div className="text-sm font-bold text-slate-900 mt-1">{candidate.stageData?.travelInsurancePolicyNumber || '-'}</div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Coverage End Date</label>
+                            <div className="text-sm font-medium text-slate-900 mt-1">{candidate.stageData?.travelInsuranceCoverageEndDate || '-'}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Flight & Departure Read Only */}
+                      <div className="pt-3 border-t border-slate-200">
+                        <h5 className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Flight & Departure</h5>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Flight Number</label>
+                            <div className="text-sm font-bold text-slate-900 mt-1 font-mono">{candidate.stageData?.flightNumber || '-'}</div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">PNR</label>
+                            <div className="text-sm font-bold text-blue-700 mt-1 font-mono">{candidate.stageData?.flightPNR || '-'}</div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Departure</label>
+                            <div className="text-sm font-bold text-emerald-700 mt-1">
+                              {candidate.stageData?.flightDepartureTime ? new Date(candidate.stageData.flightDepartureTime).toLocaleString() : '-'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* SECTION 1.56: EMBASSY APPLIED DETAILS */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-6 h-1 bg-amber-500 rounded-full"></span>
+                    Embassy Applied Details
+                  </h3>
+
+                  {isEditingProfile ? (
+                    <div className="bg-amber-50/50 p-6 rounded-xl border border-amber-200 border-dashed space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">E NO (Embassy Number)</label>
+                          <input type="text" value={(editedProfile as any).embassyDetails?.eNo || candidate.embassyDetails?.eNo || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, eNo: e.target.value } } as any)} placeholder="e.g. E2812909804914" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 font-mono" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">SE NO</label>
+                          <input type="text" value={(editedProfile as any).embassyDetails?.seNo || candidate.embassyDetails?.seNo || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, seNo: e.target.value } } as any)} placeholder="e.g. SE 0286531" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 font-mono" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Applied Date</label>
+                          <input type="date" value={(editedProfile as any).embassyDetails?.appliedDate || candidate.embassyDetails?.appliedDate || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, appliedDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Appointment Date</label>
+                          <input type="datetime-local" value={(editedProfile as any).embassyDetails?.appointmentDate || candidate.embassyDetails?.appointmentDate || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, appointmentDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Stamp Date</label>
+                          <input type="date" value={(editedProfile as any).embassyDetails?.stampDate || candidate.embassyDetails?.stampDate || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, stampDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Stamp Result</label>
+                          <select value={(editedProfile as any).embassyDetails?.stampResult || candidate.embassyDetails?.stampResult || 'Pending'} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, stampResult: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+                            <option value="Pending">Pending</option>
+                            <option value="Stamped">Stamped</option>
+                            <option value="Rejected">Rejected</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Awareness Program Date</label>
+                          <input type="date" value={(editedProfile as any).embassyDetails?.awarenessProgramDate || candidate.embassyDetails?.awarenessProgramDate || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, awarenessProgramDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+                        </div>
+                        <div className="flex items-end pb-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={(editedProfile as any).embassyDetails?.awarenessProgramSigned || candidate.embassyDetails?.awarenessProgramSigned || false} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, awarenessProgramSigned: e.target.checked } } as any)} className="w-4 h-4 rounded border-slate-300 text-amber-600" />
+                            <span className="text-xs font-bold text-slate-600 uppercase">Awareness Program Signed</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50/30 p-5 rounded-xl border border-amber-100 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">E NO</label>
+                          <div className="text-sm font-bold text-slate-900 mt-1 font-mono">{candidate.embassyDetails?.eNo || '-'}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">SE NO</label>
+                          <div className="text-sm font-bold text-slate-900 mt-1 font-mono">{candidate.embassyDetails?.seNo || '-'}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Applied Date</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate.embassyDetails?.appliedDate || '-'}</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-amber-100">
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Appointment Date</label>
+                          <div className="text-sm font-bold text-amber-700 mt-1">{candidate.embassyDetails?.appointmentDate ? new Date(candidate.embassyDetails.appointmentDate).toLocaleString() : '-'}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Stamp Date</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate.embassyDetails?.stampDate || '-'}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Stamp Result</label>
+                          <div className="mt-1">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${candidate.embassyDetails?.stampResult === 'Stamped' ? 'bg-green-100 text-green-700' : candidate.embassyDetails?.stampResult === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
+                              {candidate.embassyDetails?.stampResult || 'Pending'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {(candidate.embassyDetails?.awarenessProgramDate || candidate.embassyDetails?.awarenessProgramSigned) && (
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-amber-100">
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Awareness Program</label>
+                            <div className="text-sm font-medium text-slate-900 mt-1">{candidate.embassyDetails?.awarenessProgramDate || '-'}</div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Signed</label>
+                            <div className="text-sm font-bold mt-1">{candidate.embassyDetails?.awarenessProgramSigned ? '✅ Yes' : '❌ No'}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+
+                {/* SECTION 1.57: ADVANCE PAYMENT TRACKING */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-6 h-1 bg-green-500 rounded-full"></span>
+                    Advance Payment Tracking
+                  </h3>
+
+                  {isEditingProfile ? (
+                    <div className="bg-green-50/50 p-6 rounded-xl border border-green-200 border-dashed">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b-2 border-green-200">
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Payment Type</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice No</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Amount (Rs)</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'].map((type, idx) => {
+                              const payments = (editedProfile as any).advancePayments || candidate.advancePayments || [];
+                              const payment = payments.find((p: any) => p.type === type) || { type, id: `adv-${idx}` };
+                              return (
+                                <tr key={type} className="border-b border-green-100 hover:bg-green-50/50">
+                                  <td className="py-2 px-2 font-bold text-slate-500">{idx + 1}</td>
+                                  <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
+                                  <td className="py-2 px-2">
+                                    <input type="date" value={payment.informedDate || ''} onChange={(e) => {
+                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
+                                      const existIdx = all.findIndex((p: any) => p.type === type);
+                                      const updated = { ...payment, informedDate: e.target.value, informed: !!e.target.value };
+                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                    }} className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <input type="date" value={payment.signDate || ''} onChange={(e) => {
+                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
+                                      const existIdx = all.findIndex((p: any) => p.type === type);
+                                      const updated = { ...payment, signDate: e.target.value };
+                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                    }} className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <input type="text" value={payment.invoiceNo || ''} onChange={(e) => {
+                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
+                                      const existIdx = all.findIndex((p: any) => p.type === type);
+                                      const updated = { ...payment, invoiceNo: e.target.value };
+                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                    }} placeholder="Inv#" className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <input type="number" value={payment.amount || ''} onChange={(e) => {
+                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
+                                      const existIdx = all.findIndex((p: any) => p.type === type);
+                                      const updated = { ...payment, amount: parseFloat(e.target.value) || 0 };
+                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                    }} placeholder="0" className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <input type="text" value={payment.remarks || ''} onChange={(e) => {
+                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
+                                      const existIdx = all.findIndex((p: any) => p.type === type);
+                                      const updated = { ...payment, remarks: e.target.value };
+                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                    }} placeholder="Notes..." className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-4 pt-3 border-t border-green-200">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate EMB</label>
+                          <input type="number" step="0.01" value={(editedProfile as any).usdRateEmb || candidate.usdRateEmb || ''} onChange={(e) => setEditedProfile({ ...editedProfile, usdRateEmb: parseFloat(e.target.value) || 0 } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate F/A</label>
+                          <input type="number" step="0.01" value={(editedProfile as any).usdRateFA || candidate.usdRateFA || ''} onChange={(e) => setEditedProfile({ ...editedProfile, usdRateFA: parseFloat(e.target.value) || 0 } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50/30 p-5 rounded-xl border border-green-100">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b-2 border-green-200">
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Type</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice</th>
+                              <th className="text-right py-2 px-2 font-bold text-slate-600 uppercase">Amount</th>
+                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'].map((type, idx) => {
+                              const payment = (candidate.advancePayments || []).find((p) => p.type === type);
+                              const hasData = payment && (payment.amount || payment.invoiceNo || payment.informedDate);
+                              return (
+                                <tr key={type} className={`border-b border-green-100 ${hasData ? 'bg-green-50/50' : ''}`}>
+                                  <td className="py-2 px-2 font-bold text-slate-400">{idx + 1}</td>
+                                  <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
+                                  <td className="py-2 px-2 text-slate-600">{payment?.informedDate || '-'}</td>
+                                  <td className="py-2 px-2 text-slate-600">{payment?.signDate || '-'}</td>
+                                  <td className="py-2 px-2 font-mono text-slate-600">{payment?.invoiceNo || '-'}</td>
+                                  <td className="py-2 px-2 text-right font-bold text-green-700">{payment?.amount ? `Rs. ${payment.amount.toLocaleString()}` : '-'}</td>
+                                  <td className="py-2 px-2 text-slate-500 italic">{payment?.remarks || '-'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      {(candidate.usdRateEmb || candidate.usdRateFA) && (
+                        <div className="mt-3 pt-3 border-t border-green-100 flex gap-6 text-xs">
+                          <div><span className="font-bold text-slate-500 uppercase">USD Rate EMB:</span> <span className="font-bold text-slate-800">{candidate.usdRateEmb || '-'}</span></div>
+                          <div><span className="font-bold text-slate-500 uppercase">USD Rate F/A:</span> <span className="font-bold text-slate-800">{candidate.usdRateFA || '-'}</span></div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+
+                {/* SECTION 1.575: DATE/REMARK LOG (handwritten notes section on paper forms) */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-6 h-1 bg-orange-500 rounded-full"></span>
+                    Date / Remark Log
+                  </h3>
+                  <div className="bg-orange-50/30 rounded-xl border border-orange-200/60 overflow-hidden">
+                    {/* Existing remarks */}
+                    <div className="px-5 py-3">
+                      {((candidate as any).remarkLog && (candidate as any).remarkLog.length > 0) ? (
+                        <div className="space-y-2">
+                          {(candidate as any).remarkLog.map((entry: any, idx: number) => (
+                            <div key={idx} className="flex gap-3 py-2 border-b border-orange-100/50 last:border-0">
+                              <div className="text-[11px] font-bold text-orange-600 whitespace-nowrap min-w-[80px]">{entry.date}</div>
+                              <div className="text-xs text-slate-700 leading-relaxed">{entry.remark}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-slate-400 italic text-center py-3">
+                          No remarks recorded yet
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add new remark */}
+                    {isEditingProfile && (
+                      <div className="px-5 py-3 bg-orange-100/30 border-t border-orange-200/50">
+                        <div className="flex gap-3 items-end">
+                          <div className="flex-shrink-0">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Date</label>
+                            <input
+                              type="date"
+                              id="new-remark-date"
+                              defaultValue={new Date().toISOString().split('T')[0]}
+                              className="px-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-orange-500"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Remark</label>
+                            <input
+                              type="text"
+                              id="new-remark-text"
+                              placeholder="Enter remark / note..."
+                              className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-orange-500"
+                            />
+                          </div>
+                          <button
+                            onClick={() => {
+                              const dateInput = document.getElementById('new-remark-date') as HTMLInputElement;
+                              const textInput = document.getElementById('new-remark-text') as HTMLInputElement;
+                              if (dateInput?.value && textInput?.value) {
+                                const existing = (editedProfile as any).remarkLog || (candidate as any).remarkLog || [];
+                                setEditedProfile({ ...editedProfile, remarkLog: [...existing, { date: dateInput.value, remark: textInput.value }] } as any);
+                                textInput.value = '';
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 flex-shrink-0"
+                          >
+                            + Add
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {/* SECTION 1.58: CERTIFICATE CHECKLIST (matches paper form 14-item list) */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-6 h-1 bg-purple-500 rounded-full"></span>
+                    Certificates Checklist
+                  </h3>
+                  <div className="bg-purple-50/30 p-5 rounded-xl border border-purple-100">
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-0">
+                      {/* Left column: Items 1-7 */}
+                      <div>
+                        {[
+                          { num: 1, label: 'PP Size Photo (6)', docType: 'Passport Size Photos (6)' },
+                          { num: 2, label: 'Full Photo', docType: 'Full Photo (1)' },
+                          { num: 3, label: 'Edu: Certificates (O/L, A/L)', docType: 'GCE O/L Results' },
+                          { num: 4, label: 'Course Certificates', docType: 'Course Certificates' },
+                          { num: 5, label: 'NVQ/Trade Test Certificates', docType: 'NVQ/Trade Test Certificates' },
+                          { num: 6, label: 'Self Introduction Video', docType: 'Self Introduction Video' },
+                          { num: 7, label: 'Working Video', docType: 'Working Video' },
+                        ].map(item => {
+                          const hasDoc = candidate.documents?.some(d => d.type === item.docType && d.status !== 'Rejected');
+                          return (
+                            <div key={item.num} className={`flex items-center gap-3 py-2.5 border-b border-purple-100/50 ${hasDoc ? 'opacity-100' : 'opacity-60'}`}>
+                              <span className="text-[11px] font-bold text-slate-400 w-5 text-right">{item.num}</span>
+                              <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${hasDoc ? 'bg-green-500 text-white' : 'border-2 border-slate-300 bg-white'}`}>
+                                {hasDoc && <span className="text-xs">✓</span>}
+                              </div>
+                              <span className={`text-xs font-semibold ${hasDoc ? 'text-slate-800' : 'text-slate-500'}`}>{item.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Right column: Items 8-14 */}
+                      <div>
+                        {[
+                          { num: 8, label: 'Police Report (A) Local', docType: 'Police Report (Local)' },
+                          { num: 9, label: 'Police Report (B) HQ/FM', docType: 'Police Report (HQ/FM)' },
+                          { num: 10, label: 'Birth Certificate', docType: 'Birth Certificate' },
+                          { num: 11, label: 'Experience Letters', docType: 'Experience Letters' },
+                          { num: 12, label: 'Medical Report Date', docType: 'Medical Report' },
+                          { num: 13, label: 'Re-Check', docType: null },
+                          { num: 14, label: 'Family Background Report', docType: 'Family Background Report' },
+                        ].map(item => {
+                          const hasDoc = item.docType ? candidate.documents?.some(d => d.type === item.docType && d.status !== 'Rejected') : false;
+                          return (
+                            <div key={item.num} className={`flex items-center gap-3 py-2.5 border-b border-purple-100/50 ${hasDoc ? 'opacity-100' : 'opacity-60'}`}>
+                              <span className="text-[11px] font-bold text-slate-400 w-5 text-right">{item.num}</span>
+                              <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${hasDoc ? 'bg-green-500 text-white' : 'border-2 border-slate-300 bg-white'}`}>
+                                {hasDoc && <span className="text-xs">✓</span>}
+                              </div>
+                              <span className={`text-xs font-semibold ${hasDoc ? 'text-slate-800' : 'text-slate-500'}`}>{item.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-purple-200 flex items-center gap-4 text-xs text-slate-500">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3.5 h-3.5 rounded bg-green-500 flex items-center justify-center text-white text-[8px]">✓</div>
+                        <span className="font-semibold">Submitted</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3.5 h-3.5 rounded border-2 border-slate-300"></div>
+                        <span className="font-semibold">Pending</span>
+                      </div>
+                      <div className="ml-auto font-bold text-purple-600">
+                        {candidate.documents?.filter(d => d.status !== 'Rejected').length || 0} / 14 Collected
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* SECTION 1.59: WORKFLOW MILESTONES (bottom tracking row on paper form) */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-6 h-1 bg-cyan-500 rounded-full"></span>
+                    Workflow Milestone Dates
+                  </h3>
+
+                  {isEditingProfile ? (
+                    <div className="bg-cyan-50/50 p-6 rounded-xl border border-cyan-200 border-dashed">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {[
+                          { key: 'offerAppliedDate', label: 'Offer Applied' },
+                          { key: 'offerReceivedDate', label: 'Offer Received' },
+                          { key: 'wpAppliedDate', label: 'WP Applied' },
+                          { key: 'wpReceivedDate', label: 'WP Received' },
+                          { key: 'embAppliedDate', label: 'EMB Applied' },
+                          { key: 'embAppointmentDate', label: 'EMB Appointment' },
+                          { key: 'stampRejectDate', label: 'Stamp/Reject' },
+                          { key: 'slbfeTrainingDate', label: 'SLBFE Training' },
+                          { key: 'slbfeRegistrationDate', label: 'SLBFE Registration' },
+                          { key: 'departureDate', label: 'Departure' },
+                        ].map(milestone => (
+                          <div key={milestone.key}>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">{milestone.label}</label>
+                            <input
+                              type="date"
+                              value={((editedProfile as any).workflowMilestones || candidate.workflowMilestones || {} as any)[milestone.key] || ''}
+                              onChange={(e) => {
+                                const existing = (editedProfile as any).workflowMilestones || candidate.workflowMilestones || {};
+                                setEditedProfile({ ...editedProfile, workflowMilestones: { ...existing, [milestone.key]: e.target.value } } as any);
+                              }}
+                              className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-cyan-200">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Stamp Result Notes</label>
+                          <input
+                            type="text"
+                            value={((editedProfile as any).workflowMilestones || candidate.workflowMilestones || {} as any).stampResult || ''}
+                            onChange={(e) => {
+                              const existing = (editedProfile as any).workflowMilestones || candidate.workflowMilestones || {};
+                              setEditedProfile({ ...editedProfile, workflowMilestones: { ...existing, stampResult: e.target.value } } as any);
+                            }}
+                            placeholder="e.g. Stamped / Rejected - reason"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-cyan-50/30 p-5 rounded-xl border border-cyan-100">
+                      {/* Progress bar visualization */}
+                      <div className="flex items-center gap-0 overflow-x-auto pb-3">
+                        {[
+                          { key: 'offerAppliedDate', label: 'Offer\nApplied', icon: '📋' },
+                          { key: 'offerReceivedDate', label: 'Offer\nReceived', icon: '📩' },
+                          { key: 'wpAppliedDate', label: 'WP\nApplied', icon: '📝' },
+                          { key: 'wpReceivedDate', label: 'WP\nReceived', icon: '✅' },
+                          { key: 'embAppliedDate', label: 'EMB\nApplied', icon: '🏛️' },
+                          { key: 'embAppointmentDate', label: 'EMB\nAppoint.', icon: '📅' },
+                          { key: 'stampRejectDate', label: 'Stamp/\nReject', icon: '🔖' },
+                          { key: 'slbfeTrainingDate', label: 'SLBFE\nTraining', icon: '🎓' },
+                          { key: 'slbfeRegistrationDate', label: 'SLBFE\nReg.', icon: '📑' },
+                          { key: 'departureDate', label: 'Departure', icon: '✈️' },
+                        ].map((milestone, idx, arr) => {
+                          const milestones = candidate.workflowMilestones || {} as any;
+                          const date = (milestones as any)[milestone.key];
+                          const isCompleted = !!date;
+                          const isLast = idx === arr.length - 1;
+                          return (
+                            <div key={milestone.key} className="flex items-center flex-shrink-0">
+                              <div className="flex flex-col items-center" style={{ minWidth: '72px' }}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${isCompleted ? 'bg-cyan-600 text-white shadow-md shadow-cyan-200' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>
+                                  {isCompleted ? '✓' : milestone.icon}
+                                </div>
+                                <span className="text-[9px] font-bold text-slate-600 mt-1.5 text-center whitespace-pre-line leading-tight">{milestone.label}</span>
+                                <span className="text-[8px] font-medium text-cyan-700 mt-0.5">{date || '-'}</span>
+                              </div>
+                              {!isLast && (
+                                <div className={`w-6 h-0.5 flex-shrink-0 ${isCompleted ? 'bg-cyan-400' : 'bg-slate-200'}`}></div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {(candidate.workflowMilestones as any)?.stampResult && (
+                        <div className="mt-2 pt-2 border-t border-cyan-100 text-xs">
+                          <span className="font-bold text-slate-500 uppercase">Stamp Result: </span>
+                          <span className="font-medium text-slate-700">{(candidate.workflowMilestones as any).stampResult}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+
+                {/* SECTION 1.6: OFFICE USE ONLY */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                  <h3 className="text-base font-bold text-slate-800 tracking-tight mb-5 flex items-center gap-2">
+                    <Briefcase size={18} className="text-violet-500" />
+                    Office Use Only
                   </h3>
 
                   {isEditingProfile ? (

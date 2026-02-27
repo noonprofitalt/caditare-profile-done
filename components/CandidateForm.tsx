@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Candidate, StageData, DocumentType, DocumentStatus, PaymentRecord, JobRole, Country, SLBFEData, BiometricStatus, PassportData, PassportStatus } from '../types';
 import { TemplateService } from '../services/templateService';
+import { DataSyncService } from '../services/dataSyncService';
+
 import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
 import { X, Save, User, Briefcase, Globe, Activity, FileText, CreditCard, Plus, Trash2, ChevronDown, Check, ShieldCheck } from 'lucide-react';
 
@@ -12,10 +14,8 @@ interface CandidateFormProps {
 }
 
 const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, onClose, title }) => {
-  // Safe defaults for controlled inputs
-  const splitName = initialData?.name ? initialData.name.split(' ') : ['', '', ''];
-  const defaultFirstName = initialData?.firstName || splitName[0];
-  const defaultMiddleName = initialData?.middleName || (splitName.length > 1 ? splitName.slice(1).join(' ') : '');
+  // Normalize initial data using DataSyncService
+  const initialSyncedData = initialData ? DataSyncService.fullSync(initialData) : null;
 
   // Document Status Defaults
   const passportPhotosDoc = initialData?.documents?.find(d => d.type === DocumentType.PASSPORT_PHOTOS);
@@ -23,54 +23,69 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
 
   // Form State
   const [formData, setFormData] = useState({
-    firstName: defaultFirstName,
-    middleName: defaultMiddleName,
-    nic: initialData?.nic || '',
-    dob: initialData?.dob || '',
-    gender: initialData?.gender || '',
-    phone: initialData?.phone || '',
-    secondaryPhone: initialData?.secondaryPhone || (initialData?.additionalContactNumbers && initialData.additionalContactNumbers.length > 0 ? initialData.additionalContactNumbers[0] : ''),
-    whatsapp: initialData?.whatsapp || initialData?.phone || '',
-    email: initialData?.email || '',
-    address: initialData?.address || '',
-    city: initialData?.city || initialData?.location || initialData?.district || '',
-    education: Array.isArray(initialData?.education) ? initialData.education : (initialData?.education ? [initialData.education] : []),
+    surname: initialSyncedData?.surname || '',
+    otherNames: initialSyncedData?.otherNames || '',
+    nic: initialSyncedData?.nic || '',
+    dob: initialSyncedData?.dob || '',
+    gender: initialSyncedData?.gender || '',
+    phone: initialSyncedData?.phone || '',
+    secondaryPhone: initialSyncedData?.secondaryPhone || '',
+    whatsapp: initialSyncedData?.whatsapp || initialSyncedData?.phone || '',
+    email: initialSyncedData?.email || '',
+    address: initialSyncedData?.address || '',
+    city: initialSyncedData?.city || '',
+    education: initialSyncedData?.education || [],
+    nationality: initialSyncedData?.nationality || 'Sri Lankan',
+    placeOfBirth: initialSyncedData?.placeOfBirth || '',
+    passportProfession: initialSyncedData?.passportProfession || '',
 
-    // Professional & Operational (Preserved)
-    role: initialData?.role || '',
-    location: initialData?.location || '', // Will sync with City
-    experienceYears: initialData?.experienceYears || 0,
-    skills: initialData?.skills?.join(', ') || '',
-    preferredCountries: initialData?.preferredCountries || [],
-    jobRoles: initialData?.jobRoles || [], // Dynamic Job Roles
+    // Professional & Operational
+    role: initialSyncedData?.role || '',
+    location: initialSyncedData?.location || initialSyncedData?.city || '',
+    experienceYears: initialSyncedData?.experienceYears || 0,
+    skills: initialSyncedData?.skills?.join(', ') || '',
+    preferredCountries: initialSyncedData?.preferredCountries || [],
+    jobRoles: initialSyncedData?.jobRoles || [],
 
     // Stage Data
-    employerStatus: initialData?.stageData?.employerStatus || 'Pending',
-    medicalStatus: initialData?.stageData?.medicalStatus || 'Pending',
-    medicalScheduledDate: initialData?.stageData?.medicalScheduledDate || '',
-    policeStatus: initialData?.stageData?.policeStatus || 'Pending',
-    visaStatus: initialData?.stageData?.visaStatus || 'Pending',
-    paymentStatus: initialData?.stageData?.paymentStatus || 'Pending',
-    paymentNotes: initialData?.stageData?.paymentNotes || '',
+    employerStatus: initialSyncedData?.stageData?.employerStatus || 'Pending',
+    medicalStatus: initialSyncedData?.stageData?.medicalStatus || 'Pending',
+    medicalScheduledDate: initialSyncedData?.stageData?.medicalScheduledDate || '',
+    policeStatus: initialSyncedData?.stageData?.policeStatus || 'Pending',
+    visaStatus: initialSyncedData?.stageData?.visaStatus || 'Pending',
+    paymentStatus: initialSyncedData?.stageData?.paymentStatus || 'Pending',
+    paymentNotes: initialSyncedData?.stageData?.paymentNotes || '',
 
     // photo docs status
     passportPhotosStatus: passportPhotosDoc?.status || DocumentStatus.PENDING,
     fullPhotoStatus: fullPhotoDoc?.status || DocumentStatus.PENDING,
-    targetCountry: initialData?.targetCountry || Country.SAUDI_ARABIA,
+    targetCountry: initialSyncedData?.targetCountry || initialSyncedData?.country || Country.SAUDI_ARABIA,
 
-    // SLBFE Data (Flattened for form, will reconstruct)
-    slbfeRegNo: initialData?.slbfeData?.registrationNumber || '',
-    slbfeRegDate: initialData?.slbfeData?.registrationDate || '',
-    trainingDate: initialData?.slbfeData?.trainingDate || '',
-    insurancePolicyNo: initialData?.slbfeData?.insurancePolicyNumber || '',
-    insuranceExpiryDate: initialData?.slbfeData?.insuranceExpiryDate || '',
-    biometricStatus: initialData?.slbfeData?.biometricStatus || BiometricStatus.PENDING,
-    familyConsentGiven: initialData?.slbfeData?.familyConsent?.isGiven || false,
-    agreementStatus: initialData?.slbfeData?.agreementStatus || 'Pending',
-    spouseName: initialData?.spouseName || '',
-    passports: initialData?.passports || [],
-    officeUseOnly: initialData?.officeUseOnly || { customerCareOfficer: '', fileHandlingOfficer: '', date: '', charges: '' },
+    // SLBFE Data
+    slbfeRegNo: initialSyncedData?.slbfeData?.registrationNumber || '',
+    slbfeRegDate: initialSyncedData?.slbfeData?.registrationDate || '',
+    trainingDate: initialSyncedData?.slbfeData?.trainingDate || '',
+    insurancePolicyNo: initialSyncedData?.slbfeData?.insurancePolicyNumber || '',
+    insuranceExpiryDate: initialSyncedData?.slbfeData?.insuranceExpiryDate || '',
+    biometricStatus: initialSyncedData?.slbfeData?.biometricStatus || BiometricStatus.PENDING,
+    familyConsentGiven: initialSyncedData?.slbfeData?.familyConsent?.isGiven || false,
+    agreementStatus: initialSyncedData?.slbfeData?.agreementStatus || 'Pending',
+    spouseName: initialSyncedData?.spouseName || '',
+    passports: initialSyncedData?.passports || [],
+    officeUseOnly: initialSyncedData?.officeUseOnly || { customerCareOfficer: '', fileHandlingOfficer: '', date: '', charges: '' },
+
+    // Phase 4-6 System Data
+    wpReferenceNumber: initialSyncedData?.stageData?.wpReferenceNumber || '',
+    travelInsurancePolicyNumber: initialSyncedData?.stageData?.travelInsurancePolicyNumber || '',
+    travelInsuranceCoverageEndDate: initialSyncedData?.stageData?.travelInsuranceCoverageEndDate || '',
+    flightNumber: initialSyncedData?.stageData?.flightNumber || '',
+    flightPNR: initialSyncedData?.stageData?.flightPNR || '',
+    flightDepartureTime: initialSyncedData?.stageData?.flightDepartureTime || '',
+    workingVideoLink: initialSyncedData?.stageData?.workingVideoLink || '',
+    selfIntroductionVideoLink: initialSyncedData?.stageData?.selfIntroductionVideoLink || '',
   });
+
+  const [additionalVideoLinks, setAdditionalVideoLinks] = useState<string[]>(initialData?.stageData?.additionalVideoLinks || []);
 
   // Re-added missing states for JSX compatibility
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>(initialData?.stageData?.paymentHistory || []);
@@ -129,6 +144,22 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     }));
   };
 
+  const handleAddVideoLink = () => {
+    setAdditionalVideoLinks(prev => [...prev, '']);
+  };
+
+  const handleUpdateVideoLink = (index: number, value: string) => {
+    setAdditionalVideoLinks(prev => {
+      const updated = [...prev];
+      updated[index] = value;
+      return updated;
+    });
+  };
+
+  const handleRemoveVideoLink = (index: number) => {
+    setAdditionalVideoLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleRemovePassport = (index: number) => {
     setFormData(prev => ({
       ...prev,
@@ -157,6 +188,16 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
       paymentStatus: formData.paymentStatus as StageData['paymentStatus'],
       paymentNotes: formData.paymentNotes,
       paymentHistory: paymentHistory,
+      // Phase 4-6 tracking data
+      wpReferenceNumber: formData.wpReferenceNumber,
+      travelInsurancePolicyNumber: formData.travelInsurancePolicyNumber,
+      travelInsuranceCoverageEndDate: formData.travelInsuranceCoverageEndDate,
+      flightNumber: formData.flightNumber,
+      flightPNR: formData.flightPNR,
+      flightDepartureTime: formData.flightDepartureTime,
+      workingVideoLink: formData.workingVideoLink,
+      selfIntroductionVideoLink: formData.selfIntroductionVideoLink,
+      additionalVideoLinks: additionalVideoLinks.filter(link => link.trim() !== ''),
     };
 
     // Update documents if in Edit Mode (initialData.documents exists)
@@ -188,20 +229,24 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
       agreementStatus: formData.agreementStatus as any
     };
 
-    const processedData = {
-      ...formData,
-      // Reconstruct main name and location for compatibility
-      name: `${formData.firstName} ${formData.middleName || ''}`.trim(),
-      location: formData.city ? `${formData.city}, ${formData.address}` : formData.address,
+    const constructedName = `${formData.otherNames} ${formData.surname}`.trim();
+    const skillsArray = formData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s);
 
-      skills: formData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s),
+    const processedData = DataSyncService.fullSync({
+      ...initialData,
+      ...formData,
+      name: constructedName,
+      location: formData.city ? `${formData.city}, ${formData.address}` : formData.address,
+      skills: skillsArray,
       preferredCountries: formData.preferredCountries,
       jobRoles: jobRoles,
       slbfeData: slbfeDataUpdate,
-      passports: formData.passports, // Include passports in submission
-      documents: updatedDocuments, // Pass updated docs back
+      stageData: stageDataUpdate,
+      passports: formData.passports,
+      documents: updatedDocuments,
       officeUseOnly: formData.officeUseOnly,
-    };
+      secondaryPhone: formData.secondaryPhone,
+    });
 
     onSubmit(processedData);
   };
@@ -232,23 +277,22 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
             </h4>
 
             {/* Row 1: Name */}
-            {/* Row 1: Name */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">First Name <span className="text-red-500">*</span></label>
+                <label className="text-sm font-semibold text-slate-700">Surname <span className="text-red-500">*</span></label>
                 <input
-                  name="firstName"
-                  value={formData.firstName}
+                  name="surname"
+                  value={formData.surname}
                   // FRICTIONLESS: required removed
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Middle Name</label>
+                <label className="text-sm font-semibold text-slate-700">Other Names <span className="text-red-500">*</span></label>
                 <input
-                  name="middleName"
-                  value={formData.middleName}
+                  name="otherNames"
+                  value={formData.otherNames}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 />
@@ -296,17 +340,50 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 <select
                   name="gender"
                   value={formData.gender}
-                  // FRICTIONLESS: required removed
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 >
-                  <option value="">Select your gender</option>
+                  <option value="">Select Gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
-                  <option value="Other">Other</option>
                 </select>
               </div>
             </div>
+
+            {/* Row 4: Passport Info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Place of Birth</label>
+                <input
+                  name="placeOfBirth"
+                  value={formData.placeOfBirth}
+                  onChange={handleChange}
+                  placeholder="e.g. KEGALLA"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">National Status</label>
+                <input
+                  name="nationality"
+                  value={formData.nationality}
+                  onChange={handleChange}
+                  placeholder="SRI LANKAN"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">Profession (Passport)</label>
+                <input
+                  name="passportProfession"
+                  value={formData.passportProfession}
+                  onChange={handleChange}
+                  placeholder="e.g. HEAVY VEHICLE DRIVER"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
+                />
+              </div>
+            </div>
+
 
             {/* Row 4: Phones */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -456,10 +533,10 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 )}
               </div>
             </div>
-          </div>
+          </div >
 
           {/* PROFESSIONAL DETAILS (Preserving necessary system fields) */}
-          <div className="space-y-6">
+          < div className="space-y-6" >
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4">
               Professional Details
             </h4>
@@ -545,7 +622,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
               </h5>
 
               {jobRoles.map((role, idx) => (
-                <div key={`role-${role.title}-${role.experienceYears}-${idx}`} className="flex gap-2 items-start bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div key={idx} className="flex gap-2 items-start bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <div className="grid grid-cols-12 gap-2 flex-1">
                     <div className="col-span-4">
                       <span className="text-xs font-semibold text-slate-500 block">Title</span>
@@ -641,10 +718,10 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
               </select>
               <p className="text-[10px] text-slate-400 mt-1">This will automatically generate the required document checklist for this region.</p>
             </div>
-          </div>
+          </div >
 
           {/* REGISTRATION DOCUMENTS */}
-          <div className="pt-2">
+          < div className="pt-2" >
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
               Registration Documents <FileText size={12} />
             </h4>
@@ -758,10 +835,10 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 )}
               </div>
             </div>
-          </div>
+          </div >
 
           {/* OPERATIONAL STATUS */}
-          <div className="pt-2">
+          < div className="pt-2" >
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
               Operational Statuses <Activity size={12} />
             </h4>
@@ -839,10 +916,10 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 </select>
               </div>
             </div>
-          </div>
+          </div >
 
           {/* PAYMENT DETAILS SECTION */}
-          <div className="pt-2">
+          < div className="pt-2" >
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
               Payment Details <CreditCard size={12} />
             </h4>
@@ -957,10 +1034,10 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 </div>
               </div>
             </div>
-          </div>
+          </div >
 
           {/* SLBFE COMPLIANCE SECTION */}
-          <div className="pt-2">
+          < div className="pt-2" >
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
               SLBFE Compliance <ShieldCheck size={12} />
             </h4>
@@ -1068,10 +1145,155 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
               </div>
 
             </div>
-          </div>
+          </div >
+
+          {/* PHASE 4-6 SYSTEM DATA */}
+          < div className="pt-2" >
+            <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4 flex items-center gap-2">
+              Phase 4-6 System Data <Globe size={12} />
+            </h4>
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-6">
+
+              {/* WP & Selection */}
+              <div>
+                <h5 className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-3">Work Permit & Selection</h5>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">WP Reference Number</label>
+                    <input
+                      name="wpReferenceNumber"
+                      value={formData.wpReferenceNumber}
+                      onChange={handleChange}
+                      placeholder="e.g. WP/2026/PL-1234"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Working Video Link</label>
+                    <input
+                      name="workingVideoLink"
+                      value={formData.workingVideoLink}
+                      onChange={handleChange}
+                      placeholder="https://drive.google.com/..."
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Self Intro Video</label>
+                    <input
+                      name="selfIntroductionVideoLink"
+                      value={formData.selfIntroductionVideoLink}
+                      onChange={handleChange}
+                      placeholder="https://drive.google.com/..."
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Additional Video Links */}
+                <div className="mt-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-semibold text-slate-700">Additional Video Links</label>
+                    <button
+                      type="button"
+                      onClick={handleAddVideoLink}
+                      className="text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 bg-purple-50 px-3 py-1.5 rounded-lg transition-colors border border-purple-100"
+                    >
+                      <Plus size={14} /> Add Video Link
+                    </button>
+                  </div>
+                  {additionalVideoLinks.map((link, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={link}
+                        onChange={(e) => handleUpdateVideoLink(index, e.target.value)}
+                        placeholder="https://drive.google.com/..."
+                        className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVideoLink(index)}
+                        className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  {additionalVideoLinks.length === 0 && (
+                    <p className="text-xs text-slate-400 italic">No additional video links added. Click "+ Add Video Link" to add more.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Embassy & Visa */}
+              <div className="pt-3 border-t border-slate-200">
+                <h5 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">Embassy & Visa Processing</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Travel Insurance Policy No</label>
+                    <input
+                      name="travelInsurancePolicyNumber"
+                      value={formData.travelInsurancePolicyNumber}
+                      onChange={handleChange}
+                      placeholder="Policy Number"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Coverage End Date</label>
+                    <input
+                      type="date"
+                      name="travelInsuranceCoverageEndDate"
+                      value={formData.travelInsuranceCoverageEndDate}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Flight & Departure */}
+              <div className="pt-3 border-t border-slate-200">
+                <h5 className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-3">Flight & Departure</h5>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Flight Number</label>
+                    <input
+                      name="flightNumber"
+                      value={formData.flightNumber}
+                      onChange={handleChange}
+                      placeholder="e.g. QR 668"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">PNR</label>
+                    <input
+                      name="flightPNR"
+                      value={formData.flightPNR}
+                      onChange={handleChange}
+                      placeholder="e.g. ABC123"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-slate-700">Departure Time</label>
+                    <input
+                      type="datetime-local"
+                      name="flightDepartureTime"
+                      value={formData.flightDepartureTime}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div >
 
           {/* OFFICE USE ONLY SECTION */}
-          <div className="space-y-6">
+          < div className="space-y-6" >
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4">
               Office Use Only
             </h4>
@@ -1111,7 +1333,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                 />
               </div>
             </div>
-          </div>
+          </div >
 
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
             <button
@@ -1128,9 +1350,9 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
               <Save size={18} /> Save Details
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </form >
+      </div >
+    </div >
   );
 };
 

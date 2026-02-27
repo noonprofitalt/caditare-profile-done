@@ -6,10 +6,11 @@
  * Features: Sequential transitions, compliance enforcement, SLA tracking, rollback support
  */
 
-import { Candidate, WorkflowStage, PassportStatus, PCCStatus, MedicalStatus, DocumentStatus, DocumentCategory } from '../types';
+import { Candidate, WorkflowStage, PassportStatus, PCCStatus, MedicalStatus, DocumentStatus, DocumentCategory, DocumentType } from '../types';
 import { ComplianceEngine } from './compliance/ComplianceEngine';
 import { ComplianceSeverity } from './compliance/ComplianceTypes';
 import { SLBFEAutomationEngine } from './slbfe/SLBFEEngine';
+import { TemplateService } from './templateService';
 import { AuditService } from './auditService';
 
 // ============================================================================
@@ -145,10 +146,9 @@ export class WorkflowEngine {
     const missingDocuments: string[] = [];
     const complianceIssues: string[] = [];
 
-    // Check passport document
+    // Check passport document (enum-based)
     const passportDoc = candidate.documents?.find(
-      d => d.category === DocumentCategory.MANDATORY_REGISTRATION &&
-        d.type.toLowerCase().includes('passport')
+      d => d.type === DocumentType.PASSPORT
     );
 
     if (!passportDoc) {
@@ -158,10 +158,9 @@ export class WorkflowEngine {
       blockers.push(`Passport document status is ${passportDoc.status}, must be APPROVED`);
     }
 
-    // Check CV document
+    // Check CV document (enum-based)
     const cvDoc = candidate.documents?.find(
-      d => d.category === DocumentCategory.MANDATORY_REGISTRATION &&
-        d.type.toLowerCase().includes('cv')
+      d => d.type === DocumentType.CV
     );
 
     if (!cvDoc) {
@@ -223,10 +222,9 @@ export class WorkflowEngine {
     const missingDocuments: string[] = [];
     const complianceIssues: string[] = [];
 
-    // Check offer letter document
+    // Check offer letter document (enum-based)
     const offerDoc = candidate.documents?.find(
-      d => d.type.toLowerCase().includes('offer') &&
-        d.type.toLowerCase().includes('letter')
+      d => d.type === DocumentType.OFFER_LETTER
     );
 
     if (!offerDoc) {
@@ -254,10 +252,9 @@ export class WorkflowEngine {
     const missingDocuments: string[] = [];
     const complianceIssues: string[] = [];
 
-    // Check signed offer document
+    // Check signed offer document (enum-based)
     const signedOfferDoc = candidate.documents?.find(
-      d => d.type.toLowerCase().includes('signed') &&
-        d.type.toLowerCase().includes('offer')
+      d => d.type === DocumentType.SIGNED_OFFER_LETTER
     );
 
     if (!signedOfferDoc) {
@@ -265,6 +262,31 @@ export class WorkflowEngine {
       blockers.push('Signed offer letter not uploaded');
     } else if (signedOfferDoc.status !== DocumentStatus.APPROVED) {
       blockers.push(`Signed offer status is ${signedOfferDoc.status}, must be APPROVED`);
+    }
+
+    // Check IGI Records
+    const igiDoc = candidate.documents?.find(
+      d => d.type === DocumentType.IGI_RECORDS
+    );
+    if (!igiDoc) {
+      missingDocuments.push('IGI Records');
+      warnings.push('IGI Records not uploaded (recommended)');
+    }
+
+    // Check Work Permit
+    const wpDoc = candidate.documents?.find(
+      d => d.type === DocumentType.WORK_PERMIT
+    );
+    if (!wpDoc) {
+      missingDocuments.push('Work Permit (WP)');
+      blockers.push('Work Permit document not uploaded');
+    } else if (wpDoc.status !== DocumentStatus.APPROVED) {
+      blockers.push(`Work Permit status is ${wpDoc.status}, must be APPROVED`);
+    }
+
+    // Check WP Reference Number in system data
+    if (!candidate.stageData?.wpReferenceNumber) {
+      warnings.push('WP Reference Number not entered in system data');
     }
 
     // Check employer confirmation
@@ -301,7 +323,7 @@ export class WorkflowEngine {
       blockers.push('Passport must be VALID (≥ 180 days validity) to apply at Embassy');
     }
 
-    // 2. Check PCC Status (Hard Stop)
+    // 2. Check PCC Status (Hard Stop - 180-day flag)
     if (!candidate.pccData) {
       complianceIssues.push('PCC data not entered');
       blockers.push('Police Clearance Certificate (PCC) information is missing');
@@ -320,11 +342,18 @@ export class WorkflowEngine {
       blockers.push('Medical examination must be COMPLETED before Embassy submission');
     }
 
-    // 4. Check mandatory WP documents
-    const hasWP = candidate.documents?.some(d => d.type.toLowerCase().includes('work') && d.type.toLowerCase().includes('permit') && d.status === DocumentStatus.APPROVED);
-    if (!hasWP) {
+    // 4. Check Work Permit document (enum-based)
+    const wpDoc = candidate.documents?.find(d => d.type === DocumentType.WORK_PERMIT && d.status === DocumentStatus.APPROVED);
+    if (!wpDoc) {
       missingDocuments.push('Approved Work Permit');
       blockers.push('Approved Work Permit document is required');
+    }
+
+    // 5. Check Vaccination Records
+    const vacDoc = candidate.documents?.find(d => d.type === DocumentType.VACCINATION_RECORDS);
+    if (!vacDoc) {
+      missingDocuments.push('Vaccination Records');
+      warnings.push('Vaccination records not uploaded (may be required)');
     }
 
     return {
@@ -345,15 +374,50 @@ export class WorkflowEngine {
     const missingDocuments: string[] = [];
     const complianceIssues: string[] = [];
 
-    // Check embassy submission confirmation
-    const embassyDoc = candidate.documents?.find(
-      d => d.type.toLowerCase().includes('embassy') &&
-        d.type.toLowerCase().includes('submission')
+    // Check Embassy Appointment Letter
+    const appointmentDoc = candidate.documents?.find(
+      d => d.type === DocumentType.EMBASSY_APPOINTMENT_LETTER
     );
+    if (!appointmentDoc) {
+      missingDocuments.push('Embassy Appointment Letter');
+      warnings.push('Embassy appointment letter not uploaded (recommended)');
+    }
 
-    if (!embassyDoc) {
-      missingDocuments.push('Embassy Submission Confirmation');
-      warnings.push('Embassy submission document not uploaded (recommended)');
+    // Check USD Payment Receipt
+    const usdDoc = candidate.documents?.find(
+      d => d.type === DocumentType.USD_PAYMENT_RECEIPT
+    );
+    if (!usdDoc) {
+      missingDocuments.push('USD Payment Receipt');
+      blockers.push('Embassy USD payment receipt not uploaded');
+    } else if (usdDoc.status !== DocumentStatus.APPROVED) {
+      blockers.push(`USD Payment Receipt status is ${usdDoc.status}, must be APPROVED`);
+    }
+
+    // Europe-specific: D-Form and Travel Insurance
+    const targetCountry = candidate.targetCountry || candidate.country;
+    if (targetCountry && TemplateService.isSchengenCountry(targetCountry)) {
+      // D-Form required for Schengen countries
+      const dFormDoc = candidate.documents?.find(
+        d => d.type === DocumentType.D_FORM
+      );
+      if (!dFormDoc) {
+        missingDocuments.push('D-Form (National Visa Application)');
+        blockers.push('D-Form is required for Schengen country visa applications');
+      } else if (dFormDoc.status !== DocumentStatus.APPROVED) {
+        blockers.push(`D-Form status is ${dFormDoc.status}, must be APPROVED`);
+      }
+
+      // Travel Insurance required for Schengen
+      const insuranceDoc = candidate.documents?.find(
+        d => d.type === DocumentType.TRAVEL_INSURANCE
+      );
+      if (!insuranceDoc) {
+        missingDocuments.push('Travel Insurance (Schengen)');
+        blockers.push('Schengen travel insurance is required for European visa');
+      } else if (insuranceDoc.status !== DocumentStatus.APPROVED) {
+        blockers.push(`Travel Insurance status is ${insuranceDoc.status}, must be APPROVED`);
+      }
     }
 
     return {
@@ -374,9 +438,9 @@ export class WorkflowEngine {
     const missingDocuments: string[] = [];
     const complianceIssues: string[] = [];
 
-    // Check visa document
+    // Check visa document (enum-based)
     const visaDoc = candidate.documents?.find(
-      d => d.type.toLowerCase().includes('visa')
+      d => d.type === DocumentType.VISA_COPY
     );
 
     if (!visaDoc) {
@@ -384,19 +448,6 @@ export class WorkflowEngine {
       blockers.push('Visa document not uploaded');
     } else if (visaDoc.status !== DocumentStatus.APPROVED) {
       blockers.push(`Visa document status is ${visaDoc.status}, must be APPROVED`);
-    }
-
-    // Check agreement document
-    const agreementDoc = candidate.documents?.find(
-      d => d.type.toLowerCase().includes('agreement') ||
-        d.type.toLowerCase().includes('contract')
-    );
-
-    if (!agreementDoc) {
-      missingDocuments.push('Employment Agreement');
-      blockers.push('Employment agreement not uploaded');
-    } else if (agreementDoc.status !== DocumentStatus.APPROVED) {
-      blockers.push(`Agreement status is ${agreementDoc.status}, must be APPROVED`);
     }
 
     // Re-check Medical and PCC validity (Hard Stops)
@@ -437,15 +488,29 @@ export class WorkflowEngine {
       slbfeReport.missingRequirements.forEach(req => {
         blockers.push(`SLBFE Requirement Missing: ${req}`);
       });
-      // Add detailed checklist items to issues
       slbfeReport.checklist.forEach(item => {
         if (item.status !== 'Complete' && item.isMandatory) {
           complianceIssues.push(`SLBFE ${item.label} incomplete (${item.status})`);
         }
       });
-    } else {
-      // If valid, maybe log the "certificate" generation (could be stored)
-      // warnings.push(`SLBFE Certificate Generated: ${slbfeReport.certificate?.certificateId}`);
+    }
+
+    // Check SLBFE Insurance
+    const slbfeInsDoc = candidate.documents?.find(
+      d => d.type === DocumentType.SLBFE_INSURANCE
+    );
+    if (!slbfeInsDoc) {
+      missingDocuments.push('SLBFE Insurance');
+      blockers.push('SLBFE mandatory insurance document not uploaded');
+    }
+
+    // Check Bureau Documents Set
+    const bureauDoc = candidate.documents?.find(
+      d => d.type === DocumentType.BUREAU_DOCUMENTS_SET
+    );
+    if (!bureauDoc) {
+      missingDocuments.push('Bureau Documents Set');
+      blockers.push('Bureau master document set not uploaded');
     }
 
     return {
@@ -466,10 +531,9 @@ export class WorkflowEngine {
     const missingDocuments: string[] = [];
     const complianceIssues: string[] = [];
 
-    // Check ticket document
+    // Check flight ticket document (enum-based)
     const ticketDoc = candidate.documents?.find(
-      d => d.type.toLowerCase().includes('ticket') ||
-        d.type.toLowerCase().includes('flight')
+      d => d.type === DocumentType.FLIGHT_TICKET || d.type === DocumentType.AIR_TICKET
     );
 
     if (!ticketDoc) {
@@ -477,6 +541,17 @@ export class WorkflowEngine {
       blockers.push('Flight ticket not uploaded');
     } else if (ticketDoc.status !== DocumentStatus.APPROVED) {
       blockers.push(`Ticket status is ${ticketDoc.status}, must be APPROVED`);
+    }
+
+    // Check flight system data
+    if (!candidate.stageData?.flightPNR) {
+      warnings.push('Flight PNR not entered in system data');
+    }
+    if (!candidate.stageData?.flightNumber) {
+      warnings.push('Flight number not entered in system data');
+    }
+    if (!candidate.stageData?.flightDepartureTime) {
+      warnings.push('Departure time not entered in system data');
     }
 
     // Final compliance check (Hard Stops)

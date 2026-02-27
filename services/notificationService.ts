@@ -87,24 +87,28 @@ export class NotificationService {
             const user = await getCurrentUser();
             if (!user) return;
 
-            const { error } = await supabase
+            // Mark user-specific notifications as read
+            const { error: userError } = await supabase
                 .from('notifications')
                 .update({ is_read: true })
-                .eq('user_id', user.id); // Only mark own notifications? 
-            // If we have global notifications (user_id is null), we can't really "mark them read" for a specific user easily 
-            // without a separate "read_receipts" table. 
-            // For now, let's assume we only mark user-specific ones or we rely on the policy 
-            // "Users can update own notifications" which checks auth.uid() = user_id.
-            // So executing update on user_id=null would fail or affect everyone?
-            // Policy: USING (auth.uid() = user_id). So we can ONLY update rows where user_id matches.
-            // So we can just run update on all rows visible?
-            // "Users can view own notifications" allows selecting user_id IS NULL.
-            // "Users can update own notifications" requires auth.uid() = user_id.
-            // So users CANNOT mark global notifications as read with the current policy. 
-            // This is a known limitation of simple notification systems.
-            // We will fix the query to only target user's notifications.
+                .eq('user_id', user.id)
+                .eq('is_read', false);
 
-            if (error) logger.error('Failed to mark all as read', error);
+            if (userError) logger.error('Failed to mark user notifications as read', userError);
+
+            // Also mark global notifications (user_id IS NULL) as read
+            // Note: This requires policy to allow updates on global notifications
+            // If policy blocks this, it will silently fail which is acceptable
+            const { error: globalError } = await supabase
+                .from('notifications')
+                .update({ is_read: true })
+                .is('user_id', null)
+                .eq('is_read', false);
+
+            if (globalError) {
+                // Expected if RLS policy doesn't allow updates on global notifications
+                logger.warn('Could not mark global notifications as read (expected if RLS blocks)', { error: globalError });
+            }
         } catch (err) {
             logger.error('Error in markAllAsRead', err);
         }

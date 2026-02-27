@@ -25,6 +25,7 @@ const Dashboard: React.FC = () => {
    const [openJobsCount, setOpenJobsCount] = useState(0);
    const [activeDemands, setActiveDemands] = useState(0);
    const [isLoading, setIsLoading] = useState(true);
+   const [activeTaskTab, setActiveTaskTab] = useState<'priority' | 'alerts' | 'compliance'>('priority');
    const navigate = useNavigate();
 
    useEffect(() => {
@@ -82,15 +83,6 @@ const Dashboard: React.FC = () => {
       loadDashboardData();
    }, []);
 
-   const getPriorityColor = (priority: string) => {
-      switch (priority) {
-         case 'Critical': return 'border-l-4 border-l-red-500 bg-red-50/50';
-         case 'High': return 'border-l-4 border-l-orange-500 bg-orange-50/50';
-         case 'Medium': return 'border-l-4 border-l-blue-500 bg-blue-50/50';
-         default: return 'border-l-4 border-l-slate-300';
-      }
-   };
-
    const activeCandidates = candidates.length;
    const criticalIssues = tasks.filter(t => t.priority === 'Critical').length;
 
@@ -98,6 +90,106 @@ const Dashboard: React.FC = () => {
    const quickProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK).length;
    const partialProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL).length;
    const completeProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length;
+
+   // Tab-specific filtered data
+   const priorityTasks = tasks; // all tasks sorted by priority
+   const complianceTasks = tasks.filter(t => t.type === 'ISSUE');
+   const alertItems = alerts;
+
+   const getActiveContent = () => {
+      if (activeTaskTab === 'alerts') {
+         return alertItems.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+               {alertItems.map((alert) => (
+                  <div key={alert.id} className={`p-4 md:p-6 flex items-start gap-4 md:gap-5 border-l-4 transition-all duration-300 ${alert.type === 'DELAY' ? 'border-red-500' :
+                     alert.type === 'WARNING' ? 'border-amber-500' : 'border-blue-500'
+                     }`}>
+                     <div className="pt-1 shrink-0">
+                        {alert.type === 'DELAY' ? <AlertTriangle className="text-red-500" size={28} /> :
+                           alert.type === 'WARNING' ? <AlertTriangle className="text-amber-500" size={28} /> :
+                              <Bell className="text-blue-500" size={28} />}
+                     </div>
+                     <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-3 mb-2">
+                           <h4 className="font-black text-slate-900 text-lg uppercase tracking-tight">{alert.message}</h4>
+                           <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 shadow-sm ${alert.type === 'DELAY' ? 'bg-red-500 text-white shadow-red-100' :
+                              alert.type === 'WARNING' ? 'bg-amber-500 text-white shadow-amber-100' : 'bg-blue-600 text-white shadow-blue-100'
+                              }`}>
+                              {alert.type}
+                           </span>
+                        </div>
+                        <p className="text-sm text-slate-500 font-medium">
+                           {alert.count} candidate{alert.count !== 1 ? 's' : ''} affected
+                        </p>
+                        <div className="flex items-center gap-4 text-[10px] mt-3">
+                           <span className="text-slate-400 font-black uppercase tracking-widest">
+                              <Clock size={12} className="inline mr-1" />
+                              {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           </span>
+                        </div>
+                     </div>
+                  </div>
+               ))}
+            </div>
+         ) : renderEmpty('No Active Alerts', 'All systems operating normally.');
+      }
+
+      if (activeTaskTab === 'compliance') {
+         return complianceTasks.length > 0 ? renderTaskList(complianceTasks) : renderEmpty('No Compliance Issues', 'All candidates are compliant.');
+      }
+
+      // Default: priority
+      return priorityTasks.length > 0 ? renderTaskList(priorityTasks) : renderEmpty('All Caught Up', 'No pending tasks.');
+   };
+
+   const renderTaskList = (taskList: WorkTask[]) => (
+      <div className="divide-y divide-slate-100">
+         {taskList.map((task) => (
+            <div key={task.id} onClick={() => navigate(`/candidates/${task.candidateId}`)} className={`p-4 md:p-6 hover:bg-slate-50/50 transition-premium cursor-pointer group flex items-start gap-4 md:gap-5 border-l-4 transition-all duration-300 ${task.priority === 'Critical' ? 'border-red-500' :
+               task.priority === 'High' ? 'border-amber-500' : 'border-blue-500'
+               }`}>
+               <div className="pt-1 shrink-0 group-hover:scale-110 transition-premium">
+                  {task.priority === 'Critical' ? <AlertTriangle className="text-red-500" size={28} /> :
+                     task.priority === 'High' ? <Clock className="text-amber-500" size={28} /> :
+                        <FileText className="text-blue-500" size={28} />}
+               </div>
+               <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-3 mb-2">
+                     <h4 className="font-black text-slate-900 group-hover:text-blue-600 transition-colors text-lg uppercase tracking-tight">{task.title}</h4>
+                     <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 shadow-sm ${task.priority === 'Critical' ? 'bg-red-500 text-white shadow-red-100' :
+                        task.priority === 'High' ? 'bg-amber-500 text-white shadow-amber-100' : 'bg-blue-600 text-white shadow-blue-100'
+                        }`}>
+                        {task.priority}
+                     </span>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-4 font-medium leading-relaxed">{task.description}</p>
+                  <div className="flex flex-wrap items-center gap-4 text-[10px]">
+                     <span className="flex items-center gap-2 font-black text-slate-700 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                        <UserPlus size={14} className="text-blue-500" /> {task.candidateName}
+                     </span>
+                     <span className="text-slate-400 font-black uppercase tracking-widest">{task.stage}</span>
+                     <span className="ml-auto text-red-500 font-black uppercase tracking-widest flex items-center gap-1.5">
+                        <Clock size={12} /> {task.dueDate}
+                     </span>
+                  </div>
+               </div>
+               <div className="self-center hidden md:block opacity-0 group-hover:opacity-100 transition-premium shrink-0 translate-x-4 group-hover:translate-x-0">
+                  <ArrowRight size={24} className="text-blue-600" />
+               </div>
+            </div>
+         ))}
+      </div>
+   );
+
+   const renderEmpty = (title: string, subtitle: string) => (
+      <div className="flex flex-col items-center justify-center p-20 text-slate-300">
+         <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center border border-slate-100 mb-6 group-hover:scale-110 transition-premium">
+            <CheckCircle size={40} className="text-emerald-400" />
+         </div>
+         <p className="font-black uppercase tracking-widest text-sm text-slate-400">{title}</p>
+         <p className="text-xs font-bold text-slate-400 mt-2">{subtitle}</p>
+      </div>
+   );
 
    return (
       <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 pb-24 lg:pb-8">
@@ -257,7 +349,7 @@ const Dashboard: React.FC = () => {
                   </div>
                </div>
 
-               <div onClick={() => navigate('/candidates?status=quick')} className="glass-card-interactive p-6 flex flex-col justify-between group">
+               <div onClick={() => navigate('/candidates?status=QUICK')} className="glass-card-interactive p-6 flex flex-col justify-between group">
                   <div className="flex items-center gap-2 mb-4">
                      <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></div>
                      <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Fragile</h3>
@@ -266,7 +358,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Pending full Sync</p>
                </div>
 
-               <div onClick={() => navigate('/candidates?status=partial')} className="glass-card-interactive p-6 flex flex-col justify-between group">
+               <div onClick={() => navigate('/candidates?status=PARTIAL')} className="glass-card-interactive p-6 flex flex-col justify-between group">
                   <div className="flex items-center gap-2 mb-4">
                      <Clock size={16} className="text-amber-500" />
                      <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Staging</h3>
@@ -275,7 +367,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Active Processing</p>
                </div>
 
-               <div onClick={() => navigate('/candidates?status=complete')} className="glass-card-interactive p-6 flex flex-col justify-between group">
+               <div onClick={() => navigate('/candidates?status=COMPLETE')} className="glass-card-interactive p-6 flex flex-col justify-between group">
                   <div className="flex items-center gap-2 mb-4">
                      <CheckCircle size={16} className="text-emerald-500" />
                      <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Validated</h3>
@@ -297,9 +389,33 @@ const Dashboard: React.FC = () => {
                      <p className="text-[10px] text-slate-500 mt-1 font-bold uppercase tracking-widest">Sorted by priority</p>
                   </div>
                   <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-                     <button className="px-4 py-2 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-200 shrink-0">Priority</button>
-                     <button className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 shrink-0">Alerts</button>
-                     <button className="px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 shrink-0">Compliance</button>
+                     <button
+                        onClick={() => setActiveTaskTab('priority')}
+                        className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'priority'
+                           ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
+                           : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                           }`}
+                     >
+                        Priority {priorityTasks.length > 0 && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[8px]">{priorityTasks.length}</span>}
+                     </button>
+                     <button
+                        onClick={() => setActiveTaskTab('alerts')}
+                        className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'alerts'
+                           ? 'bg-amber-500 text-white shadow-lg shadow-amber-200'
+                           : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                           }`}
+                     >
+                        Alerts {alertItems.length > 0 && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[8px]">{alertItems.length}</span>}
+                     </button>
+                     <button
+                        onClick={() => setActiveTaskTab('compliance')}
+                        className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'compliance'
+                           ? 'bg-red-500 text-white shadow-lg shadow-red-200'
+                           : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                           }`}
+                     >
+                        Compliance {complianceTasks.length > 0 && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[8px]">{complianceTasks.length}</span>}
+                     </button>
                   </div>
                </div>
 
@@ -323,56 +439,7 @@ const Dashboard: React.FC = () => {
                            </div>
                         ))}
                      </div>
-                  ) : tasks.length > 0 ? (
-                     <div className="divide-y divide-slate-100">
-                        {tasks.map((task) => (
-                           <div
-                              key={task.id}
-                              onClick={() => navigate(`/candidates/${task.candidateId}`)}
-                              className={`p-4 md:p-6 hover:bg-slate-50/50 transition-premium cursor-pointer group flex items-start gap-4 md:gap-5 border-l-4 transition-all duration-300 ${task.priority === 'Critical' ? 'border-red-500' :
-                                 task.priority === 'High' ? 'border-amber-500' : 'border-blue-500'
-                                 }`}
-                           >
-                              <div className="pt-1 shrink-0 group-hover:scale-110 transition-premium">
-                                 {task.priority === 'Critical' ? <AlertTriangle className="text-red-500" size={28} /> :
-                                    task.priority === 'High' ? <Clock className="text-amber-500" size={28} /> :
-                                       <FileText className="text-blue-500" size={28} />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                 <div className="flex justify-between items-start gap-3 mb-2">
-                                    <h4 className="font-black text-slate-900 group-hover:text-blue-600 transition-colors text-lg uppercase tracking-tight">{task.title}</h4>
-                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 shadow-sm ${task.priority === 'Critical' ? 'bg-red-500 text-white shadow-red-100' :
-                                       task.priority === 'High' ? 'bg-amber-500 text-white shadow-amber-100' : 'bg-blue-600 text-white shadow-blue-100'
-                                       }`}>
-                                       {task.priority}
-                                    </span>
-                                 </div>
-                                 <p className="text-sm text-slate-500 mb-4 font-medium leading-relaxed">{task.description}</p>
-                                 <div className="flex flex-wrap items-center gap-4 text-[10px]">
-                                    <span className="flex items-center gap-2 font-black text-slate-700 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-                                       <UserPlus size={14} className="text-blue-500" /> {task.candidateName}
-                                    </span>
-                                    <span className="text-slate-400 font-black uppercase tracking-widest">{task.stage}</span>
-                                    <span className="ml-auto text-red-500 font-black uppercase tracking-widest flex items-center gap-1.5">
-                                       <Clock size={12} /> {task.dueDate}
-                                    </span>
-                                 </div>
-                              </div>
-                              <div className="self-center hidden md:block opacity-0 group-hover:opacity-100 transition-premium shrink-0 translate-x-4 group-hover:translate-x-0">
-                                 <ArrowRight size={24} className="text-blue-600" />
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                  ) : (
-                     <div className="flex flex-col items-center justify-center p-20 text-slate-300">
-                        <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center border border-slate-100 mb-6 group-hover:scale-110 transition-premium">
-                           <CheckCircle size={40} className="text-emerald-400" />
-                        </div>
-                        <p className="font-black uppercase tracking-widest text-sm text-slate-400">All Caught Up</p>
-                        <p className="text-xs font-bold text-slate-400 mt-2">No pending tasks.</p>
-                     </div>
-                  )}
+                  ) : getActiveContent()}
                </div>
             </div>
 

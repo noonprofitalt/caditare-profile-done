@@ -28,6 +28,7 @@ const mockCandidate = (flags: ComplianceFlag[] = []): Candidate => ({
     complianceFlags: flags,
     profileCompletionStatus: ProfileCompletionStatus.COMPLETE,
     candidateCode: 'C001',
+    regNo: 'SR 001',
     email: 'test@example.com',
     phone: '1234567890',
     personalInfo: { fullName: 'Test Candidate' } as any,

@@ -41,6 +41,18 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* Remove number input spinners globally — users type numbers manually */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 }
 
 @layer components {

@@ -8,6 +8,7 @@ describe('csvExportService', () => {
         const mockCandidate: Candidate = {
             id: '123',
             candidateCode: 'GW-2024-0001',
+            regNo: 'SPA 19-240101',
             name: 'John Doe',
             email: 'john@example.com',
             phone: '+1234567890',
