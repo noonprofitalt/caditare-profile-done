@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   Users,
@@ -21,11 +22,14 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { logout, user } = useAuth();
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
       ? 'bg-blue-600 text-white shadow-md'
       : 'text-slate-400 hover:bg-slate-800 hover:text-white'
     }`;
+
+  const isAdmin = user?.role === 'Admin';
 
   return (
     <aside className={`w-64 h-screen bg-slate-900 text-white flex flex-col fixed left-0 top-0 border-r border-slate-800 z-50 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
@@ -48,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
         <NavLink to="/" className={linkClass}>
           <LayoutDashboard size={20} />
           <span>Dashboard</span>
@@ -65,18 +69,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <Users size={20} />
           <span>Candidates</span>
         </NavLink>
-        <NavLink to="/jobs" className={linkClass}>
-          <Briefcase size={20} />
-          <span>Jobs</span>
-        </NavLink>
-        <NavLink to="/partners" className={linkClass}>
-          <Target size={20} />
-          <span>Partners</span>
-        </NavLink>
-        <NavLink to="/finance" className={linkClass}>
-          <DollarSign size={20} />
-          <span>Finance</span>
-        </NavLink>
+
+        {isAdmin && (
+          <>
+            <NavLink to="/jobs" className={linkClass}>
+              <Briefcase size={20} />
+              <span>Jobs</span>
+            </NavLink>
+            <NavLink to="/partners" className={linkClass}>
+              <Target size={20} />
+              <span>Partners</span>
+            </NavLink>
+            <NavLink to="/finance" className={linkClass}>
+              <DollarSign size={20} />
+              <span>Finance</span>
+            </NavLink>
+          </>
+        )}
+
         <NavLink to="/team-chat" className={linkClass}>
           <MessageSquare size={20} />
           <span>Chat</span>
@@ -84,15 +94,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       </nav>
 
       <div className="p-4 border-t border-slate-800 space-y-2">
-        <NavLink to="/audit" className={linkClass}>
-          <Activity size={20} />
-          <span>Audit Trails</span>
-        </NavLink>
-        <NavLink to="/settings" className={linkClass}>
-          <Settings size={20} />
-          <span>Settings</span>
-        </NavLink>
-        <button className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+        {isAdmin && (
+          <>
+            <NavLink to="/audit" className={linkClass}>
+              <Activity size={20} />
+              <span>Audit Trails</span>
+            </NavLink>
+            <NavLink to="/settings" className={linkClass}>
+              <Settings size={20} />
+              <span>Settings</span>
+            </NavLink>
+          </>
+        )}
+        <button onClick={logout} className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
           <LogOut size={20} />
           <span>Sign Out</span>
         </button>

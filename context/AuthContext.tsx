@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { User, AuthState } from '../types';
 import { AuthService } from '../services/authService';
+import { AuditService } from '../services/auditService';
 
 interface AuthContextType extends AuthState {
     login: (email: string, password: string) => Promise<void>;
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const user = await AuthService.getCurrentUser();
 
                 if (user) {
+                    AuditService.setCurrentUser(user.id);
                     setState({
                         user,
                         isAuthenticated: true,
@@ -53,7 +55,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setState(prev => ({ ...prev, isLoading: true }));
         try {
             const user = await AuthService.login(email, password);
+            AuditService.setCurrentUser(user.id);
             setState({ user, isAuthenticated: true, isLoading: false });
+            AuditService.log('USER_LOGIN', { email: user.email }, user.id);
         } catch (error) {
             setState(prev => ({ ...prev, isLoading: false }));
             throw error;
@@ -61,13 +65,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const logout = async () => {
+        if (state.user) {
+            AuditService.log('USER_LOGOUT', { email: state.user.email }, state.user.id);
+        }
         await AuthService.logout();
+        AuditService.setCurrentUser(null);
         setState({ user: null, isAuthenticated: false, isLoading: false });
     };
 
     const updateUser = (user: User) => {
         setState(prev => ({ ...prev, user }));
     };
+
+    // Auto-Session Timeout (Idle Security) - 2 Hours
+    React.useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+        const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+
+        const handleActivity = () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            if (state.isAuthenticated) {
+                timeoutId = setTimeout(() => {
+                    console.log('[Auth] Session timed out due to inactivity.');
+                    logout();
+                    // Hard redirect to clear any sensitive states safely
+                    window.location.href = '/login';
+                }, TWO_HOURS_MS);
+            }
+        };
+
+        if (state.isAuthenticated) {
+            handleActivity(); // Start timer initially
+            window.addEventListener('mousemove', handleActivity);
+            window.addEventListener('keydown', handleActivity);
+            window.addEventListener('click', handleActivity);
+            window.addEventListener('scroll', handleActivity);
+        }
+
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            window.removeEventListener('mousemove', handleActivity);
+            window.removeEventListener('keydown', handleActivity);
+            window.removeEventListener('click', handleActivity);
+            window.removeEventListener('scroll', handleActivity);
+        };
+    }, [state.isAuthenticated]);
 
     return (
         <AuthContext.Provider value={{ ...state, login, logout, updateUser }}>
@@ -76,7 +122,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {

@@ -97,8 +97,8 @@ const JobRoleEntry: React.FC<JobRoleEntryProps> = ({ jobRoles, onChange }) => {
                                         type="number"
                                         min="0"
                                         max="50"
-                                        value={role.experienceYears}
-                                        onChange={(e) => updateRole(index, 'experienceYears', parseInt(e.target.value) || 0)}
+                                        value={role.experienceYears ?? ''}
+                                        onChange={(e) => updateRole(index, 'experienceYears', e.target.value ? parseInt(e.target.value) : (undefined as any))}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                                         required
                                     />

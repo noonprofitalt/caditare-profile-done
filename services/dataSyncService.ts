@@ -64,7 +64,7 @@ export class DataSyncService {
         const professionalProfile: ProfessionalProfile = {
             ...currentPP,
             jobRoles: result.jobRoles || currentPP.jobRoles || (result.role ? [result.role] : []),
-            experienceYears: result.experienceYears || currentPP.experienceYears || 0,
+            experienceYears: result.experienceYears ?? currentPP.experienceYears,
             skills: result.skills || currentPP.skills || [],
             education: result.education || currentPP.education || [],
             educationalQualifications: result.educationalQualifications || currentPP.educationalQualifications || [],
@@ -138,7 +138,7 @@ export class DataSyncService {
             const pp = result.professionalProfile;
             result.skills = pp.skills || result.skills || [];
             result.education = pp.education || result.education || [];
-            result.experienceYears = pp.experienceYears || result.experienceYears || 0;
+            result.experienceYears = pp.experienceYears ?? result.experienceYears;
             result.jobRoles = pp.jobRoles || result.jobRoles || [];
             result.educationalQualifications = pp.educationalQualifications || result.educationalQualifications || [];
             result.employmentHistory = pp.employmentHistory || result.employmentHistory || [];
@@ -167,8 +167,8 @@ export class DataSyncService {
         result.passportProfession = result.personalInfo?.passportProfession || result.passportProfession || '';
         result.drivingLicenseNo = result.personalInfo?.drivingLicenseNo || result.drivingLicenseNo || '';
         result.religion = result.personalInfo?.religion || result.religion || '';
-        result.height = result.personalInfo?.height || result.height;
-        result.weight = result.personalInfo?.weight || result.weight;
+        result.height = result.personalInfo?.height ?? result.height;
+        result.weight = result.personalInfo?.weight ?? result.weight;
 
         return result;
     }

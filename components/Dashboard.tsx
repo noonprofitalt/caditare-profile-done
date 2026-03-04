@@ -8,6 +8,7 @@ import { JobService } from '../services/jobService';
 import { DemandOrderService } from '../services/demandOrderService';
 import { WorkTask, SystemAlert, Candidate, WorkflowStage, ProfileCompletionStatus, JobStatus, DemandOrderStatus } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
    CheckCircle, AlertTriangle, Clock, Activity, ArrowRight,
    Calendar, Zap, Bell, FileText, UserPlus,
@@ -27,23 +28,28 @@ const Dashboard: React.FC = () => {
    const [isLoading, setIsLoading] = useState(true);
    const [activeTaskTab, setActiveTaskTab] = useState<'priority' | 'alerts' | 'compliance'>('priority');
    const navigate = useNavigate();
+   const { user } = useAuth();
+   const isAdmin = user?.role === 'Admin';
 
    useEffect(() => {
       const loadDashboardData = async () => {
          try {
-            // FRICTIONLESS MODE: Parallel Fetching to eliminate network waterfalls
+            // FRICTIONLESS MODE: Parallel Fetching to eliminate network waterfalls.
+            // Only fetch restricted data if user is an Admin.
             const [data, employers, jobs, orders] = await Promise.all([
                CandidateService.getCandidates().then(res => res || []),
-               PartnerService.getEmployers().then(res => res || []),
-               JobService.getJobs().then(res => res || []),
-               DemandOrderService.getAll().then(res => res || [])
+               isAdmin ? PartnerService.getEmployers().then(res => res || []) : Promise.resolve([]),
+               isAdmin ? JobService.getJobs().then(res => res || []) : Promise.resolve([]),
+               isAdmin ? DemandOrderService.getAll().then(res => res || []) : Promise.resolve([])
             ]);
 
             // OFFLINE MODE: Cache latest data
             if (data.length > 0) localStorage.setItem('caditare_dash_data', JSON.stringify(data));
-            if (employers.length > 0) localStorage.setItem('caditare_dash_employers', JSON.stringify(employers));
-            if (jobs.length > 0) localStorage.setItem('caditare_dash_jobs', JSON.stringify(jobs));
-            if (orders.length > 0) localStorage.setItem('caditare_dash_orders', JSON.stringify(orders));
+            if (isAdmin) {
+               if (employers.length > 0) localStorage.setItem('caditare_dash_employers', JSON.stringify(employers));
+               if (jobs.length > 0) localStorage.setItem('caditare_dash_jobs', JSON.stringify(jobs));
+               if (orders.length > 0) localStorage.setItem('caditare_dash_orders', JSON.stringify(orders));
+            }
 
             setCandidates(data);
             const generatedTasks = TaskEngine.generateWorkQueue(data);
@@ -51,9 +57,11 @@ const Dashboard: React.FC = () => {
             setTasks(generatedTasks);
             setAlerts(generatedAlerts);
 
-            setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
-            setOpenJobsCount(jobs.filter(j => j.status === JobStatus.OPEN).length);
-            setActiveDemands(orders.filter(o => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
+            if (isAdmin) {
+               setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
+               setOpenJobsCount(jobs.filter(j => j.status === JobStatus.OPEN).length);
+               setActiveDemands(orders.filter(o => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
+            }
          } catch (error) {
             console.error('Failed to load dashboard data:', error);
             // OFFLINE MODE: Fallback to cached data if network fails
@@ -244,22 +252,24 @@ const Dashboard: React.FC = () => {
                      </div>
                   </div>
 
-                  <div
-                     onClick={() => navigate('/finance')}
-                     className="bg-blue-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
-                  >
-                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
-                     <div className="flex items-center justify-between relative z-10">
-                        <div className="flex-1 min-w-0 pr-2">
-                           <p className="text-blue-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Projected Revenue</p>
-                           <h3 className="text-2xl sm:text-2xl lg:text-3xl xl:text-2xl 2xl:text-3xl font-black text-white mb-1 tracking-tighter truncate" title={`$${projectedRevenue.toLocaleString()}`}>${projectedRevenue.toLocaleString()}</h3>
-                           <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight truncate">Projected Revenue</p>
-                        </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:translate-y-[-4px] transition-premium shrink-0">
-                           <TrendingUp size={24} />
+                  {isAdmin && (
+                     <div
+                        onClick={() => navigate('/finance')}
+                        className="bg-blue-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
+                     >
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                        <div className="flex items-center justify-between relative z-10">
+                           <div className="flex-1 min-w-0 pr-2">
+                              <p className="text-blue-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Projected Revenue</p>
+                              <h3 className="text-2xl sm:text-2xl lg:text-3xl xl:text-2xl 2xl:text-3xl font-black text-white mb-1 tracking-tighter truncate" title={`$${projectedRevenue.toLocaleString()}`}>${projectedRevenue.toLocaleString()}</h3>
+                              <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight truncate">Projected Revenue</p>
+                           </div>
+                           <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:translate-y-[-4px] transition-premium shrink-0">
+                              <TrendingUp size={24} />
+                           </div>
                         </div>
                      </div>
-                  </div>
+                  )}
 
                   <div
                      onClick={() => navigate('/candidates?stage=Departed')}
@@ -278,39 +288,43 @@ const Dashboard: React.FC = () => {
                      </div>
                   </div>
 
-                  <div
-                     onClick={() => navigate('/jobs')}
-                     className="bg-purple-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-purple-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
-                  >
-                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
-                     <div className="flex items-center justify-between relative z-10">
-                        <div className="flex-1 min-w-0 pr-2">
-                           <p className="text-purple-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Open Jobs</p>
-                           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{openJobsCount}</h3>
-                           <p className="text-[10px] text-purple-100 font-bold uppercase tracking-tight truncate">Hiring Now</p>
+                  {isAdmin && (
+                     <>
+                        <div
+                           onClick={() => navigate('/jobs')}
+                           className="bg-purple-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-purple-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
+                        >
+                           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                           <div className="flex items-center justify-between relative z-10">
+                              <div className="flex-1 min-w-0 pr-2">
+                                 <p className="text-purple-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Open Jobs</p>
+                                 <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{openJobsCount}</h3>
+                                 <p className="text-[10px] text-purple-100 font-bold uppercase tracking-tight truncate">Hiring Now</p>
+                              </div>
+                              <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium shrink-0">
+                                 <Briefcase size={24} />
+                              </div>
+                           </div>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium shrink-0">
-                           <Briefcase size={24} />
-                        </div>
-                     </div>
-                  </div>
 
-                  <div
-                     onClick={() => navigate('/partners')}
-                     className="bg-indigo-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
-                  >
-                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
-                     <div className="flex items-center justify-between relative z-10">
-                        <div className="flex-1 min-w-0 pr-2">
-                           <p className="text-indigo-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Active Demands</p>
-                           <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{activeDemands}</h3>
-                           <p className="text-[10px] text-indigo-100 font-bold uppercase tracking-tight truncate">Orders Open</p>
+                        <div
+                           onClick={() => navigate('/partners')}
+                           className="bg-indigo-600 group relative overflow-hidden p-6 rounded-2xl shadow-2xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-premium cursor-pointer"
+                        >
+                           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                           <div className="flex items-center justify-between relative z-10">
+                              <div className="flex-1 min-w-0 pr-2">
+                                 <p className="text-indigo-100 text-[10px] uppercase font-black tracking-widest mb-1 truncate">Active Demands</p>
+                                 <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-1 tracking-tighter truncate">{activeDemands}</h3>
+                                 <p className="text-[10px] text-indigo-100 font-bold uppercase tracking-tight truncate">Orders Open</p>
+                              </div>
+                              <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-cyan-300 group-hover:rotate-12 transition-premium shrink-0">
+                                 <Package size={24} />
+                              </div>
+                           </div>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-cyan-300 group-hover:rotate-12 transition-premium shrink-0">
-                           <Package size={24} />
-                        </div>
-                     </div>
-                  </div>
+                     </>
+                  )}
                </>
             )}
          </div>
@@ -343,8 +357,8 @@ const Dashboard: React.FC = () => {
                            className="text-emerald-500 transition-all duration-1000 ease-out" strokeLinecap="round" />
                      </svg>
                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-black text-slate-900 tracking-tighter">{activeCandidates > 0 ? Math.round((completeProfiles / activeCandidates) * 100) : 0}%</span>
-                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Healthy</span>
+                        <span className="text-3xl font-black text-slate-900 tracking-tighter">{activeCandidates > 0 ? Math.round(((completeProfiles + (partialProfiles * 0.5)) / activeCandidates) * 100) : 0}%</span>
+                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Verified</span>
                      </div>
                   </div>
                </div>
@@ -533,9 +547,11 @@ const Dashboard: React.FC = () => {
                      <button onClick={() => navigate('/candidates')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
                         <UserPlus size={16} /> Add Candidate
                      </button>
-                     <button onClick={() => navigate('/jobs')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
-                        <FilePlus size={16} /> Post Job
-                     </button>
+                     {isAdmin && (
+                        <button onClick={() => navigate('/jobs')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
+                           <FilePlus size={16} /> Post Job
+                        </button>
+                     )}
                      <button onClick={() => navigate('/team-chat')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-blue-600 hover:text-white rounded-xl text-left transition-premium">
                         <MessageCircle size={16} /> Chat
                      </button>

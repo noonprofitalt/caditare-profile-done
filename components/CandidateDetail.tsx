@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../context/ToastContext';
 import { useCandidates } from '../context/CandidateContext';
 import { useAuth } from '../context/AuthContext';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -14,6 +15,7 @@ import {
   TimelineEvent,
   TimelineEventType,
   PassportStatus,
+  RemarkEntry,
   Job,
   Employer
 } from '../types';
@@ -57,6 +59,8 @@ import ComplianceWidget from './ComplianceWidget';
 import WorkflowProgressWidget from './widgets/WorkflowProgressWidget';
 import RecentActivityWidget from './widgets/RecentActivityWidget';
 import SLBFEStatusWidget from './widgets/SLBFEStatusWidget';
+import ActivityLogWidget from './widgets/ActivityLogWidget';
+import FinancialLedgerWidget from './widgets/FinancialLedgerWidget';
 
 import MultiPhoneInput from './ui/MultiPhoneInput';
 import MultiEducationSelector from './ui/MultiEducationSelector';
@@ -73,7 +77,7 @@ import { ComplianceService } from '../services/complianceService';
 import { ProfileCompletionService } from '../services/profileCompletionService';
 import WorkflowEngine, { WORKFLOW_STAGES } from '../services/workflowEngine';
 import { DataSyncService } from '../services/dataSyncService';
-
+import { AuditService } from '../services/auditService';
 
 
 const CandidateDetail: React.FC = () => {
@@ -82,6 +86,8 @@ const CandidateDetail: React.FC = () => {
   // Use global state
   const { candidates, updateCandidateInState, removeCandidateFromState, refreshCandidates } = useCandidates();
   const { user } = useAuth();
+  const toast = useToast();
+  const isAdmin = user?.role === 'Admin';
 
   // Derive candidate from global state
   const [candidate, setCandidate] = useState<Candidate | null>(null);
@@ -125,6 +131,13 @@ const CandidateDetail: React.FC = () => {
     loadCandidate();
   }, [id, candidates]);
 
+  // Log profile view once when candidate is loaded
+  useEffect(() => {
+    if (candidate && candidate.id) {
+      AuditService.log('PROFILE_VIEW', { candidateId: candidate.id, candidateName: candidate.name });
+    }
+  }, [candidate?.id]);
+
   const [activeTab, setActiveTab] = useState<'profile' | 'documents' | 'timeline' | 'audit'>('profile');
 
   // Handles profile fields editing
@@ -137,7 +150,7 @@ const CandidateDetail: React.FC = () => {
 
   useEffect(() => {
     const loadLinkedData = async () => {
-      if (!candidate) return;
+      if (!candidate || !isAdmin) return;
       try {
         const allJobs = await JobService.getJobs();
         const allEmployers = await PartnerService.getEmployers();
@@ -153,7 +166,7 @@ const CandidateDetail: React.FC = () => {
       }
     };
     loadLinkedData();
-  }, [candidate]);
+  }, [candidate, isAdmin]);
 
   const startEditing = () => {
     if (!candidate) return;
@@ -180,7 +193,7 @@ const CandidateDetail: React.FC = () => {
           ...(editedProfile.slbfeData || {})
         } as any,
         // Ensure complex arrays are preserved if missing in editedProfile
-        advancePayments: (editedProfile as any).advancePayments || candidate.advancePayments || [],
+        advancePayments: (editedProfile as any).advancePayments ?? [],
         workflowMilestones: {
           ...(candidate.workflowMilestones || {}),
           ...((editedProfile as any).workflowMilestones || {}),
@@ -290,18 +303,53 @@ const CandidateDetail: React.FC = () => {
   };
 
   // Strict Workflow Actions
-  // Strict Workflow Actions
-  const handleAdvanceStage = async () => {
+  const handleAdvanceStage = async (forceOverride: boolean = false) => {
     if (!candidate) return;
 
     const nextStage = WorkflowEngine.getNextStage(candidate.stage);
     if (!nextStage) return;
 
     // Use WorkflowEngine to perform transition logic
-    const transitionResult = await WorkflowEngine.performTransition(candidate, nextStage, user?.name || 'System Admin');
+    const transitionResult = await WorkflowEngine.performTransition(candidate, nextStage, user?.name || 'System Admin', undefined, forceOverride);
 
     if (transitionResult.success) {
+      const today = new Date().toISOString().split('T')[0];
       const updatedCandidate = { ...candidate, stage: nextStage };
+
+      // Auto-update workflow milestone dates to bind with workflow progress
+      const milestones = { ...(updatedCandidate.workflowMilestones || {}) };
+      switch (nextStage) {
+        case WorkflowStage.VERIFIED:
+          milestones.verifiedDate = today;
+          break;
+        case WorkflowStage.APPLIED:
+          milestones.offerAppliedDate = today;
+          break;
+        case WorkflowStage.OFFER_RECEIVED:
+          milestones.offerReceivedDate = today;
+          break;
+        case WorkflowStage.WP_RECEIVED:
+          milestones.wpReceivedDate = today;
+          break;
+        case WorkflowStage.EMBASSY_APPLIED:
+          milestones.embAppliedDate = today;
+          break;
+        case WorkflowStage.VISA_RECEIVED:
+          milestones.stampRejectDate = today;
+          milestones.stampResult = 'Stamped';
+          break;
+        case WorkflowStage.SLBFE_REGISTRATION:
+          milestones.slbfeRegistrationDate = today;
+          break;
+        case WorkflowStage.TICKET_ISSUED:
+          milestones.ticketIssuedDate = today;
+          break;
+        case WorkflowStage.DEPARTED:
+          milestones.departureDate = today;
+          updatedCandidate.departureDate = today;
+          break;
+      }
+      updatedCandidate.workflowMilestones = milestones;
 
       // Update Backend
       await CandidateService.updateCandidate(updatedCandidate);
@@ -326,6 +374,74 @@ const CandidateDetail: React.FC = () => {
     }
   };
 
+  const handleStageClick = async (toStage: WorkflowStage) => {
+    if (!candidate) return;
+
+    const fromIndex = WORKFLOW_STAGES.indexOf(candidate.stage);
+    const toIndex = WORKFLOW_STAGES.indexOf(toStage);
+
+    if (toIndex === fromIndex) return;
+
+    if (toIndex < fromIndex) {
+      const reason = prompt(`Reason for rollback to ${toStage}:`);
+      if (reason) handleRollback(toStage, reason);
+      return;
+    }
+
+    const isSequential = toIndex === fromIndex + 1;
+    const confirmMsg = isSequential
+      ? `Progress workflow to ${toStage}?`
+      : `JUMP workflow to ${toStage}? (Bypasses sequential logic)`;
+
+    if (window.confirm(confirmMsg)) {
+      // Logic for jump is same as advance but with forceOverride=true if non-sequential
+      // Note: WorkflowEngine.performTransition takes forceOverride as last param
+      const result = await WorkflowEngine.performTransition(candidate, toStage, user?.name || 'System Admin', undefined, !isSequential);
+
+      if (result.success) {
+        const today = new Date().toISOString().split('T')[0];
+        const updatedCandidate = { ...candidate, stage: toStage };
+        const milestones = { ...(updatedCandidate.workflowMilestones || {}) };
+
+        // Update relevant milestone for the target stage
+        switch (toStage) {
+          case WorkflowStage.VERIFIED: milestones.verifiedDate = today; break;
+          case WorkflowStage.APPLIED: milestones.offerAppliedDate = today; break;
+          case WorkflowStage.OFFER_RECEIVED: milestones.offerReceivedDate = today; break;
+          case WorkflowStage.WP_RECEIVED: milestones.wpReceivedDate = today; break;
+          case WorkflowStage.EMBASSY_APPLIED: milestones.embAppliedDate = today; break;
+          case WorkflowStage.VISA_RECEIVED:
+            milestones.stampRejectDate = today;
+            milestones.stampResult = 'Stamped';
+            break;
+          case WorkflowStage.SLBFE_REGISTRATION: milestones.slbfeRegistrationDate = today; break;
+          case WorkflowStage.TICKET_ISSUED: milestones.ticketIssuedDate = today; break;
+          case WorkflowStage.DEPARTED:
+            milestones.departureDate = today;
+            updatedCandidate.departureDate = today;
+            break;
+        }
+
+        updatedCandidate.workflowMilestones = milestones;
+        await CandidateService.updateCandidate(updatedCandidate);
+        updateCandidateInState(updatedCandidate);
+        setCandidate(updatedCandidate);
+
+        await CandidateService.addTimelineEvent(candidate.id, {
+          type: 'WORKFLOW',
+          title: `Moved to ${toStage}`,
+          description: `Direct stage transition from ${candidate.stage} to ${toStage}`,
+          actor: user?.name || 'Internal Staff',
+          timestamp: new Date().toISOString()
+        });
+
+        toast.success(`Candidate moved to ${toStage}`);
+      } else {
+        toast.error(result.error || "Transition failed");
+      }
+    }
+  };
+
   const handleRollback = async (targetStage: WorkflowStage, reason: string) => {
     if (!candidate) return;
 
@@ -338,9 +454,15 @@ const CandidateDetail: React.FC = () => {
 
     const updatedCandidate = { ...candidate, stage: targetStage };
 
+    // When rolling back, we might optionally clear later milestones,
+    // but the request was specifically to bond the progress and dates.
+    // We'll update today's date into the targeted rollback stage just in case
+    // it functions as a fresh entry to that stage.
+
     await CandidateService.updateCandidate(updatedCandidate);
     updateCandidateInState(updatedCandidate);
     setCandidate(updatedCandidate);
+
 
     await CandidateService.addTimelineEvent(candidate.id, {
       type: 'WORKFLOW',
@@ -374,6 +496,32 @@ const CandidateDetail: React.FC = () => {
         });
       }
       navigate('/candidates');
+    }
+  };
+
+  // Handle activity log (remarkLog) update from ActivityLogWidget
+  const handleRemarkLogUpdate = async (updatedRemarkLog: RemarkEntry[]) => {
+    if (!candidate) return;
+
+    const updatedCandidate = {
+      ...candidate,
+      remarkLog: updatedRemarkLog,
+    } as Candidate;
+
+    try {
+      await CandidateService.updateCandidate(updatedCandidate);
+      updateCandidateInState(updatedCandidate);
+      setCandidate(updatedCandidate);
+
+      await CandidateService.addTimelineEvent(candidate.id, {
+        type: 'NOTE',
+        title: 'Activity Log Updated',
+        description: `Activity log updated (${updatedRemarkLog.length} entries)`,
+        actor: user?.name || 'Internal Staff',
+        userId: user?.id
+      });
+    } catch (err) {
+      console.error('Failed to update activity log', err);
     }
   };
 
@@ -530,14 +678,14 @@ const CandidateDetail: React.FC = () => {
                     {isEditingProfile ? (
                       <input
                         type="text"
-                        value={editedProfile.regNo || candidate.regNo || ''}
+                        value={editedProfile.regNo ?? ''}
                         onChange={(e) => setEditedProfile({ ...editedProfile, regNo: e.target.value })}
                         placeholder="e.g. SPA 19-260225"
                         className="text-2xl font-black text-red-700 bg-white border-2 border-red-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-red-500 outline-none tracking-wide"
                         style={{ minWidth: '220px' }}
                       />
                     ) : (
-                      <span className="text-2xl font-black text-red-700 tracking-wide">{candidate.regNo || candidate.candidateCode || '-'}</span>
+                      <span className="text-2xl font-black text-red-700 tracking-wide">{candidate.regNo ?? '-'}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-6 text-xs text-slate-500">
@@ -546,7 +694,7 @@ const CandidateDetail: React.FC = () => {
                       {isEditingProfile ? (
                         <input
                           type="date"
-                          value={editedProfile.regDate ? editedProfile.regDate.split('T')[0] : candidate.regDate ? candidate.regDate.split('T')[0] : ''}
+                          value={editedProfile.regDate ? editedProfile.regDate.split('T')[0] : ''}
                           onChange={(e) => setEditedProfile({ ...editedProfile, regDate: e.target.value })}
                           className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1"
                         />
@@ -558,11 +706,11 @@ const CandidateDetail: React.FC = () => {
                       <div className="flex flex-wrap gap-3">
                         <div>
                           <span className="font-bold uppercase">Agent: </span>
-                          <input type="text" value={editedProfile.foreignAgent || candidate.foreignAgent || ''} onChange={(e) => setEditedProfile({ ...editedProfile, foreignAgent: e.target.value })} placeholder="Foreign Agent" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
+                          <input type="text" value={editedProfile.foreignAgent ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, foreignAgent: e.target.value })} placeholder="Foreign Agent" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
                         </div>
                         <div>
                           <span className="font-bold uppercase">Coordinator: </span>
-                          <input type="text" value={editedProfile.coordinatorName || candidate.coordinatorName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, coordinatorName: e.target.value })} placeholder="Name" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
+                          <input type="text" value={editedProfile.coordinatorName ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, coordinatorName: e.target.value })} placeholder="Name" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
                         </div>
                         <div>
                           <span className="font-bold uppercase">Company: </span>
@@ -570,7 +718,7 @@ const CandidateDetail: React.FC = () => {
                         </div>
                         <div>
                           <span className="font-bold uppercase">D/H Officer: </span>
-                          <input type="text" value={editedProfile.dhOfficer || candidate.dhOfficer || ''} onChange={(e) => setEditedProfile({ ...editedProfile, dhOfficer: e.target.value })} placeholder="Officer" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
+                          <input type="text" value={editedProfile.dhOfficer ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, dhOfficer: e.target.value })} placeholder="Officer" className="text-sm border border-slate-300 rounded px-2 py-0.5 ml-1 w-28" />
                         </div>
                       </div>
                     ) : (
@@ -1078,19 +1226,19 @@ const CandidateDetail: React.FC = () => {
                         <input
                           id="height-ft"
                           type="number"
-                          value={editedProfile.personalInfo?.height?.feet || 0}
+                          value={editedProfile.personalInfo?.height?.feet || ''}
                           onChange={(e) => setEditedProfile({
                             ...editedProfile,
                             personalInfo: {
                               ...editedProfile.personalInfo!,
-                              height: { ...(editedProfile.personalInfo?.height || { feet: 0, inches: 0 }), feet: parseInt(e.target.value) || 0 }
+                              height: { ...(editedProfile.personalInfo?.height || { feet: 0, inches: 0 }), feet: e.target.value ? parseInt(e.target.value) : '' as any }
                             }
                           })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate?.personalInfo?.height?.feet || (candidate as any)?.height?.feet || 0} FT
+                          {candidate?.personalInfo?.height?.feet || (candidate as any)?.height?.feet || '-'} FT
                         </div>
                       )}
                     </div>
@@ -1100,19 +1248,19 @@ const CandidateDetail: React.FC = () => {
                         <input
                           id="height-in"
                           type="number"
-                          value={editedProfile.personalInfo?.height?.inches || 0}
+                          value={editedProfile.personalInfo?.height?.inches || ''}
                           onChange={(e) => setEditedProfile({
                             ...editedProfile,
                             personalInfo: {
                               ...editedProfile.personalInfo!,
-                              height: { ...(editedProfile.personalInfo?.height || { feet: 0, inches: 0 }), inches: parseInt(e.target.value) || 0 }
+                              height: { ...(editedProfile.personalInfo?.height || { feet: 0, inches: 0 }), inches: e.target.value ? parseInt(e.target.value) : '' as any }
                             }
                           })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate?.personalInfo?.height?.inches || (candidate as any)?.height?.inches || 0} IN
+                          {candidate?.personalInfo?.height?.inches || (candidate as any)?.height?.inches || '-'} IN
                         </div>
                       )}
                     </div>
@@ -1122,16 +1270,16 @@ const CandidateDetail: React.FC = () => {
                         <input
                           id="weight-kg"
                           type="number"
-                          value={editedProfile.personalInfo?.weight || 0}
+                          value={editedProfile.personalInfo?.weight || ''}
                           onChange={(e) => setEditedProfile({
                             ...editedProfile,
-                            personalInfo: { ...(candidate.personalInfo || { fullName: '' }), ...(editedProfile.personalInfo || {}), weight: parseInt(e.target.value) || 0 }
+                            personalInfo: { ...(candidate.personalInfo || { fullName: '' }), ...(editedProfile.personalInfo || {}), weight: e.target.value ? parseInt(e.target.value) : '' as any }
                           })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         />
                       ) : (
                         <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50">
-                          {candidate?.personalInfo?.weight || (candidate as any)?.weight || 0} KG
+                          {candidate?.personalInfo?.weight || (candidate as any)?.weight || '-'} KG
                         </div>
                       )}
                     </div>
@@ -1147,7 +1295,7 @@ const CandidateDetail: React.FC = () => {
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         >
                           <option value="">Select Religion</option>
-                          <option value="Sinhala">Sinhala</option>
+                          <option value="Buddhist">Buddhist</option>
                           <option value="Tamil">Tamil</option>
                           <option value="Muslim">Muslim</option>
                           <option value="Christian">Christian</option>
@@ -1236,7 +1384,7 @@ const CandidateDetail: React.FC = () => {
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Primary Phone</label>
                           <div className="p-2.5 bg-slate-50 rounded-lg text-sm font-medium text-slate-900 border border-slate-200/50 flex items-center gap-2">
-                            {candidate.contactInfo?.primaryPhone || candidate.phone || '-'}
+                            {candidate.contactInfo?.primaryPhone ?? '-'}
                           </div>
                         </div>
                         <div>
@@ -1282,10 +1430,11 @@ const CandidateDetail: React.FC = () => {
                           <label className="text-xs font-semibold text-slate-600 uppercase">Experience (Years)</label>
                           <input
                             type="number"
-                            value={editedProfile.professionalProfile?.experienceYears || editedProfile.experienceYears || 0}
+                            value={editedProfile.professionalProfile?.experienceYears || ''}
                             onChange={(e) => setEditedProfile({
                               ...editedProfile,
-                              professionalProfile: { ...editedProfile.professionalProfile!, experienceYears: parseInt(e.target.value) }
+                              experienceYears: e.target.value ? parseInt(e.target.value) : ('' as any),
+                              professionalProfile: { ...editedProfile.professionalProfile!, experienceYears: e.target.value ? parseInt(e.target.value) : ('' as any) }
                             })}
                             className="w-full mt-1 p-2 border border-slate-200 rounded text-sm"
                           />
@@ -1317,7 +1466,7 @@ const CandidateDetail: React.FC = () => {
                               value={editedProfile.professionalProfile?.gceOL?.year || ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
-                                professionalProfile: { ...(candidate.professionalProfile || { jobRoles: [], experienceYears: 0, skills: [], education: [] }), ...(editedProfile.professionalProfile || {}), gceOL: { year: e.target.value } }
+                                professionalProfile: { ...(candidate.professionalProfile || { jobRoles: [], experienceYears: undefined, skills: [], education: [] }), ...(editedProfile.professionalProfile || {}), gceOL: { year: e.target.value } }
                               })}
                               className="w-full mt-1 p-2 border border-slate-200 rounded text-sm"
                             />
@@ -1329,7 +1478,7 @@ const CandidateDetail: React.FC = () => {
                               value={editedProfile.professionalProfile?.gceAL?.year || ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
-                                professionalProfile: { ...(candidate.professionalProfile || { jobRoles: [], experienceYears: 0, skills: [], education: [] }), ...(editedProfile.professionalProfile || {}), gceAL: { year: e.target.value } }
+                                professionalProfile: { ...(candidate.professionalProfile || { jobRoles: [], experienceYears: undefined, skills: [], education: [] }), ...(editedProfile.professionalProfile || {}), gceAL: { year: e.target.value } }
                               })}
                               className="w-full mt-1 p-2 border border-slate-200 rounded text-sm"
                             />
@@ -1344,12 +1493,12 @@ const CandidateDetail: React.FC = () => {
                         <div className="text-sm text-slate-900 mt-1">
                           {candidate.professionalProfile?.jobRoles?.[0] && typeof candidate.professionalProfile.jobRoles[0] === 'string'
                             ? candidate.professionalProfile.jobRoles[0]
-                            : (candidate.professionalProfile?.jobRoles?.[0] as any)?.title || candidate.role || 'N/A'}
+                            : (candidate.professionalProfile?.jobRoles?.[0] as any)?.title ?? 'N/A'}
                         </div>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Experience</label>
-                        <div className="text-sm text-slate-900 mt-1">{candidate.professionalProfile?.experienceYears || candidate.experienceYears || 0} years</div>
+                        <div className="text-sm text-slate-900 mt-1">{candidate.professionalProfile?.experienceYears || '-'} years</div>
                       </div>
                       {candidate.preferredCountries && candidate.preferredCountries.length > 0 && (
                         <div className="col-span-2">
@@ -1620,22 +1769,22 @@ const CandidateDetail: React.FC = () => {
                         <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2 border-b border-slate-100 items-center">
                           <div className="text-xs font-bold text-slate-600">Father's Name</div>
                           <input type="text" value={editedProfile.personalInfo?.fatherName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, fatherName: e.target.value } })} className="text-sm p-1.5 border border-slate-200 rounded mr-2" placeholder="Full Name" />
-                          <input type="number" value={(editedProfile as any).fatherAge || ''} onChange={(e) => setEditedProfile({ ...editedProfile, fatherAge: parseInt(e.target.value) || undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
-                          <input type="text" value={(editedProfile as any).fatherNic || ''} onChange={(e) => setEditedProfile({ ...editedProfile, fatherNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
+                          <input type="number" value={(editedProfile as any).fatherAge ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, fatherAge: e.target.value ? parseInt(e.target.value) : undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
+                          <input type="text" value={(editedProfile as any).fatherNic ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, fatherNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
                         </div>
                         {/* Mother */}
                         <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2 border-b border-slate-100 items-center">
                           <div className="text-xs font-bold text-slate-600">Mother's Name</div>
                           <input type="text" value={editedProfile.personalInfo?.motherName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, motherName: e.target.value } })} className="text-sm p-1.5 border border-slate-200 rounded mr-2" placeholder="Full Name" />
-                          <input type="number" value={(editedProfile as any).motherAge || ''} onChange={(e) => setEditedProfile({ ...editedProfile, motherAge: parseInt(e.target.value) || undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
-                          <input type="text" value={(editedProfile as any).motherNic || ''} onChange={(e) => setEditedProfile({ ...editedProfile, motherNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
+                          <input type="number" value={(editedProfile as any).motherAge ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, motherAge: e.target.value ? parseInt(e.target.value) : undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
+                          <input type="text" value={(editedProfile as any).motherNic ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, motherNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
                         </div>
                         {/* Spouse */}
                         <div className="grid grid-cols-[140px_1fr_70px_120px] gap-0 px-3 py-2 items-center">
                           <div className="text-xs font-bold text-slate-600">Spouse's Name</div>
                           <input type="text" value={editedProfile.personalInfo?.spouseName || ''} onChange={(e) => setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, spouseName: e.target.value } })} className="text-sm p-1.5 border border-slate-200 rounded mr-2" placeholder="Full Name" />
-                          <input type="number" value={(editedProfile as any).spouseAge || ''} onChange={(e) => setEditedProfile({ ...editedProfile, spouseAge: parseInt(e.target.value) || undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
-                          <input type="text" value={(editedProfile as any).spouseNic || ''} onChange={(e) => setEditedProfile({ ...editedProfile, spouseNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
+                          <input type="number" value={(editedProfile as any).spouseAge ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, spouseAge: e.target.value ? parseInt(e.target.value) : undefined } as any)} className="text-sm p-1.5 border border-slate-200 rounded mr-2 w-16" placeholder="Age" />
+                          <input type="text" value={(editedProfile as any).spouseNic ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, spouseNic: e.target.value } as any)} className="text-sm p-1.5 border border-slate-200 rounded font-mono" placeholder="NIC" />
                         </div>
                       </div>
 
@@ -1665,7 +1814,7 @@ const CandidateDetail: React.FC = () => {
                               <option value="F">Female</option>
                             </select>
                             <div className="flex gap-2">
-                              <input type="number" placeholder="Age" value={child.age || 0} onChange={(e) => { const children = [...(editedProfile.personalInfo?.children || [])]; children[idx] = { ...child, age: parseInt(e.target.value) || 0 }; setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } }); }} className="text-sm p-1 border rounded w-full" />
+                              <input type="number" placeholder="Age" value={child.age ?? ''} onChange={(e) => { const children = [...(editedProfile.personalInfo?.children || [])]; children[idx] = { ...child, age: e.target.value ? parseInt(e.target.value) : (undefined as any) }; setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } }); }} className="text-sm p-1 border rounded w-full" />
                               <button onClick={() => { const children = (editedProfile.personalInfo?.children || []).filter((_: any, i: number) => i !== idx); setEditedProfile({ ...editedProfile, personalInfo: { ...editedProfile.personalInfo!, children } }); }} className="text-red-500 p-1">&times;</button>
                             </div>
                           </div>
@@ -1713,7 +1862,7 @@ const CandidateDetail: React.FC = () => {
                                   <span className="font-bold text-slate-700">{child.name || child.gender || 'Child'}</span>
                                   <span className="text-slate-500">DOB: {child.dob || '-'}</span>
                                 </div>
-                                <span className="text-blue-600 font-bold">{child.age || 0} Years</span>
+                                <span className="text-blue-600 font-bold">{child.age || '-'} Years</span>
                               </div>
                             ))
                           ) : (
@@ -1742,7 +1891,7 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">WP Reference Number</label>
                             <input
                               type="text"
-                              value={editedProfile.stageData?.wpReferenceNumber || candidate.stageData?.wpReferenceNumber || ''}
+                              value={editedProfile.stageData?.wpReferenceNumber ?? ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, wpReferenceNumber: e.target.value } as any
@@ -1755,7 +1904,7 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Working Video Link</label>
                             <input
                               type="text"
-                              value={editedProfile.stageData?.workingVideoLink || candidate.stageData?.workingVideoLink || ''}
+                              value={editedProfile.stageData?.workingVideoLink ?? ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, workingVideoLink: e.target.value } as any
@@ -1768,7 +1917,7 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Self Intro Video Link</label>
                             <input
                               type="text"
-                              value={editedProfile.stageData?.selfIntroductionVideoLink || candidate.stageData?.selfIntroductionVideoLink || ''}
+                              value={editedProfile.stageData?.selfIntroductionVideoLink ?? ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, selfIntroductionVideoLink: e.target.value } as any
@@ -1786,7 +1935,7 @@ const CandidateDetail: React.FC = () => {
                           <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">Additional Video Links</h5>
                           <button
                             onClick={() => {
-                              const currentLinks = editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || [];
+                              const currentLinks = editedProfile.stageData?.additionalVideoLinks ?? [];
                               setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, additionalVideoLinks: [...currentLinks, ''] } as any
@@ -1798,13 +1947,13 @@ const CandidateDetail: React.FC = () => {
                           </button>
                         </div>
                         <div className="space-y-3">
-                          {(editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || []).map((link, index) => (
+                          {(editedProfile.stageData?.additionalVideoLinks ?? []).map((link, index) => (
                             <div key={index} className="flex gap-2">
                               <input
                                 type="text"
                                 value={link}
                                 onChange={(e) => {
-                                  const currentLinks = [...(editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || [])];
+                                  const currentLinks = [...(editedProfile.stageData?.additionalVideoLinks ?? [])];
                                   currentLinks[index] = e.target.value;
                                   setEditedProfile({
                                     ...editedProfile,
@@ -1816,7 +1965,7 @@ const CandidateDetail: React.FC = () => {
                               />
                               <button
                                 onClick={() => {
-                                  const currentLinks = [...(editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || [])];
+                                  const currentLinks = [...(editedProfile.stageData?.additionalVideoLinks ?? [])];
                                   currentLinks.splice(index, 1);
                                   setEditedProfile({
                                     ...editedProfile,
@@ -1829,7 +1978,7 @@ const CandidateDetail: React.FC = () => {
                               </button>
                             </div>
                           ))}
-                          {(editedProfile.stageData?.additionalVideoLinks || candidate.stageData?.additionalVideoLinks || []).length === 0 && (
+                          {(editedProfile.stageData?.additionalVideoLinks ?? []).length === 0 && (
                             <p className="text-xs text-slate-400 italic">No additional video links added.</p>
                           )}
                         </div>
@@ -1843,7 +1992,7 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Travel Insurance Policy</label>
                             <input
                               type="text"
-                              value={editedProfile.stageData?.travelInsurancePolicyNumber || candidate.stageData?.travelInsurancePolicyNumber || ''}
+                              value={editedProfile.stageData?.travelInsurancePolicyNumber ?? ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, travelInsurancePolicyNumber: e.target.value } as any
@@ -1855,7 +2004,7 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Coverage End Date</label>
                             <input
                               type="date"
-                              value={editedProfile.stageData?.travelInsuranceCoverageEndDate || candidate.stageData?.travelInsuranceCoverageEndDate || ''}
+                              value={editedProfile.stageData?.travelInsuranceCoverageEndDate ?? ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, travelInsuranceCoverageEndDate: e.target.value } as any
@@ -1874,7 +2023,7 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Flight Number</label>
                             <input
                               type="text"
-                              value={editedProfile.stageData?.flightNumber || candidate.stageData?.flightNumber || ''}
+                              value={editedProfile.stageData?.flightNumber ?? ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, flightNumber: e.target.value } as any
@@ -1886,7 +2035,7 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">PNR</label>
                             <input
                               type="text"
-                              value={editedProfile.stageData?.flightPNR || candidate.stageData?.flightPNR || ''}
+                              value={editedProfile.stageData?.flightPNR ?? ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, flightPNR: e.target.value } as any
@@ -1898,7 +2047,7 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Departure Time</label>
                             <input
                               type="datetime-local"
-                              value={editedProfile.stageData?.flightDepartureTime ? new Date(editedProfile.stageData.flightDepartureTime).toISOString().slice(0, 16) : candidate.stageData?.flightDepartureTime ? new Date(candidate.stageData.flightDepartureTime).toISOString().slice(0, 16) : ''}
+                              value={editedProfile.stageData?.flightDepartureTime ? new Date(editedProfile.stageData.flightDepartureTime).toISOString().slice(0, 16) : ''}
                               onChange={(e) => setEditedProfile({
                                 ...editedProfile,
                                 stageData: { ...candidate.stageData, ...editedProfile.stageData, flightDepartureTime: e.target.value ? new Date(e.target.value).toISOString() : undefined } as any
@@ -2016,29 +2165,29 @@ const CandidateDetail: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">E NO (Embassy Number)</label>
-                          <input type="text" value={(editedProfile as any).embassyDetails?.eNo || candidate.embassyDetails?.eNo || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, eNo: e.target.value } } as any)} placeholder="e.g. E2812909804914" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 font-mono" />
+                          <input type="text" value={(editedProfile as any).embassyDetails?.eNo ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, eNo: e.target.value } } as any)} placeholder="e.g. E2812909804914" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 font-mono" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">SE NO</label>
-                          <input type="text" value={(editedProfile as any).embassyDetails?.seNo || candidate.embassyDetails?.seNo || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, seNo: e.target.value } } as any)} placeholder="e.g. SE 0286531" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 font-mono" />
+                          <input type="text" value={(editedProfile as any).embassyDetails?.seNo ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, seNo: e.target.value } } as any)} placeholder="e.g. SE 0286531" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 font-mono" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Applied Date</label>
-                          <input type="date" value={(editedProfile as any).embassyDetails?.appliedDate || candidate.embassyDetails?.appliedDate || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, appliedDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+                          <input type="date" value={(editedProfile as any).embassyDetails?.appliedDate ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, appliedDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Appointment Date</label>
-                          <input type="datetime-local" value={(editedProfile as any).embassyDetails?.appointmentDate || candidate.embassyDetails?.appointmentDate || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, appointmentDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+                          <input type="datetime-local" value={(editedProfile as any).embassyDetails?.appointmentDate ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, appointmentDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Stamp Date</label>
-                          <input type="date" value={(editedProfile as any).embassyDetails?.stampDate || candidate.embassyDetails?.stampDate || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, stampDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+                          <input type="date" value={(editedProfile as any).embassyDetails?.stampDate ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, stampDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Stamp Result</label>
-                          <select value={(editedProfile as any).embassyDetails?.stampResult || candidate.embassyDetails?.stampResult || 'Pending'} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, stampResult: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
+                          <select value={(editedProfile as any).embassyDetails?.stampResult ?? 'Pending'} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, stampResult: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500">
                             <option value="Pending">Pending</option>
                             <option value="Stamped">Stamped</option>
                             <option value="Rejected">Rejected</option>
@@ -2048,11 +2197,11 @@ const CandidateDetail: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Awareness Program Date</label>
-                          <input type="date" value={(editedProfile as any).embassyDetails?.awarenessProgramDate || candidate.embassyDetails?.awarenessProgramDate || ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, awarenessProgramDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
+                          <input type="date" value={(editedProfile as any).embassyDetails?.awarenessProgramDate ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, awarenessProgramDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500" />
                         </div>
                         <div className="flex items-end pb-2">
                           <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={(editedProfile as any).embassyDetails?.awarenessProgramSigned || candidate.embassyDetails?.awarenessProgramSigned || false} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, awarenessProgramSigned: e.target.checked } } as any)} className="w-4 h-4 rounded border-slate-300 text-amber-600" />
+                            <input type="checkbox" checked={(editedProfile as any).embassyDetails?.awarenessProgramSigned ?? false} onChange={(e) => setEditedProfile({ ...editedProfile, embassyDetails: { ...candidate.embassyDetails, ...(editedProfile as any).embassyDetails, awarenessProgramSigned: e.target.checked } } as any)} className="w-4 h-4 rounded border-slate-300 text-amber-600" />
                             <span className="text-xs font-bold text-slate-600 uppercase">Awareness Program Signed</span>
                           </label>
                         </div>
@@ -2109,140 +2258,182 @@ const CandidateDetail: React.FC = () => {
                 </section>
 
                 {/* SECTION 1.57: ADVANCE PAYMENT TRACKING */}
-                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-green-500 rounded-full"></span>
-                    Advance Payment Tracking
-                  </h3>
+                {isAdmin && (
+                  <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <span className="w-6 h-1 bg-green-500 rounded-full"></span>
+                      Advance Payment Tracking
+                    </h3>
 
-                  {isEditingProfile ? (
-                    <div className="bg-green-50/50 p-6 rounded-xl border border-green-200 border-dashed">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b-2 border-green-200">
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Payment Type</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice No</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Amount (Rs)</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'].map((type, idx) => {
-                              const payments = (editedProfile as any).advancePayments || candidate.advancePayments || [];
-                              const payment = payments.find((p: any) => p.type === type) || { type, id: `adv-${idx}` };
-                              return (
-                                <tr key={type} className="border-b border-green-100 hover:bg-green-50/50">
-                                  <td className="py-2 px-2 font-bold text-slate-500">{idx + 1}</td>
-                                  <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
-                                  <td className="py-2 px-2">
-                                    <input type="date" value={payment.informedDate || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, informedDate: e.target.value, informed: !!e.target.value };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                  <td className="py-2 px-2">
-                                    <input type="date" value={payment.signDate || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, signDate: e.target.value };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                  <td className="py-2 px-2">
-                                    <input type="text" value={payment.invoiceNo || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, invoiceNo: e.target.value };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} placeholder="Inv#" className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                  <td className="py-2 px-2">
-                                    <input type="number" value={payment.amount || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, amount: parseFloat(e.target.value) || 0 };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} placeholder="0" className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                  <td className="py-2 px-2">
-                                    <input type="text" value={payment.remarks || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments || candidate.advancePayments || [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, remarks: e.target.value };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} placeholder="Notes..." className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="mt-4 grid grid-cols-2 gap-4 pt-3 border-t border-green-200">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate EMB</label>
-                          <input type="number" step="0.01" value={(editedProfile as any).usdRateEmb || candidate.usdRateEmb || ''} onChange={(e) => setEditedProfile({ ...editedProfile, usdRateEmb: parseFloat(e.target.value) || 0 } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                    {isEditingProfile ? (
+                      <div className="bg-green-50/50 p-6 rounded-xl border border-green-200 border-dashed">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b-2 border-green-200">
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Payment Type</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice No</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Amount (Rs)</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                const payments = (editedProfile as any).advancePayments ?? [];
+                                const defaultTypes = ['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'];
+                                const customTypes = payments.filter((p: any) => !defaultTypes.includes(p.type)).map((p: any) => p.type);
+                                return Array.from(new Set([...defaultTypes, ...customTypes]));
+                              })().map((type: any, idx: number) => {
+                                const payments = (editedProfile as any).advancePayments ?? [];
+                                const payment = payments.find((p: any) => p.type === type) || { type, id: `adv-${idx}` };
+                                return (
+                                  <tr key={type} className="border-b border-green-100 hover:bg-green-50/50">
+                                    <td className="py-2 px-2 font-bold text-slate-500">{idx + 1}</td>
+                                    <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
+                                    <td className="py-2 px-2">
+                                      <input type="date" value={payment.informedDate || ''} onChange={(e) => {
+                                        const all = [...((editedProfile as any).advancePayments ?? [])];
+                                        const existIdx = all.findIndex((p: any) => p.type === type);
+                                        const updated = { ...payment, informedDate: e.target.value, informed: !!e.target.value };
+                                        if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                        setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                      }} className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                    </td>
+                                    <td className="py-2 px-2">
+                                      <input type="date" value={payment.signDate || ''} onChange={(e) => {
+                                        const all = [...((editedProfile as any).advancePayments ?? [])];
+                                        const existIdx = all.findIndex((p: any) => p.type === type);
+                                        const updated = { ...payment, signDate: e.target.value };
+                                        if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                        setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                      }} className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                    </td>
+                                    <td className="py-2 px-2">
+                                      <input type="text" value={payment.invoiceNo || ''} onChange={(e) => {
+                                        const all = [...((editedProfile as any).advancePayments ?? [])];
+                                        const existIdx = all.findIndex((p: any) => p.type === type);
+                                        const updated = { ...payment, invoiceNo: e.target.value };
+                                        if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                        setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                      }} placeholder="Inv#" className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                    </td>
+                                    <td className="py-2 px-2">
+                                      <input type="number" value={payment.amount || ''} onChange={(e) => {
+                                        const all = [...((editedProfile as any).advancePayments ?? [])];
+                                        const existIdx = all.findIndex((p: any) => p.type === type);
+                                        const updated = { ...payment, amount: e.target.value ? parseFloat(e.target.value) : 0 };
+                                        if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                        setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                      }} placeholder="0" className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                    </td>
+                                    <td className="py-2 px-2 flex gap-1 items-center">
+                                      <input type="text" value={payment.remarks || ''} onChange={(e) => {
+                                        const all = [...((editedProfile as any).advancePayments ?? [])];
+                                        const existIdx = all.findIndex((p: any) => p.type === type);
+                                        const updated = { ...payment, remarks: e.target.value };
+                                        if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
+                                        setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                      }} placeholder="Notes..." className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
+                                      {(!['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'].includes(type)) && (
+                                        <button
+                                          className="text-red-400 hover:text-red-600 p-1"
+                                          onClick={() => {
+                                            const all = [...((editedProfile as any).advancePayments ?? [])].filter((p: any) => p.type !== type);
+                                            setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                          }}
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate F/A</label>
-                          <input type="number" step="0.01" value={(editedProfile as any).usdRateFA || candidate.usdRateFA || ''} onChange={(e) => setEditedProfile({ ...editedProfile, usdRateFA: parseFloat(e.target.value) || 0 } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            className="flex items-center gap-1.5 text-xs font-bold text-green-700 hover:text-green-800 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-lg transition-colors"
+                            onClick={() => {
+                              const newType = window.prompt("Enter new custom payment type:");
+                              if (newType && newType.trim()) {
+                                const all = [...((editedProfile as any).advancePayments ?? [])];
+                                if (!all.find((p: any) => p.type.toLowerCase() === newType.trim().toLowerCase())) {
+                                  all.push({ type: newType.trim(), id: `adv-${Date.now()}` });
+                                  setEditedProfile({ ...editedProfile, advancePayments: all } as any);
+                                } else {
+                                  alert('This payment type already exists.');
+                                }
+                              }
+                            }}
+                          >
+                            <Plus size={14} /> Add Custom Payment
+                          </button>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-4 pt-3 border-t border-green-200">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate EMB</label>
+                            <input type="number" step="0.01" value={(editedProfile as any).usdRateEmb ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, usdRateEmb: e.target.value ? parseFloat(e.target.value) : 0 } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate F/A</label>
+                            <input type="number" step="0.01" value={(editedProfile as any).usdRateFA ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, usdRateFA: e.target.value ? parseFloat(e.target.value) : 0 } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="bg-green-50/30 p-5 rounded-xl border border-green-100">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b-2 border-green-200">
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Type</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice</th>
-                              <th className="text-right py-2 px-2 font-bold text-slate-600 uppercase">Amount</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'].map((type, idx) => {
-                              const payment = (candidate.advancePayments || []).find((p) => p.type === type);
-                              const hasData = payment && (payment.amount || payment.invoiceNo || payment.informedDate);
-                              return (
-                                <tr key={type} className={`border-b border-green-100 ${hasData ? 'bg-green-50/50' : ''}`}>
-                                  <td className="py-2 px-2 font-bold text-slate-400">{idx + 1}</td>
-                                  <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
-                                  <td className="py-2 px-2 text-slate-600">{payment?.informedDate || '-'}</td>
-                                  <td className="py-2 px-2 text-slate-600">{payment?.signDate || '-'}</td>
-                                  <td className="py-2 px-2 font-mono text-slate-600">{payment?.invoiceNo || '-'}</td>
-                                  <td className="py-2 px-2 text-right font-bold text-green-700">{payment?.amount ? `Rs. ${payment.amount.toLocaleString()}` : '-'}</td>
-                                  <td className="py-2 px-2 text-slate-500 italic">{payment?.remarks || '-'}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                      {(candidate.usdRateEmb || candidate.usdRateFA) && (
-                        <div className="mt-3 pt-3 border-t border-green-100 flex gap-6 text-xs">
-                          <div><span className="font-bold text-slate-500 uppercase">USD Rate EMB:</span> <span className="font-bold text-slate-800">{candidate.usdRateEmb || '-'}</span></div>
-                          <div><span className="font-bold text-slate-500 uppercase">USD Rate F/A:</span> <span className="font-bold text-slate-800">{candidate.usdRateFA || '-'}</span></div>
+                    ) : (
+                      <div className="bg-green-50/30 p-5 rounded-xl border border-green-100">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b-2 border-green-200">
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Type</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice</th>
+                                <th className="text-right py-2 px-2 font-bold text-slate-600 uppercase">Amount</th>
+                                <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                const payments = candidate.advancePayments || [];
+                                const defaultTypes = ['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'];
+                                const customTypes = payments.filter((p: any) => !defaultTypes.includes(p.type)).map((p: any) => p.type);
+                                return Array.from(new Set([...defaultTypes, ...customTypes]));
+                              })().map((type: any, idx: number) => {
+                                const payment = (candidate.advancePayments || []).find((p) => p.type === type);
+                                const hasData = payment && (payment.amount || payment.invoiceNo || payment.informedDate);
+                                return (
+                                  <tr key={type} className={`border-b border-green-100 ${hasData ? 'bg-green-50/50' : ''}`}>
+                                    <td className="py-2 px-2 font-bold text-slate-400">{idx + 1}</td>
+                                    <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
+                                    <td className="py-2 px-2 text-slate-600">{payment?.informedDate || '-'}</td>
+                                    <td className="py-2 px-2 text-slate-600">{payment?.signDate || '-'}</td>
+                                    <td className="py-2 px-2 font-mono text-slate-600">{payment?.invoiceNo || '-'}</td>
+                                    <td className="py-2 px-2 text-right font-bold text-green-700">{payment?.amount ? `Rs. ${payment.amount.toLocaleString()}` : '-'}</td>
+                                    <td className="py-2 px-2 text-slate-500 italic">{payment?.remarks || '-'}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </section>
+                        {(candidate.usdRateEmb || candidate.usdRateFA) && (
+                          <div className="mt-3 pt-3 border-t border-green-100 flex gap-6 text-xs">
+                            <div><span className="font-bold text-slate-500 uppercase">USD Rate EMB:</span> <span className="font-bold text-slate-800">{candidate.usdRateEmb || '-'}</span></div>
+                            <div><span className="font-bold text-slate-500 uppercase">USD Rate F/A:</span> <span className="font-bold text-slate-800">{candidate.usdRateFA || '-'}</span></div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                )}
 
                 {/* SECTION 1.575: DATE/REMARK LOG (handwritten notes section on paper forms) */}
                 <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
@@ -2296,7 +2487,7 @@ const CandidateDetail: React.FC = () => {
                               const dateInput = document.getElementById('new-remark-date') as HTMLInputElement;
                               const textInput = document.getElementById('new-remark-text') as HTMLInputElement;
                               if (dateInput?.value && textInput?.value) {
-                                const existing = (editedProfile as any).remarkLog || (candidate as any).remarkLog || [];
+                                const existing = (editedProfile as any).remarkLog || [];
                                 setEditedProfile({ ...editedProfile, remarkLog: [...existing, { date: dateInput.value, remark: textInput.value }] } as any);
                                 textInput.value = '';
                               }
@@ -2310,6 +2501,19 @@ const CandidateDetail: React.FC = () => {
                     )}
                   </div>
                 </section>
+
+                {/* SECTION 1.57b: ADVANCE PAYMENTS / FINANCIAL LEDGER */}
+                {isAdmin && (
+                  <section className="mt-8 pt-8 border-t border-slate-100 mb-6 w-full overflow-hidden">
+                    <FinancialLedgerWidget
+                      candidate={(isEditingProfile ? editedProfile : candidate) as any}
+                      isEditing={isEditingProfile}
+                      onUpdate={(payments) => {
+                        setEditedProfile({ ...editedProfile, advancePayments: payments } as any);
+                      }}
+                    />
+                  </section>
+                )}
 
                 {/* SECTION 1.58: CERTIFICATE CHECKLIST (matches paper form 14-item list) */}
                 <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
@@ -2408,9 +2612,9 @@ const CandidateDetail: React.FC = () => {
                             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">{milestone.label}</label>
                             <input
                               type="date"
-                              value={((editedProfile as any).workflowMilestones || candidate.workflowMilestones || {} as any)[milestone.key] || ''}
+                              value={((editedProfile as any).workflowMilestones ?? {} as any)[milestone.key] || ''}
                               onChange={(e) => {
-                                const existing = (editedProfile as any).workflowMilestones || candidate.workflowMilestones || {};
+                                const existing = (editedProfile as any).workflowMilestones ?? {};
                                 setEditedProfile({ ...editedProfile, workflowMilestones: { ...existing, [milestone.key]: e.target.value } } as any);
                               }}
                               className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-cyan-500"
@@ -2423,9 +2627,9 @@ const CandidateDetail: React.FC = () => {
                           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Stamp Result Notes</label>
                           <input
                             type="text"
-                            value={((editedProfile as any).workflowMilestones || candidate.workflowMilestones || {} as any).stampResult || ''}
+                            value={((editedProfile as any).workflowMilestones ?? {} as any).stampResult || ''}
                             onChange={(e) => {
-                              const existing = (editedProfile as any).workflowMilestones || candidate.workflowMilestones || {};
+                              const existing = (editedProfile as any).workflowMilestones ?? {};
                               setEditedProfile({ ...editedProfile, workflowMilestones: { ...existing, stampResult: e.target.value } } as any);
                             }}
                             placeholder="e.g. Stamped / Rejected - reason"
@@ -2611,10 +2815,14 @@ const CandidateDetail: React.FC = () => {
               onRefresh={refreshCandidates}
             />
             <SLBFEStatusWidget candidate={candidate} />
+            <ActivityLogWidget
+              candidate={candidate}
+              onUpdate={handleRemarkLogUpdate}
+              isEditable={true}
+            />
 
             {/* Matched Jobs Widget */}
-            {/* Matched Jobs Widget */}
-            {matchedJobs.length > 0 && (
+            {isAdmin && matchedJobs.length > 0 && (
               <div className="bg-white rounded-xl border border-slate-200 p-5">
                 <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
                   <Briefcase size={14} className="text-blue-500" />
@@ -2654,6 +2862,7 @@ const CandidateDetail: React.FC = () => {
               candidate={candidate}
               onAdvance={handleAdvanceStage}
               onRollback={handleRollback}
+              onStageClick={handleStageClick}
             />
             <RecentActivityWidget
               candidate={candidate}

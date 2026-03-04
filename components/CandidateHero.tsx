@@ -107,13 +107,30 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
                     {/* Identity Info */}
                     <div className="flex-1 min-w-0">
                         <div className="flex flex-col mb-3">
-                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{candidate.name}</h1>
-                            <div className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-2">
-                                <span className="text-blue-600 font-semibold">{candidate.role || 'No Role Assigned'}</span>
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+                                {candidate.name}
+                                {candidate.batchReference && (
+                                    <span className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm">
+                                        {candidate.batchReference}
+                                    </span>
+                                )}
+                            </h1>
+                            <div className="text-sm font-medium text-slate-500 mt-1.5 flex flex-wrap items-center gap-2">
+                                <span className="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{candidate.role || 'No Role Assigned'}</span>
                                 {candidate.nic && (
                                     <>
                                         <span className="text-slate-300">•</span>
-                                        <span>NIC: <span className="font-mono text-slate-600">{candidate.nic}</span></span>
+                                        <span>NIC: <span className="font-bold text-slate-700">{candidate.nic}</span></span>
+                                    </>
+                                )}
+                                {(candidate.companyName || candidate.foreignAgent) && (
+                                    <>
+                                        <span className="text-slate-300">•</span>
+                                        <span className="flex items-center gap-1">
+                                            {candidate.companyName && <span className="font-bold text-slate-700">{candidate.companyName}</span>}
+                                            {candidate.companyName && candidate.foreignAgent && <span className="text-slate-400 text-xs">(FA: {candidate.foreignAgent})</span>}
+                                            {!candidate.companyName && candidate.foreignAgent && <span className="font-bold text-slate-700">FA: {candidate.foreignAgent}</span>}
+                                        </span>
                                     </>
                                 )}
                             </div>

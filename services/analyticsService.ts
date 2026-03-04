@@ -1,4 +1,3 @@
-import { MOCK_CANDIDATES } from './mockData';
 import { WorkflowStage, Candidate } from '../types';
 import { getSLAStatus } from './workflowEngine';
 
@@ -12,13 +11,13 @@ export interface DashboardMetrics {
   recentAlerts: Candidate[];
 }
 
-export const getDashboardMetrics = (): DashboardMetrics => {
+export const getDashboardMetrics = (candidates: Candidate[] = []): DashboardMetrics => {
   let delayed = 0;
   let critical = 0;
   const dist: Record<string, number> = {};
   const alerts: Candidate[] = [];
 
-  MOCK_CANDIDATES.forEach(c => {
+  candidates.forEach(c => {
     // Distribution
     dist[c.stage] = (dist[c.stage] || 0) + 1;
 
@@ -36,7 +35,7 @@ export const getDashboardMetrics = (): DashboardMetrics => {
   });
 
   return {
-    totalCandidates: MOCK_CANDIDATES.length,
+    totalCandidates: candidates.length,
     activeJobs: 45,
     placements: 328,
     delayedCases: delayed,
@@ -46,7 +45,7 @@ export const getDashboardMetrics = (): DashboardMetrics => {
   };
 };
 
- 
+
 export const getAverageTimeInStage = (_stage: WorkflowStage): number => {
   // Mock calculation - in real app would aggregate from timeline_events
   return Math.floor(Math.random() * 5) + 1;

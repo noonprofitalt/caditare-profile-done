@@ -9,6 +9,7 @@ import { AuthProvider } from './context/AuthContext';
 import { CandidateProvider } from './context/CandidateContext';
 import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleRoute from './components/RoleRoute';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { logger } from './services/loggerService';
@@ -130,12 +131,32 @@ const App: React.FC = () => {
                                     <Route path="/candidates/:id" element={<CandidateDetail />} />
                                     <Route path="/candidates/quick-add" element={<QuickAddForm />} />
                                     <Route path="/applications/new" element={<DigitalApplicationForm />} />
-                                    <Route path="/jobs" element={<JobBoard />} />
-                                    <Route path="/partners/:id?" element={<PartnerManager />} />
-                                    <Route path="/finance" element={<FinanceLedger />} />
+                                    <Route path="/jobs" element={
+                                      <RoleRoute allowedRoles={['Admin']}>
+                                        <JobBoard />
+                                      </RoleRoute>
+                                    } />
+                                    <Route path="/partners/:id?" element={
+                                      <RoleRoute allowedRoles={['Admin']}>
+                                        <PartnerManager />
+                                      </RoleRoute>
+                                    } />
+                                    <Route path="/finance" element={
+                                      <RoleRoute allowedRoles={['Admin']}>
+                                        <FinanceLedger />
+                                      </RoleRoute>
+                                    } />
                                     <Route path="/team-chat" element={<TeamChat />} />
-                                    <Route path="/audit" element={<AuditLogPage />} />
-                                    <Route path="/settings" element={<Settings />} />
+                                    <Route path="/audit" element={
+                                      <RoleRoute allowedRoles={['Admin']}>
+                                        <AuditLogPage />
+                                      </RoleRoute>
+                                    } />
+                                    <Route path="/settings" element={
+                                      <RoleRoute allowedRoles={['Admin']}>
+                                        <Settings />
+                                      </RoleRoute>
+                                    } />
                                     <Route path="/showcase" element={<ComponentShowcase />} />
                                     <Route path="*" element={<Navigate to="/" replace />} />
                                   </Routes>

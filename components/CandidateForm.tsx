@@ -23,6 +23,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
 
   // Form State
   const [formData, setFormData] = useState({
+    regNo: initialSyncedData?.regNo || '',
     surname: initialSyncedData?.surname || '',
     otherNames: initialSyncedData?.otherNames || '',
     nic: initialSyncedData?.nic || '',
@@ -42,7 +43,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
     // Professional & Operational
     role: initialSyncedData?.role || '',
     location: initialSyncedData?.location || initialSyncedData?.city || '',
-    experienceYears: initialSyncedData?.experienceYears || 0,
+    experienceYears: initialSyncedData?.experienceYears,
     skills: initialSyncedData?.skills?.join(', ') || '',
     preferredCountries: initialSyncedData?.preferredCountries || [],
     jobRoles: initialSyncedData?.jobRoles || [],
@@ -92,9 +93,9 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
   const [newPayment, setNewPayment] = useState({ date: '', amount: '', notes: '' });
   const [showSecondaryPhone, setShowSecondaryPhone] = useState(!!initialData?.secondaryPhone);
   const [jobRoles, setJobRoles] = useState<JobRole[]>(
-    (initialData?.jobRoles || []).map(r => typeof r === 'string' ? { title: r, experienceYears: 0, skillLevel: 'Skilled' } : r)
+    (initialData?.jobRoles || []).map(r => typeof r === 'string' ? { title: r, experienceYears: undefined as any, skillLevel: 'Skilled' } : r)
   );
-  const [newJobRole, setNewJobRole] = useState<JobRole>({ title: '', experienceYears: 0, skillLevel: 'Skilled', notes: '' });
+  const [newJobRole, setNewJobRole] = useState<JobRole>({ title: '', experienceYears: undefined as any, skillLevel: 'Skilled', notes: '' });
   const [countrySearch, setCountrySearch] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showEducationDropdown, setShowEducationDropdown] = useState(false);
@@ -275,6 +276,20 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
             <h4 className="font-bold text-slate-400 uppercase tracking-wider text-xs border-b border-slate-100 pb-2 mb-4">
               Personal Information
             </h4>
+
+            {/* Row 0: Reg No */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-sm font-semibold text-slate-700">Registration Number</label>
+                <input
+                  name="regNo"
+                  value={formData.regNo}
+                  onChange={handleChange}
+                  placeholder="e.g. SC 126"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-red-700 max-w-sm"
+                />
+              </div>
+            </div>
 
             {/* Row 1: Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -557,7 +572,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                   name="experienceYears"
                   type="number"
                   min="0"
-                  value={formData.experienceYears}
+                  value={formData.experienceYears || ''}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
                 />
@@ -662,9 +677,10 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                     <label className="text-[10px] uppercase font-bold text-slate-400">Yrs</label>
                     <input
                       type="number"
-                      value={newJobRole.experienceYears}
-                      onChange={e => setNewJobRole(p => ({ ...p, experienceYears: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2 py-1.5 text-sm border border-slate-300 rounded outline-none"
+                      placeholder="e.g. 5"
+                      value={newJobRole.experienceYears || ''}
+                      onChange={e => setNewJobRole(p => ({ ...p, experienceYears: e.target.value ? parseInt(e.target.value) : '' as any }))}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div className="col-span-3 space-y-1">
@@ -695,7 +711,7 @@ const CandidateForm: React.FC<CandidateFormProps> = ({ initialData, onSubmit, on
                   onClick={() => {
                     if (newJobRole.title) {
                       setJobRoles([...jobRoles, newJobRole]);
-                      setNewJobRole({ title: '', experienceYears: 0, skillLevel: 'Skilled', notes: '' });
+                      setNewJobRole({ title: '', experienceYears: undefined as any, skillLevel: 'Skilled', notes: '' });
                     }
                   }}
                   className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition-colors"

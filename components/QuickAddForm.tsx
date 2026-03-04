@@ -122,6 +122,7 @@ const QuickAddForm: React.FC = () => {
 
         try {
             const candidate = await CandidateService.createCandidate({
+                regNo: (formData.regNo || '').trim(),
                 name: (formData.fullName || '').trim() || 'Unknown Candidate',
                 firstName: (formData.otherNames || '').trim(),
                 surname: (formData.surname || '').trim(),

@@ -131,11 +131,12 @@ export class JobService {
 
         const result = this.mapDatabaseToJob(data);
 
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('JOB_CREATED', {
             jobId: result.id,
             title: result.title,
             employerId: result.employerId
-        });
+        }, auditUserId);
 
         return result;
     }
@@ -179,11 +180,12 @@ export class JobService {
 
         const result = this.mapDatabaseToJob(data);
 
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('JOB_UPDATED', {
             jobId: result.id,
             title: result.title,
             status: result.status
-        });
+        }, auditUserId);
 
         return result;
     }
@@ -208,9 +210,10 @@ export class JobService {
             }
             return false;
         }
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('JOB_DELETED', {
             jobId: id
-        });
+        }, auditUserId);
 
         return true;
     }

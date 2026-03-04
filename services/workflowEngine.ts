@@ -724,7 +724,8 @@ export class WorkflowEngine {
     candidate: Candidate,
     toStage: WorkflowStage,
     userId: string,
-    reason?: string
+    reason?: string,
+    forceOverride: boolean = false
   ): { success: boolean; event?: WorkflowTransitionEvent; error?: string } {
     const fromStage = candidate.stage;
 
@@ -745,7 +746,7 @@ export class WorkflowEngine {
     }
 
     // For forward, check validation
-    if (!isRollback && !validationResult.allowed) {
+    if (!isRollback && !validationResult.allowed && !forceOverride) {
       return {
         success: false,
         error: `Transition blocked: ${validationResult.blockers.join(', ')}`

@@ -161,8 +161,9 @@ export class CandidateService {
             throw error;
         }
 
-        // SYSLOG: Track Audit
-        AuditService.log('CANDIDATE_CREATED', { candidateId: id, name: candidateData.name, candidateCode });
+        // SYSLOG: Track Audit (explicit userId for bulletproof attribution)
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('CANDIDATE_CREATED', { candidateId: id, name: candidateData.name, candidateCode }, auditUserId);
 
         return this.mapRowToCandidate(data);
     }
@@ -207,14 +208,15 @@ export class CandidateService {
             throw error;
         }
 
-        // SYSLOG: Track Audit
+        // SYSLOG: Track Audit (explicit userId for bulletproof attribution)
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('CANDIDATE_UPDATED', {
             candidateId: candidate.id,
             name: candidate.name,
             candidateCode: candidate.candidateCode,
             stage: candidate.stage,
             completionRate: candidate.profileCompletionPercentage
-        });
+        }, auditUserId);
     }
 
     static async saveCandidates(candidates: Candidate[]): Promise<void> {
@@ -248,8 +250,9 @@ export class CandidateService {
             throw error;
         }
 
-        // SYSLOG: Track Audit
-        AuditService.log('CANDIDATE_DELETED', { candidateId: id });
+        // SYSLOG: Track Audit (explicit userId for bulletproof attribution)
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('CANDIDATE_DELETED', { candidateId: id }, auditUserId);
     }
 
     // --- Helpers for mapping between JSONB and Typed Object ---

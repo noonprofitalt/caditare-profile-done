@@ -22,11 +22,10 @@ serve(async (req) => {
         )
 
         console.log('Auth Header:', req.headers.get('Authorization'));
-        const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-        console.log('User found:', user?.email, 'Error:', userError);
+        const { data: userData, error: userError } = await supabaseClient.auth.getUser()
 
-        // Check if the user is an Admin
-        const { data: { user } } = await supabaseClient.auth.getUser()
+        const user = userData?.user;
+        console.log('User found:', user?.email, 'Error:', userError);
 
         if (!user) {
             throw new Error('Unauthorized')

@@ -111,11 +111,12 @@ export class SelectionService {
         if (error) {
             console.error('Error adding selection:', error);
         } else {
+            const auditUserId = await AuditService.getCurrentUserId();
             AuditService.log('CANDIDATE_SELECTED_FOR_JOB', {
                 candidateId: selection.candidateId,
                 demandOrderId: selection.demandOrderId,
                 stage: selection.stage
-            });
+            }, auditUserId);
         }
     }
 
@@ -137,11 +138,12 @@ export class SelectionService {
                 // delete row.id; // Keep ID
                 await supabase.from('candidate_selections').insert(row);
 
+                const auditUserId = await AuditService.getCurrentUserId();
                 AuditService.log('CANDIDATE_SELECTED_FOR_JOB', {
                     candidateId: sel.candidateId,
                     demandOrderId: sel.demandOrderId,
                     stage: sel.stage
-                });
+                }, auditUserId);
             }
         }
     }
@@ -164,10 +166,11 @@ export class SelectionService {
         if (error) {
             console.error('Error updating selection:', error);
         } else {
+            const auditUserId = await AuditService.getCurrentUserId();
             AuditService.log('SELECTION_UPDATED', {
                 selectionId: updated.id,
                 stage: updated.stage
-            });
+            }, auditUserId);
         }
     }
 
@@ -187,10 +190,11 @@ export class SelectionService {
             return null;
         }
 
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('SELECTION_STAGE_ADVANCED', {
             selectionId,
             newStage: toStage
-        });
+        }, auditUserId);
 
         return this.mapRowToSelection(data);
     }
@@ -208,10 +212,11 @@ export class SelectionService {
         if (error) {
             console.error('Error rejecting candidate:', error);
         } else {
+            const auditUserId = await AuditService.getCurrentUserId();
             AuditService.log('SELECTION_REJECTED', {
                 selectionId,
                 reason
-            });
+            }, auditUserId);
         }
     }
 
@@ -224,9 +229,10 @@ export class SelectionService {
         if (error) {
             console.error('Error deleting selection:', error);
         } else {
+            const auditUserId = await AuditService.getCurrentUserId();
             AuditService.log('SELECTION_DELETED', {
                 selectionId: id
-            });
+            }, auditUserId);
         }
     }
 

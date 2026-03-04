@@ -9,8 +9,12 @@ import {
    Download, RefreshCw, Server, BrainCircuit, ShieldCheck, MessageSquare, ShieldAlert
 } from 'lucide-react';
 import AIPlayground from './AIPlayground';
+import StaffPerformanceDashboard from './StaffPerformanceDashboard';
+import { useAuth } from '../context/AuthContext';
 
 const IntelligenceEngine: React.FC = () => {
+   const { user } = useAuth();
+   const isAdmin = user?.role === 'Admin';
    const [snapshot, setSnapshot] = useState<SystemSnapshot | null>(null);
    const [activeTab, setActiveTab] = useState<'dashboard' | 'workflow' | 'staff' | 'financial' | 'assistant'>('dashboard');
    const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +28,7 @@ const IntelligenceEngine: React.FC = () => {
    };
 
    useEffect(() => {
-       
+
       refreshData();
    }, []);
 
@@ -60,16 +64,18 @@ const IntelligenceEngine: React.FC = () => {
                </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-               <div className="flex justify-between items-start mb-4">
-                  <div>
-                     <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">Est. Revenue</p>
-                     <h3 className="text-3xl font-bold text-slate-800">${snapshot.kpi.revenueEst.toLocaleString()}</h3>
+            {isAdmin && (
+               <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                     <div>
+                        <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">Est. Revenue</p>
+                        <h3 className="text-3xl font-bold text-slate-800">${snapshot.kpi.revenueEst.toLocaleString()}</h3>
+                     </div>
+                     <DollarSign className="text-green-500 bg-green-50 p-1.5 rounded-lg" size={32} />
                   </div>
-                  <DollarSign className="text-green-500 bg-green-50 p-1.5 rounded-lg" size={32} />
+                  <p className="text-xs text-green-600 font-medium">Verified Collections</p>
                </div>
-               <p className="text-xs text-green-600 font-medium">Verified Collections</p>
-            </div>
+            )}
 
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                <div className="flex justify-between items-start mb-4">
@@ -253,36 +259,7 @@ const IntelligenceEngine: React.FC = () => {
    );
 
    const renderStaffMetrics = () => (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-         {snapshot.staffMetrics.map((staff, idx) => (
-            <div key={staff.name} className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-               <div className="flex items-center gap-4 w-full sm:w-auto">
-                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-100 flex shrink-0 items-center justify-center text-lg md:text-xl font-bold text-slate-500">
-                     {staff.name.charAt(0)}
-                  </div>
-                  <div className="text-2xl font-bold text-slate-200 sm:hidden ml-auto">#{idx + 1}</div>
-               </div>
-               <div className="flex-1 min-w-0 w-full">
-                  <h4 className="font-bold text-base md:text-lg text-slate-800 truncate">{staff.name}</h4>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-xs md:text-sm text-slate-600">
-                     <div>
-                        <p className="text-[10px] md:text-xs text-slate-400 uppercase">Actions</p>
-                        <p className="font-bold">{staff.actionsPerformed}</p>
-                     </div>
-                     <div>
-                        <p className="text-[10px] md:text-xs text-slate-400 uppercase">Focus Area</p>
-                        <p className="font-bold text-blue-600">{staff.mostActiveStage}</p>
-                     </div>
-                     <div>
-                        <p className="text-[10px] md:text-xs text-slate-400 uppercase">Last Active</p>
-                        <p className="font-mono text-[10px] md:text-xs">{new Date(staff.lastActive).toLocaleDateString()}</p>
-                     </div>
-                  </div>
-               </div>
-               <div className="text-2xl font-bold text-slate-200 hidden sm:block shrink-0">#{idx + 1}</div>
-            </div>
-         ))}
-      </div>
+      <StaffPerformanceDashboard staffMetrics={snapshot.staffMetrics} />
    );
 
    return (
@@ -321,7 +298,7 @@ const IntelligenceEngine: React.FC = () => {
                { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
                { id: 'workflow', label: 'Workflow Analytics', icon: Server },
                { id: 'staff', label: 'Staff Performance', icon: Users },
-               { id: 'financial', label: 'Financials', icon: DollarSign },
+               ...(isAdmin ? [{ id: 'financial', label: 'Financials', icon: DollarSign }] : []),
                { id: 'assistant', label: 'AI Assistant', icon: BrainCircuit },
             ].map(tab => (
                <button

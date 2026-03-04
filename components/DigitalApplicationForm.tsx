@@ -67,11 +67,11 @@ const DigitalApplicationForm: React.FC = () => {
         drivingLicenseNo: '',
 
         // Physical & Personal
-        height: { feet: 0, inches: 0 },
-        weight: 0,
+        height: undefined,
+        weight: undefined,
         religion: '',
         maritalStatus: 'Single',
-        numberOfChildren: 0,
+        numberOfChildren: undefined,
 
         // Education
         school: '',
@@ -103,7 +103,7 @@ const DigitalApplicationForm: React.FC = () => {
         preferredCountries: [],
         skills: [],
         role: '',
-        experienceYears: 0,
+        experienceYears: undefined,
         stageData: {},
         workflowLogs: [],
         timelineEvents: [],
@@ -257,7 +257,7 @@ const DigitalApplicationForm: React.FC = () => {
                     if (candidate.jobRoles) {
                         const mappedRoles: JobRole[] = candidate.jobRoles.map(r =>
                             typeof r === 'string'
-                                ? { title: r, experienceYears: 0, skillLevel: 'Beginner' }
+                                ? { title: r, experienceYears: undefined as any, skillLevel: 'Beginner' }
                                 : r
                         );
                         setJobRoles(mappedRoles);
@@ -576,7 +576,17 @@ const DigitalApplicationForm: React.FC = () => {
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-12 bg-slate-50/30">
                     {/* UNIVERSAL HEADER FIELDS (Visible across all steps) */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Reg No</label>
+                            <input
+                                type="text"
+                                value={formData.regNo || ''}
+                                onChange={(e) => handleInputChange('regNo', e.target.value)}
+                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm text-red-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                                placeholder="e.g. SC 126"
+                            />
+                        </div>
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Application Date</label>
                             <input
@@ -955,8 +965,8 @@ const DigitalApplicationForm: React.FC = () => {
                                         <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Height (FT)</label>
                                         <input
                                             type="number"
-                                            value={formData.height?.feet || 0}
-                                            onChange={(e) => handleNestedChange('height', 'feet', parseInt(e.target.value))}
+                                            value={formData.height?.feet || ''}
+                                            onChange={(e) => handleNestedChange('height', 'feet', e.target.value ? parseInt(e.target.value) : undefined)}
                                             readOnly={!canEditPersonal}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                         />
@@ -965,8 +975,8 @@ const DigitalApplicationForm: React.FC = () => {
                                         <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Height (IN)</label>
                                         <input
                                             type="number"
-                                            value={formData.height?.inches || 0}
-                                            onChange={(e) => handleNestedChange('height', 'inches', parseInt(e.target.value))}
+                                            value={formData.height?.inches || ''}
+                                            onChange={(e) => handleNestedChange('height', 'inches', e.target.value ? parseInt(e.target.value) : undefined)}
                                             readOnly={!canEditPersonal}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                         />
@@ -975,8 +985,8 @@ const DigitalApplicationForm: React.FC = () => {
                                         <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Weight (KG)</label>
                                         <input
                                             type="number"
-                                            value={formData.weight || 0}
-                                            onChange={(e) => handleInputChange('weight', parseInt(e.target.value))}
+                                            value={formData.weight || ''}
+                                            onChange={(e) => handleInputChange('weight', e.target.value ? parseInt(e.target.value) : undefined)}
                                             readOnly={!canEditPersonal}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                         />
@@ -990,7 +1000,7 @@ const DigitalApplicationForm: React.FC = () => {
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
                                         >
                                             <option value="">Select Religion</option>
-                                            <option value="Sinhala">Sinhala</option>
+                                            <option value="Buddhist">Buddhist</option>
                                             <option value="Tamil">Tamil</option>
                                             <option value="Muslim">Muslim</option>
                                             <option value="Christian">Christian</option>
@@ -1339,10 +1349,10 @@ const DigitalApplicationForm: React.FC = () => {
                                                         <td className="px-3 py-2">
                                                             <input
                                                                 type="number"
-                                                                value={row.years}
+                                                                value={row.years || ''}
                                                                 onChange={(e) => {
                                                                     const updated = [...employmentRows.local];
-                                                                    updated[index].years = parseInt(e.target.value);
+                                                                    updated[index].years = e.target.value ? parseInt(e.target.value) : '' as any;
                                                                     setEmploymentRows({ ...employmentRows, local: updated });
                                                                 }}
                                                                 className="w-full px-2 py-1 border border-slate-200 rounded"
@@ -1424,10 +1434,10 @@ const DigitalApplicationForm: React.FC = () => {
                                                         <td className="px-3 py-2">
                                                             <input
                                                                 type="number"
-                                                                value={row.years}
+                                                                value={row.years || ''}
                                                                 onChange={(e) => {
                                                                     const updated = [...employmentRows.foreign];
-                                                                    updated[index].years = parseInt(e.target.value);
+                                                                    updated[index].years = e.target.value ? parseInt(e.target.value) : '' as any;
                                                                     setEmploymentRows({ ...employmentRows, foreign: updated });
                                                                 }}
                                                                 className="w-full px-2 py-1 border border-slate-200 rounded"
@@ -1508,8 +1518,8 @@ const DigitalApplicationForm: React.FC = () => {
                                         <label className="block text-xs font-bold text-slate-600 uppercase mb-1">No of Children</label>
                                         <input
                                             type="number"
-                                            value={formData.numberOfChildren || 0}
-                                            onChange={(e) => handleInputChange('numberOfChildren', parseInt(e.target.value))}
+                                            value={formData.numberOfChildren || ''}
+                                            onChange={(e) => handleInputChange('numberOfChildren', e.target.value ? parseInt(e.target.value) : undefined)}
                                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
@@ -1591,10 +1601,10 @@ const DigitalApplicationForm: React.FC = () => {
                                                         <td className="px-3 py-2">
                                                             <input
                                                                 type="number"
-                                                                value={row.age}
+                                                                value={row.age || ''}
                                                                 onChange={(e) => {
                                                                     const updated = [...childrenRows];
-                                                                    updated[index].age = parseInt(e.target.value);
+                                                                    updated[index].age = e.target.value ? parseInt(e.target.value) : '' as any;
                                                                     setChildrenRows(updated);
                                                                 }}
                                                                 className="w-full px-2 py-1 border border-slate-200 rounded"

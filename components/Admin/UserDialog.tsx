@@ -75,9 +75,17 @@ const UserDialog: React.FC<UserDialogProps> = ({ isOpen, onClose, user, onSave }
                     }
                 });
 
-                if (createError) throw new Error(createError.message || 'Failed to create user via Edge Function');
+                if (createError) {
+                    let errMsg = createError.message || 'Failed to create user via Edge Function';
+                    if (createError.context && typeof createError.context.json === 'function') {
+                        try {
+                            const errBody = await createError.context.json();
+                            if (errBody && errBody.error) errMsg = errBody.error;
+                        } catch (e) { /* ignore parse error */ }
+                    }
+                    throw new Error(errMsg);
+                }
                 if (data?.error) throw new Error(data.error);
-
             }
 
             onSave();
@@ -161,6 +169,7 @@ const UserDialog: React.FC<UserDialogProps> = ({ isOpen, onClose, user, onSave }
                                 <option value="Viewer">Viewer</option>
                                 <option value="Recruiter">Recruiter</option>
                                 <option value="Manager">Manager</option>
+                                <option value="HR">HR</option>
                                 <option value="Admin">Admin</option>
                                 <option value="Finance">Finance</option>
                                 <option value="Compliance">Compliance</option>

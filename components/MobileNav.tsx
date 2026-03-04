@@ -7,8 +7,12 @@ import {
     MessageSquare,
     Settings
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const MobileNav: React.FC = () => {
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'Admin';
+
     return (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] z-30 safe-bottom">
             <div className="flex items-center justify-around h-[72px] px-2 sm:px-4">
@@ -40,13 +44,15 @@ const MobileNav: React.FC = () => {
                     <MessageSquare size={22} className="mb-0.5" />
                     <span className="text-[9px] uppercase tracking-tighter font-black">Chat</span>
                 </NavLink>
-                <NavLink
-                    to="/settings"
-                    className={({ isActive }) => `mobile-nav-item flex-1 ${isActive ? 'active scale-105' : 'hover:bg-slate-50/50 rounded-xl'}`}
-                >
-                    <Settings size={22} className="mb-0.5" />
-                    <span className="text-[9px] uppercase tracking-tighter font-black">Settings</span>
-                </NavLink>
+                {isAdmin && (
+                    <NavLink
+                        to="/settings"
+                        className={({ isActive }) => `mobile-nav-item flex-1 ${isActive ? 'active scale-105' : 'hover:bg-slate-50/50 rounded-xl'}`}
+                    >
+                        <Settings size={22} className="mb-0.5" />
+                        <span className="text-[9px] uppercase tracking-tighter font-black">Settings</span>
+                    </NavLink>
+                )}
             </div>
         </nav>
     );

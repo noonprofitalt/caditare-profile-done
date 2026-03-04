@@ -71,13 +71,14 @@ export class FinanceService {
             referenceId: data.reference_id
         };
 
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('FINANCE_TRANSACTION_CREATED', {
             transactionId: result.id,
             type: result.type,
             amount: result.amount,
             candidateId: result.candidateId,
             employerId: result.employerId
-        });
+        }, auditUserId);
 
         return result;
     }
@@ -154,12 +155,13 @@ export class FinanceService {
             billingAddress: data.billing_address
         };
 
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('INVOICE_GENERATED', {
             invoiceId: result.id,
             amount: result.amount,
             candidateId: result.candidateId,
             employerId: result.employerId
-        });
+        }, auditUserId);
 
         return result;
     }
@@ -171,10 +173,17 @@ export class FinanceService {
      * Calculates potential revenue based on active candidates in the pipeline
      */
     static getProjectedRevenue(candidates: Candidate[], employers: Employer[] = []): number {
+        const HIGH_PROBABILITY_STAGES = [
+            WorkflowStage.VISA_RECEIVED,
+            WorkflowStage.SLBFE_REGISTRATION,
+            WorkflowStage.TICKET_ISSUED
+        ];
+
         return candidates.reduce((total, candidate) => {
             if (!candidate) return total;
-            // If already departed, it's actual revenue, not projected
-            if (candidate.stage === WorkflowStage.DEPARTED) return total;
+
+            // Only count candidates who are in the late, high-probability stages
+            if (!HIGH_PROBABILITY_STAGES.includes(candidate.stage)) return total;
 
             const employer = employers.find(e => e.id === candidate.jobId || (candidate as Candidate & { employerId?: string }).employerId); // fallback
             const commission = employer?.commissionPerHire || 450; // Use default if no specific employer found

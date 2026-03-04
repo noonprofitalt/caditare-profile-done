@@ -1,4 +1,4 @@
-import { Candidate, WorkflowStage, SystemSnapshot, BottleneckMetric, StaffPerformanceMetric } from '../types';
+import { Candidate, WorkflowStage, SystemSnapshot, BottleneckMetric, StaffPerformanceMetric, StaffCandidateSummary } from '../types';
 import { SLA_CONFIG, WORKFLOW_STAGES, WorkflowEngine } from './workflowEngine.v2';
 import { CandidateService } from './candidateService';
 
@@ -15,8 +15,8 @@ export class ReportingService {
       kpi: this.calculateKPIs(candidates),
       stageDistribution: this.calculateStageDistribution(candidates),
       bottlenecks: this.calculateBottlenecks(candidates),
-      staffMetrics: this.calculateStaffPerformance(candidates),
-      financials: this.calculateFinancials(candidates)
+      staffMetrics: await this.calculateStaffPerformance(candidates),
+      financials: await this.calculateFinancials(candidates)
     };
   }
 
@@ -88,46 +88,219 @@ export class ReportingService {
 
   /**
    * Staff Performance Analytics
-   * analyzing timeline events to track actor activity
+   * Combines audit_logs + candidate timeline events for accurate tracking.
+   * Handles the case where audit_logs have null user_id by cross-referencing
+   * with candidate timeline events which store both actor name and userId.
    */
-  private static calculateStaffPerformance(candidates: Candidate[]): StaffPerformanceMetric[] {
-    const staffMap: Record<string, { actions: number; lastActive: string; stages: Record<string, number> }> = {};
+  private static async calculateStaffPerformance(candidates: Candidate[]): Promise<StaffPerformanceMetric[]> {
+    const { supabase } = await import('./supabase');
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role, status, avatar_url, last_login, created_at')
+      .order('full_name');
+
+    const { data: auditLogs } = await supabase
+      .from('audit_logs')
+      .select('user_id, action, details, created_at')
+      .order('created_at', { ascending: true });
+
+    if (!profiles || !auditLogs) return [];
+
+    // Build name→userId lookup
+    const nameToId: Record<string, string> = {};
+    profiles.forEach((p: any) => {
+      if (p.full_name && p.id) nameToId[p.full_name] = p.id;
+    });
+
+    // ── Analyze candidate timeline events (ground truth for work done) ──
+    const timelineWork: Record<string, {
+      totalEvents: number;
+      candidateRegistrations: number;
+      documentActions: number;
+      stages: Record<string, number>;
+      candidatesMap: Map<string, StaffCandidateSummary>;
+    }> = {};
+
+    const initTL = () => ({
+      totalEvents: 0,
+      candidateRegistrations: 0,
+      documentActions: 0,
+      stages: {} as Record<string, number>,
+      candidatesMap: new Map<string, StaffCandidateSummary>()
+    });
 
     (candidates || []).forEach(c => {
       (c.timelineEvents || []).forEach(evt => {
         const actor = evt.actor || 'System';
         if (actor === 'System') return;
+        // Prefer name→id (maps to current profiles) over evt.userId (may be stale)
+        const uid = nameToId[actor] || evt.userId;
+        if (!uid || !nameToId[actor]) return; // Only count if actor maps to a current profile
 
-        if (!staffMap[actor]) {
-          staffMap[actor] = { actions: 0, lastActive: evt.timestamp, stages: {} };
+        if (!timelineWork[uid]) timelineWork[uid] = initTL();
+        const e = timelineWork[uid];
+        e.totalEvents++;
+
+        const title = (evt.title || '').toLowerCase();
+        const type = (evt.type || '').toUpperCase();
+
+        if (title.includes('application submitted') || title.includes('registered') || title.includes('candidate created')) {
+          e.candidateRegistrations++;
+        } else if (type === 'DOCUMENT' || title.includes('document')) {
+          e.documentActions++;
         }
 
-        staffMap[actor].actions++;
-        if (new Date(evt.timestamp) > new Date(staffMap[actor].lastActive)) {
-          staffMap[actor].lastActive = evt.timestamp;
-        }
-
-        // Track which stage they work in most
         const stage = evt.stage || 'General';
-        staffMap[actor].stages[stage] = (staffMap[actor].stages[stage] || 0) + 1;
+        e.stages[stage] = (e.stages[stage] || 0) + 1;
+
+        // Track unique candidates worked on
+        const existing = e.candidatesMap.get(c.id);
+        const actionDate = evt.timestamp || new Date().toISOString();
+        if (!existing || new Date(actionDate) > new Date(existing.lastActionAt)) {
+          e.candidatesMap.set(c.id, {
+            id: c.id,
+            name: c.name,
+            stage: c.stage,
+            lastActionAt: actionDate,
+            latestActionTitle: evt.title || 'Updated Candidate'
+          });
+        }
       });
     });
 
-    const maxActions = Math.max(...Object.values(staffMap).map(d => d.actions), 1);
+    // ── Analyze audit_logs (only user_id-attributed ones) ──
+    const auditWork: Record<string, {
+      candidatesCreated: number; candidatesUpdated: number;
+      documentsUploaded: number; chatMessages: number;
+      usersManaged: number; bulkExports: number; otherAudit: number;
+      loginTimes: Date[]; logoutTimes: Date[];
+      lastActive: string; firstActive: string;
+    }> = {};
 
-    return Object.entries(staffMap).map(([name, data]) => {
-      // Find most active stage
-      const sortedStages = Object.entries(data.stages).sort((a, b) => b[1] - a[1]);
-      const efficiencyScore = Math.round((data.actions / maxActions) * 100);
+    const initAudit = () => ({
+      candidatesCreated: 0, candidatesUpdated: 0, documentsUploaded: 0,
+      chatMessages: 0, usersManaged: 0, bulkExports: 0, otherAudit: 0,
+      loginTimes: [] as Date[], logoutTimes: [] as Date[],
+      lastActive: '', firstActive: '',
+    });
 
-      return {
-        name,
-        actionsPerformed: data.actions,
-        lastActive: data.lastActive,
-        mostActiveStage: sortedStages[0] ? sortedStages[0][0] : 'General',
-        efficiencyScore
+    // Map candidateId→creatorUserId from timeline events (for orphaned audit recovery)
+    const candidateCreatorMap: Record<string, string> = {};
+    (candidates || []).forEach(c => {
+      const creationEvt = (c.timelineEvents || []).find(evt => {
+        const t = (evt.title || '').toLowerCase();
+        return t.includes('application submitted') || t.includes('registered') || t.includes('candidate created');
+      });
+      if (creationEvt) {
+        const uid = nameToId[creationEvt.actor || ''] || creationEvt.userId;
+        if (uid && nameToId[creationEvt.actor || '']) candidateCreatorMap[c.id] = uid;
+      }
+    });
+
+    auditLogs.forEach((log: any) => {
+      let uid = log.user_id;
+
+      // Recover orphaned CANDIDATE_CREATED logs
+      if (!uid && log.action === 'CANDIDATE_CREATED' && log.details?.candidateId) {
+        uid = candidateCreatorMap[log.details.candidateId];
+      }
+      if (!uid) return;
+
+      if (!auditWork[uid]) auditWork[uid] = initAudit();
+      const e = auditWork[uid];
+      if (!e.firstActive) e.firstActive = log.created_at;
+      e.lastActive = log.created_at;
+
+      switch (log.action) {
+        case 'CANDIDATE_CREATED': e.candidatesCreated++; break;
+        case 'CANDIDATE_UPDATED': e.candidatesUpdated++; break;
+        case 'DOCUMENT_UPLOADED': e.documentsUploaded++; break;
+        case 'TEAM_CHAT_MESSAGE_SENT': e.chatMessages++; break;
+        case 'SYSTEM_USER_CREATED':
+        case 'SYSTEM_USER_DELETED': e.usersManaged++; break;
+        case 'BULK_CANDIDATE_EXPORTED': e.bulkExports++; break;
+        case 'USER_LOGIN': e.loginTimes.push(new Date(log.created_at)); break;
+        case 'USER_LOGOUT': e.logoutTimes.push(new Date(log.created_at)); break;
+        default: e.otherAudit++; break;
+      }
+    });
+
+    // ── Assemble final metrics ──
+    const results: StaffPerformanceMetric[] = [];
+
+    for (const profile of profiles) {
+      const uid = profile.id;
+      const audit = auditWork[uid] || initAudit();
+      const tl = timelineWork[uid] || initTL();
+
+      // Best-of from both sources (avoids undercounting)
+      const candidatesRegistered = Math.max(audit.candidatesCreated, tl.candidateRegistrations);
+      const candidatesUpdated = Math.max(audit.candidatesUpdated, tl.totalEvents - tl.candidateRegistrations - tl.documentActions);
+      const documentsUploaded = Math.max(audit.documentsUploaded, tl.documentActions);
+
+      const wb = {
+        candidatesCreated: candidatesRegistered,
+        candidatesUpdated: Math.max(candidatesUpdated, 0),
+        documentsUploaded,
+        chatMessagesSent: audit.chatMessages,
+        usersManaged: audit.usersManaged,
+        bulkExports: audit.bulkExports,
+        otherActions: audit.otherAudit,
       };
-    }).sort((a, b) => b.actionsPerformed - a.actionsPerformed);
+
+      const totalWork = wb.candidatesCreated + wb.candidatesUpdated + wb.documentsUploaded +
+        wb.chatMessagesSent + wb.usersManaged + wb.bulkExports + wb.otherActions;
+
+      // Sessions
+      const sessions: { loginTime: string; logoutTime?: string; durationMinutes: number }[] = [];
+      audit.loginTimes.forEach(loginTime => {
+        const matchLogout = audit.logoutTimes.find(lt => lt > loginTime && (lt.getTime() - loginTime.getTime()) < 24 * 60 * 60 * 1000);
+        const dur = matchLogout ? Math.round((matchLogout.getTime() - loginTime.getTime()) / 60000) : 30;
+        sessions.push({ loginTime: loginTime.toISOString(), logoutTime: matchLogout?.toISOString(), durationMinutes: Math.max(dur, 1) });
+      });
+      const totalUptime = sessions.reduce((s, x) => s + x.durationMinutes, 0);
+      const avgSession = sessions.length > 0 ? Math.round(totalUptime / sessions.length) : 0;
+
+      // Daily activity (last 30 days)
+      const dailyMap: Record<string, number> = {};
+      for (let i = 0; i < 30; i++) dailyMap[new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)] = 0;
+      auditLogs.filter((l: any) => l.user_id === uid).forEach((l: any) => {
+        const d = l.created_at.slice(0, 10);
+        if (dailyMap[d] !== undefined) dailyMap[d]++;
+      });
+      const dailyActivity = Object.entries(dailyMap).map(([date, actions]) => ({ date, actions })).sort((a, b) => a.date.localeCompare(b.date));
+
+      const stageBreakdown = tl.stages;
+      const sortedStages = Object.entries(stageBreakdown).sort((a, b) => b[1] - a[1]);
+
+      results.push({
+        userId: uid,
+        name: profile.full_name || profile.email?.split('@')[0] || 'Unknown',
+        email: profile.email || '',
+        role: profile.role || 'Viewer',
+        status: profile.status || 'Active',
+        avatarUrl: profile.avatar_url,
+        accountCreatedAt: profile.created_at,
+        actionsPerformed: totalWork,
+        lastActive: audit.lastActive || profile.created_at,
+        firstActive: audit.firstActive || profile.created_at,
+        mostActiveStage: sortedStages.length > 0 ? sortedStages[0][0] : 'General',
+        efficiencyScore: 0,
+        sessions,
+        totalSessions: sessions.length,
+        totalUptimeMinutes: totalUptime,
+        avgSessionMinutes: avgSession,
+        workBreakdown: wb,
+        candidatesWorkedOn: Array.from(tl.candidatesMap.values()),
+        dailyActivity,
+        stageBreakdown,
+      });
+    }
+
+    const maxActions = Math.max(...results.map(r => r.actionsPerformed), 1);
+    results.forEach(r => { r.efficiencyScore = Math.round((r.actionsPerformed / maxActions) * 100); });
+    return results.sort((a, b) => b.actionsPerformed - a.actionsPerformed);
   }
 
   private static calculateStageDistribution(candidates: Candidate[]) {
@@ -139,34 +312,66 @@ export class ReportingService {
     return Object.entries(dist).map(([name, value]) => ({ name, value }));
   }
 
-  private static calculateFinancials(candidates: Candidate[]) {
+  private static async calculateFinancials(candidates: Candidate[]) {
+    const { supabase } = await import('./supabase');
+    const { PartnerService } = await import('./partnerService');
+
     let collected = 0;
     let pending = 0;
     let projected = 0;
     let totalPipeline = 0;
 
-    const REVENUE_PER_PLACEMENT = 2500; // Mock avg total revenue per candidate
+    // Fetch real employer data for commission rates
+    const employers = await PartnerService.getEmployers();
+    const DEFAULT_COMMISSION = 450;
+
+    const HIGH_PROBABILITY_STAGES = [
+      WorkflowStage.VISA_RECEIVED,
+      WorkflowStage.SLBFE_REGISTRATION,
+      WorkflowStage.TICKET_ISSUED
+    ];
 
     candidates.forEach(c => {
-      // Collected
-      const paid = c.stageData?.paymentHistory?.reduce((pSum: number, rec: any) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
-      collected += paid;
+      // --- COLLECTED: Sum of actual advance payments recorded on each candidate ---
+      const advanceTotal = (c.advancePayments || []).reduce((sum, ap) => sum + (ap.amount || 0), 0);
+      const paymentHistoryTotal = c.stageData?.paymentHistory?.reduce(
+        (pSum: number, rec: any) => pSum + parseFloat(rec.amount || '0'), 0
+      ) || 0;
+      collected += advanceTotal + paymentHistoryTotal;
 
-      // Pending (Invoiced but not paid)
+      // --- PENDING: Candidates with partial/pending payment status ---
       if (c.stageData?.paymentStatus === 'Pending' || c.stageData?.paymentStatus === 'Partial') {
-        pending += 500;
+        // Calculate how much is still owed based on commission minus what's paid
+        const employer = employers.find(e => e.id === c.employerId || e.id === c.jobId);
+        const totalOwed = employer?.commissionPerHire || DEFAULT_COMMISSION;
+        const stillOwed = Math.max(0, totalOwed - (advanceTotal + paymentHistoryTotal));
+        pending += stillOwed;
       }
 
-      // Projected (High probability - Visa Received or Ticket Issued)
-      if (c.stage === WorkflowStage.VISA_RECEIVED || c.stage === WorkflowStage.TICKET_ISSUED) {
-        projected += REVENUE_PER_PLACEMENT;
+      // --- PROJECTED: Only high-probability late-stage candidates ---
+      if (HIGH_PROBABILITY_STAGES.includes(c.stage)) {
+        const employer = employers.find(e => e.id === c.employerId || e.id === c.jobId);
+        const commission = employer?.commissionPerHire || DEFAULT_COMMISSION;
+        projected += commission;
       }
 
-      // Pipeline (Total potential)
+      // --- PIPELINE: All active (non-departed) candidates × their real commission ---
       if (c.stage && c.stage !== WorkflowStage.DEPARTED) {
-        totalPipeline += REVENUE_PER_PLACEMENT;
+        const employer = employers.find(e => e.id === c.employerId || e.id === c.jobId);
+        const commission = employer?.commissionPerHire || DEFAULT_COMMISSION;
+        totalPipeline += commission;
       }
     });
+
+    // Also add pending from real invoices
+    const { data: invoices } = await supabase
+      .from('invoices')
+      .select('amount, status')
+      .in('status', ['Draft', 'Sent', 'Overdue']);
+
+    if (invoices) {
+      pending += invoices.reduce((sum: number, inv: any) => sum + parseFloat(inv.amount || '0'), 0);
+    }
 
     return {
       totalCollected: collected,

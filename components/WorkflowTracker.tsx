@@ -14,6 +14,20 @@ const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ candidate }) => {
   // Validation for next stage
   const validation = nextStage ? WorkflowEngine.validateTransition(candidate, nextStage) : { allowed: true, blockers: [] as string[] };
 
+  const getStageDate = (stage: WorkflowStage) => {
+    const dates = candidate.workflowMilestones || {};
+    switch (stage) {
+      case WorkflowStage.APPLIED: return dates.offerAppliedDate;
+      case WorkflowStage.OFFER_RECEIVED: return dates.offerReceivedDate;
+      case WorkflowStage.WP_RECEIVED: return dates.wpReceivedDate;
+      case WorkflowStage.EMBASSY_APPLIED: return dates.embAppliedDate;
+      case WorkflowStage.VISA_RECEIVED: return dates.stampRejectDate;
+      case WorkflowStage.SLBFE_REGISTRATION: return dates.slbfeRegistrationDate;
+      case WorkflowStage.DEPARTED: return dates.departureDate;
+      default: return null;
+    }
+  };
+
   const getStepIcon = (stageIdx: number) => {
     if (stageIdx < currentStageIdx) return <CheckCircle2 className="text-green-600" size={24} />;
     if (stageIdx === currentStageIdx) {
@@ -64,6 +78,9 @@ const WorkflowTracker: React.FC<WorkflowTrackerProps> = ({ candidate }) => {
               <span className={`text-xs font-bold mb-1 ${index === currentStageIdx ? 'text-blue-700' : index < currentStageIdx ? 'text-green-700' : 'text-slate-400'}`}>
                 {stage}
               </span>
+              {getStageDate(stage) && (
+                <span className="text-[10px] font-bold text-slate-500 mb-1">{getStageDate(stage)}</span>
+              )}
               {index === currentStageIdx && (
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${candidate.stageStatus === StageStatus.IN_PROGRESS ? 'bg-blue-50 border-blue-200 text-blue-600' :
                   candidate.stageStatus === StageStatus.ON_HOLD ? 'bg-orange-50 border-orange-200 text-orange-600' :

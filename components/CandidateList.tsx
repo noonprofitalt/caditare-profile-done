@@ -11,11 +11,14 @@ import { convertToCSV } from '../services/csvExportService';
 import { useDebounce } from '../hooks/useDebounce';
 import { CandidateService } from '../services/candidateService';
 import { supabase } from '../services/supabase';
+import { useAuth } from '../context/AuthContext';
 
 const PAGE_SIZE = 50;
 
 const CandidateList: React.FC = () => {
   const { candidates: contextCandidates } = useCandidates(); // Keeps the top-level stats alive
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
 
   const [paginatedCandidates, setPaginatedCandidates] = useState<Candidate[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -220,7 +223,7 @@ const CandidateList: React.FC = () => {
   };
 
   // Virtualized Row Component - Responsive Card
-  const CandidateRow = ({ index, style, candidates, selectedIds, onSelect }: any) => {
+  const CandidateRow = ({ index, style, candidates, selectedIds, onSelect, adminCheck }: any) => {
     const candidate = candidates[index];
     const isSelected = selectedIds.includes(candidate.id);
 
@@ -230,12 +233,14 @@ const CandidateList: React.FC = () => {
           }`}>
           {/* Mobile Header: Checkbox + Avatar + Basic Info */}
           <div className="flex items-center gap-3 md:w-1/3 min-w-0">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => onSelect(candidate.id)}
-              className="w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 transition-premium cursor-pointer"
-            />
+            {adminCheck && (
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onSelect(candidate.id)}
+                className="w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 transition-premium cursor-pointer shrink-0"
+              />
+            )}
             <div className="relative flex-shrink-0">
               <img
                 src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}`}
@@ -353,8 +358,8 @@ const CandidateList: React.FC = () => {
         hasActiveFilters={hasActiveFilters}
       />
 
-      {/* Bulk Actions Bar */}
-      {selectedCandidateIds.length > 0 && (
+      {/* Bulk Actions Bar (Admin Only) */}
+      {isAdmin && selectedCandidateIds.length > 0 && (
         <div className="fixed bottom-[88px] md:bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 z-50 transition-premium scale-in">
           <div className="bg-slate-900/95 backdrop-blur-xl text-white border border-slate-800 shadow-2xl rounded-2xl px-4 py-3 flex items-center justify-between md:justify-start md:gap-4 max-w-lg mx-auto md:max-w-none">
             <div className="flex items-center gap-2 pr-4 md:border-r border-slate-800">
@@ -453,7 +458,8 @@ const CandidateList: React.FC = () => {
               rowProps={{
                 candidates: paginatedCandidates,
                 selectedIds: selectedCandidateIds,
-                onSelect: handleSelectCandidate
+                onSelect: handleSelectCandidate,
+                adminCheck: isAdmin
               }}
               className="custom-scrollbar"
             />

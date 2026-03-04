@@ -79,7 +79,8 @@ export class PartnerService {
         }
 
         // SYSLOG: Track Audit
-        AuditService.log('EMPLOYER_CREATED', { employerId: data.id, name: dbEmployer.name });
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('EMPLOYER_CREATED', { employerId: data.id, name: dbEmployer.name }, auditUserId);
 
         return this.mapDatabaseToEmployer(data);
     }
@@ -131,7 +132,8 @@ export class PartnerService {
         }
 
         // SYSLOG: Track Audit
-        AuditService.log('EMPLOYER_UPDATED', { employerId: updated.id, status: updated.status });
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('EMPLOYER_UPDATED', { employerId: updated.id, status: updated.status }, auditUserId);
 
         return this.mapDatabaseToEmployer(data);
     }
@@ -158,7 +160,8 @@ export class PartnerService {
         }
 
         // SYSLOG: Track Audit
-        AuditService.log('EMPLOYER_DELETED', { employerId: id });
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('EMPLOYER_DELETED', { employerId: id }, auditUserId);
 
         return true;
     }

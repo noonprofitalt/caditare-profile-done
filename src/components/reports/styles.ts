@@ -1,253 +1,161 @@
 import { StyleSheet } from '@react-pdf/renderer';
 
-// Register fonts (Standard PDF fonts are available by default)
-
 export const styles = StyleSheet.create({
-  // 1️⃣ PURE A4 LAYOUT RESET
   page: {
-    paddingTop: 45,
-    paddingBottom: 60,
-    paddingLeft: 45,
-    paddingRight: 45,
+    padding: 30,
     fontFamily: 'Helvetica',
-    fontSize: 10,
-    color: '#0c0a09',
-    backgroundColor: '#FFFFFF',
-    position: 'relative',
+    fontSize: 9,
+    color: '#1e293b', // slate-800
+    backgroundColor: '#ffffff',
   },
-
-  // 2️⃣ CLEAN HEADER (NO DIVIDERS - 45/55 Split for BIG LOGO)
-  headerSection: {
+  headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: '#1e1b4b',
-    paddingBottom: 8,
-    width: '100%',
-  },
-  headerLeft: {
-    width: '50%',
     alignItems: 'flex-start',
+    borderBottomWidth: 2,
+    borderBottomColor: '#0f172a',
+    paddingBottom: 10,
+    marginBottom: 15,
   },
-  headerRight: {
-    width: '50%',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+  logo: {
+    width: 280,
+    height: 100,
+    objectFit: 'contain',
+    alignSelf: 'flex-start',
   },
-
-  // 3️⃣ EMBASSY TYPOGRAPHY - HIERARCHY
-  suharaTitle: {
+  headerText: {
+    textAlign: 'right',
+  },
+  docTitle: {
+    fontSize: 18,
     fontFamily: 'Helvetica-Bold',
-    fontSize: 16, // Authoritative
-    color: '#1e1b4b', // Deep Indigo
+    color: '#0f172a',
     textTransform: 'uppercase',
-    marginBottom: 4,
+    letterSpacing: 1,
+  },
+  docMeta: {
+    fontSize: 8,
+    color: '#64748b',
+    marginTop: 4,
+    textTransform: 'uppercase',
+  },
+  docMetaBold: {
+    fontSize: 10,
+    color: '#0f172a',
+    fontFamily: 'Helvetica-Bold',
+    marginTop: 4,
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  licenseNo: {
+  sectionTitle: {
+    fontSize: 11,
     fontFamily: 'Helvetica-Bold',
-    fontSize: 10,
-    color: '#334155', // Slate
-    marginBottom: 6,
-  },
-  contactBox: {
-    fontSize: 8.5,
-    fontFamily: 'Helvetica',
-    color: '#334155',
-    lineHeight: 1.4,
-  },
-
-  // 4️⃣ DOCUMENT TITLE
-  reportTitle: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 16,
-    color: '#000000',
+    color: '#ffffff',
+    backgroundColor: '#0f172a',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginTop: 15,
+    marginBottom: 5,
     textTransform: 'uppercase',
-    textAlign: 'center',
-    marginBottom: 8,
-    marginTop: 8,
-    letterSpacing: 2,
-    borderTopWidth: 2,
-    borderTopColor: '#1e1b4b',
-    borderBottomWidth: 2,
-    borderBottomColor: '#1e1b4b',
-    paddingVertical: 10,
+    letterSpacing: 0.5,
   },
-
-  // 5️⃣ META DATA ROW
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#f8fafc',
-    padding: '6 10',
-    marginBottom: 25,
-  },
-  metaText: {
-    fontSize: 8.5,
-    fontFamily: 'Helvetica',
-    color: '#64748b',
-  },
-
-  // 6️⃣ SECTION HEADERS
-  h1: { fontSize: 13, fontFamily: 'Helvetica-Bold', marginBottom: 6, textTransform: 'uppercase', color: '#000' },
-  h2: {
-    fontSize: 12,
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 8,
-    marginTop: 12,
-    textTransform: 'uppercase',
-    color: '#000000',
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#000000',
-    paddingBottom: 4,
-  },
-  h3: {
-    fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 3,
-    marginTop: 5,
-    textTransform: 'uppercase',
-    color: '#000000',
-  },
-
-  // 7️⃣ STANDARD TEXT
-  text: {
-    fontSize: 10,
-    fontFamily: 'Times-Roman',
-    lineHeight: 1.4,
-    color: '#000000',
-    marginBottom: 4,
-  },
-  small: {
+  subSectionTitle: {
     fontSize: 9,
-    fontFamily: 'Times-Roman',
-    color: '#000000',
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    borderBottomWidth: 1,
+    borderBottomColor: '#cbd5e1',
+    paddingBottom: 2,
+    marginTop: 10,
+    marginBottom: 5,
+    textTransform: 'uppercase',
   },
-  bold: { fontFamily: 'Times-Bold' },
-  label: { fontSize: 9, fontFamily: 'Helvetica-Bold', width: 110 },
-  value: { fontSize: 10, fontFamily: 'Times-Roman', flex: 1 },
-
-  // 8️⃣ TABLES (Strict Grid)
   table: {
     width: '100%',
     borderWidth: 1,
-    borderColor: '#000000',
-    marginTop: 5,
-    marginBottom: 10,
+    borderColor: '#94a3b8',
+    marginBottom: 5,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#000000',
-    minHeight: 20,
+    borderBottomColor: '#cbd5e1',
+    minHeight: 18,
     alignItems: 'center',
   },
   tableHeader: {
-    backgroundColor: '#f8fafc',
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 9,
-    borderBottomWidth: 1,
-    borderBottomColor: '#000000',
-    padding: 4,
-    textTransform: 'uppercase',
+    backgroundColor: '#f1f5f9',
   },
-  tableCell: {
-    padding: 6,
+  tableCellLabel: {
+    padding: 4,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
+    backgroundColor: '#f8fafc',
     borderRightWidth: 1,
-    borderRightColor: '#000000',
-    fontSize: 9,
-    fontFamily: 'Helvetica',
+    borderRightColor: '#cbd5e1',
+    width: '25%',
+  },
+  tableCellValue: {
+    padding: 4,
+    fontSize: 8,
+    color: '#0f172a',
+    width: '25%',
+    borderRightWidth: 1,
+    borderRightColor: '#cbd5e1',
   },
   lastCell: { borderRightWidth: 0 },
-
-  // 9️⃣ UTILS
-  section: { marginBottom: 10 },
-  row: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 3 },
-  grid2: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+  colFull: { width: '75%', borderRightWidth: 0 },
+  colHalf: { width: '50%' },
+  colThirdLabel: { width: '15%', backgroundColor: '#f8fafc', padding: 4, fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#475569', borderRightWidth: 1, borderRightColor: '#cbd5e1' },
+  colThirdValue: { width: '18.33%', padding: 4, fontSize: 8, color: '#0f172a', borderRightWidth: 1, borderRightColor: '#cbd5e1' },
+  gridCell: {
+    padding: 4,
+    fontSize: 8,
+    borderRightWidth: 1,
+    borderRightColor: '#cbd5e1',
+    justifyContent: 'center',
   },
-  gridItem2: {
-    width: '48%',
-    marginBottom: 8,
+  gridHeaderItem: {
+    fontFamily: 'Helvetica-Bold',
+    backgroundColor: '#f1f5f9',
+    color: '#334155',
   },
-  bgGray: { backgroundColor: '#f3f4f6' },
-
-  // 🔟 BULLETPROOF FOOTER (Absolute Bottom)
   footer: {
     position: 'absolute',
-    bottom: 25, // Inside the safe 90pt padding zone
-    left: 40,
-    right: 40,
+    bottom: 20,
+    left: 30,
+    right: 30,
     borderTopWidth: 1,
-    borderTopColor: '#0f172a',
-    paddingTop: 8,
+    borderTopColor: '#94a3b8',
+    paddingTop: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    zIndex: 100, // Top Layer
   },
   footerText: {
-    fontSize: 8,
-    color: '#334155', // Slate
-    fontFamily: 'Helvetica',
+    fontSize: 7,
+    color: '#64748b',
   },
-  pageNumber: {
-    fontSize: 8,
-    color: '#334155',
-    fontFamily: 'Helvetica',
-  },
-
-  // 1️⃣1️⃣ WATERMARK (Background Layer)
-  watermarkContainer: {
+  watermark: {
     position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    justifyContent: 'center', alignItems: 'center',
-    zIndex: -1, // Behind everything
+    top: '20%',
+    left: '10%',
+    width: 450,
+    height: 450,
+    opacity: 0.035,
+    zIndex: -1,
   },
-  watermarkImage: {
-    width: 650,
-    opacity: 0.05,
-    transform: 'rotate(-45deg)',
+  alertText: {
+    color: '#dc2626',
+    fontFamily: 'Helvetica-Bold',
   },
-  watermarkText: {
-    position: 'absolute',
-    bottom: 20, // Absolute bottom center
-    left: 45,
-    right: 45,
-    textAlign: 'center',
-    fontSize: 8,
-    color: '#cbd5e1', // Very faint grey
-    fontFamily: 'Helvetica',
+  successText: {
+    color: '#16a34a',
+    fontFamily: 'Helvetica-Bold',
   },
-  // 1️⃣2️⃣ ASSESSMENT STYLES
-  assessmentBox: {
-    padding: 10,
-    backgroundColor: '#f8fafc', // Soft Gray
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 4,
-    marginBottom: 10,
-  },
-  ratingProgressBar: {
-    height: 8,
-    width: '100%',
-    backgroundColor: '#e2e8f0',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginTop: 4,
-  },
-  ratingProgressFill: {
-    height: '100%',
-    backgroundColor: '#0f172a', // Navy
-  },
-  riskBadgeLow: { backgroundColor: '#dcfce7', color: '#166534', padding: '2 6', borderRadius: 4, fontSize: 8, fontFamily: 'Helvetica-Bold' },
-  riskBadgeMed: { backgroundColor: '#fef9c3', color: '#854d0e', padding: '2 6', borderRadius: 4, fontSize: 8, fontFamily: 'Helvetica-Bold' },
-  riskBadgeHigh: { backgroundColor: '#fee2e2', color: '#991b1b', padding: '2 6', borderRadius: 4, fontSize: 8, fontFamily: 'Helvetica-Bold' },
-  insightPoint: { marginBottom: 3, flexDirection: 'row', alignItems: 'flex-start' },
-  insightBullet: { width: 8, height: 8, backgroundColor: '#3b82f6', borderRadius: 4, marginTop: 4, marginRight: 6 }
-
+  boldValue: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 9,
+    color: '#0f172a',
+  }
 });

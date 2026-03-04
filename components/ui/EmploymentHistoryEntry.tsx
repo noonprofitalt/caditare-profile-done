@@ -114,8 +114,8 @@ const EmploymentHistoryEntry: React.FC<EmploymentHistoryEntryProps> = ({ records
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Duration (Years)</label>
                                     <input
                                         type="number"
-                                        value={record.years}
-                                        onChange={(e) => updateRecord(index, 'years', parseFloat(e.target.value) || 0)}
+                                        value={record.years ?? ''}
+                                        onChange={(e) => updateRecord(index, 'years', e.target.value ? parseFloat(e.target.value) : (undefined as any))}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>

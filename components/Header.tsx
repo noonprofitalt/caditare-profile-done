@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Search, UserCircle, X, ChevronRight, Command, MessageSquare, Menu, LogOut, Settings as SettingsIcon } from 'lucide-react';
-import { MOCK_CANDIDATES } from '../services/mockData';
+
 import { Candidate, Employer, Job, AppNotification } from '../types';
 import { CandidateService } from '../services/candidateService';
 import { PartnerService } from '../services/partnerService';
@@ -40,6 +40,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'Admin';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { showToast, ToastContainer } = useToast();
 
@@ -73,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     try {
       return await CandidateService.getCandidates() || [];
     } catch {
-      return MOCK_CANDIDATES;
+      return [];
     }
   };
 
@@ -97,19 +98,25 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         (c?.role && c.role.toLowerCase().includes(lowerQ))
       ).slice(0, 3);
 
-      // Search Employers
-      const allEmployers = await PartnerService.getEmployers() || [];
-      const employers = allEmployers.filter(e =>
-        (e?.companyName && e.companyName.toLowerCase().includes(lowerQ)) ||
-        (e?.contactPerson && e.contactPerson.toLowerCase().includes(lowerQ))
-      ).slice(0, 3);
+      // Search Employers (Admin only)
+      let employers: Employer[] = [];
+      if (isAdmin) {
+        const allEmployers = await PartnerService.getEmployers() || [];
+        employers = allEmployers.filter(e =>
+          (e?.companyName && e.companyName.toLowerCase().includes(lowerQ)) ||
+          (e?.contactPerson && e.contactPerson.toLowerCase().includes(lowerQ))
+        ).slice(0, 3);
+      }
 
-      // Search Jobs
-      const allJobs = await JobService.getJobs() || [];
-      const jobs = allJobs.filter(j =>
-        (j?.title && j.title.toLowerCase().includes(lowerQ)) ||
-        (j?.company && j.company.toLowerCase().includes(lowerQ))
-      ).slice(0, 3);
+      // Search Jobs (Admin only)
+      let jobs: Job[] = [];
+      if (isAdmin) {
+        const allJobs = await JobService.getJobs() || [];
+        jobs = allJobs.filter(j =>
+          (j?.title && j.title.toLowerCase().includes(lowerQ)) ||
+          (j?.company && j.company.toLowerCase().includes(lowerQ))
+        ).slice(0, 3);
+      }
 
       setResults({ candidates, employers, jobs });
       setIsOpen(true);

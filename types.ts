@@ -142,6 +142,7 @@ export interface AdvancePayment {
 
 // --- WORKFLOW MILESTONES (bottom tracking row on paper form) ---
 export interface WorkflowMilestones {
+  verifiedDate?: string;
   offerAppliedDate?: string;
   offerReceivedDate?: string;
   wpAppliedDate?: string;
@@ -152,6 +153,7 @@ export interface WorkflowMilestones {
   stampResult?: string;
   slbfeTrainingDate?: string;
   slbfeRegistrationDate?: string;
+  ticketIssuedDate?: string;
   departureDate?: string;
 }
 
@@ -601,6 +603,7 @@ export interface Candidate {
   passportProfession?: string; // Profession (as per passport)
   passportRemark?: string;   // Remark field from passport section of paper form
   companyName?: string;      // Company name from paper form header
+  batchReference?: string;   // e.g. AL/2185/0001/25 (1500 ER) 1st Batch (top right corner of form)
   remarkLog?: RemarkEntry[]; // Date/Remark log (handwritten notes on paper forms)
   // Family AGE/ID fields (matching paper form columns)
   fatherAge?: number;
@@ -617,6 +620,7 @@ export interface Candidate {
 export interface RemarkEntry {
   date: string;
   remark: string;
+  note?: string;
 }
 
 
@@ -665,12 +669,67 @@ export interface KPIMetrics {
   projectedDepartures?: number;
 }
 
-export interface StaffPerformanceMetric {
+export interface StaffSession {
+  loginTime: string;
+  logoutTime?: string;
+  durationMinutes: number;
+}
+
+export interface StaffWorkBreakdown {
+  candidatesCreated: number;
+  candidatesUpdated: number;
+  documentsUploaded: number;
+  chatMessagesSent: number;
+  usersManaged: number;       // created + deleted
+  bulkExports: number;
+  otherActions: number;
+}
+
+export interface StaffDailyActivity {
+  date: string;     // ISO date string (YYYY-MM-DD)
+  actions: number;
+}
+
+export interface StaffCandidateSummary {
+  id: string;
   name: string;
+  stage: string;
+  lastActionAt: string;
+  latestActionTitle: string;
+}
+
+export interface StaffPerformanceMetric {
+  // Identity
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  avatarUrl?: string;
+  accountCreatedAt: string;
+
+  // Activity
   actionsPerformed: number;
   lastActive: string;
+  firstActive: string;
   mostActiveStage: string;
-  efficiencyScore?: number; // 0-100 based on activity vs avg
+  efficiencyScore: number; // 0-100 based on activity vs avg
+
+  // Session tracking (from audit_logs LOGIN/LOGOUT)
+  sessions: StaffSession[];
+  totalSessions: number;
+  totalUptimeMinutes: number;
+  avgSessionMinutes: number;
+
+  // Work metrics
+  workBreakdown: StaffWorkBreakdown;
+  candidatesWorkedOn: StaffCandidateSummary[];
+
+  // Daily activity over last 30 days
+  dailyActivity: StaffDailyActivity[];
+
+  // stage breakdown: how many actions per workflow stage
+  stageBreakdown: Record<string, number>;
 }
 
 export interface BottleneckMetric {
@@ -897,7 +956,7 @@ export interface Invoice {
 
 // --- AUTHENTICATION & SECURITY TYPES ---
 
-export type UserRole = 'Admin' | 'Recruiter' | 'Viewer' | 'Manager' | 'Finance' | 'Compliance' | 'Operations';
+export type UserRole = 'Admin' | 'Recruiter' | 'Viewer' | 'Manager' | 'Finance' | 'Compliance' | 'Operations' | 'HR';
 
 export interface User {
   id: string;
@@ -1073,5 +1132,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   'Manager': ['candidates.view', 'candidates.edit', 'reports.view', 'chat.view'],
   'Finance': ['finance.view', 'finance.edit', 'reports.view', 'chat.view'],
   'Compliance': ['candidates.view', 'reports.view', 'chat.view'],
-  'Operations': ['candidates.view', 'reports.view', 'chat.view']
+  'Operations': ['candidates.view', 'reports.view', 'chat.view'],
+  'HR': ['candidates.view', 'candidates.edit', 'finance.view', 'reports.view', 'users.manage', 'chat.view']
 };

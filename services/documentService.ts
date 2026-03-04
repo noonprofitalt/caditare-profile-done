@@ -37,12 +37,13 @@ export class DocumentService {
                 .from(this.BUCKET_NAME)
                 .getPublicUrl(filePath);
 
+            const auditUserId = await AuditService.getCurrentUserId();
             AuditService.log('DOCUMENT_UPLOADED', {
                 candidateId,
                 documentType: docType,
                 fileName,
                 path: filePath
-            });
+            }, auditUserId);
 
             return { path: filePath, url: publicUrl };
 
@@ -66,9 +67,10 @@ export class DocumentService {
                 return { success: false, error };
             }
 
+            const auditUserId = await AuditService.getCurrentUserId();
             AuditService.log('DOCUMENT_DELETED', {
                 path
-            });
+            }, auditUserId);
 
             return { success: true };
         } catch (err) {

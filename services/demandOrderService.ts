@@ -114,7 +114,8 @@ export class DemandOrderService {
         }
 
         // SYSLOG: Track Audit
-        AuditService.log('DEMAND_ORDER_CREATED', { orderId: dbOrder.order_number || data.id, title: dbOrder.title });
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('DEMAND_ORDER_CREATED', { orderId: dbOrder.order_number || data.id, title: dbOrder.title }, auditUserId);
 
         return this.mapDatabaseToOrder(data);
     }
@@ -162,7 +163,8 @@ export class DemandOrderService {
         }
 
         // SYSLOG: Track Audit
-        AuditService.log('DEMAND_ORDER_UPDATED', { orderId: updated.id, status: updated.status });
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('DEMAND_ORDER_UPDATED', { orderId: updated.id, status: updated.status }, auditUserId);
 
         return this.mapDatabaseToOrder(data);
     }
@@ -189,7 +191,8 @@ export class DemandOrderService {
         }
 
         // SYSLOG: Track Audit
-        AuditService.log('DEMAND_ORDER_DELETED', { orderId: id });
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('DEMAND_ORDER_DELETED', { orderId: id }, auditUserId);
 
         return true;
     }

@@ -44,11 +44,12 @@ export class UserService {
             throw error;
         }
 
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('SYSTEM_USER_CREATED', {
             newUserEmail: user.email,
             newUserRole: user.role,
             newUserName: user.name
-        });
+        }, auditUserId);
     }
 
     // Delete a user via Edge Function
@@ -62,9 +63,10 @@ export class UserService {
             throw error;
         }
 
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('SYSTEM_USER_DELETED', {
             deletedUserId: userId
-        });
+        }, auditUserId);
     }
 
     // Update user profile (role, status, etc.) - Direct DB update as Admin
@@ -82,9 +84,10 @@ export class UserService {
             throw error;
         }
 
+        const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('SYSTEM_USER_UPDATED', {
             targetUserId: userId,
             updates: updates
-        });
+        }, auditUserId);
     }
 }
