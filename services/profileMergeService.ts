@@ -52,27 +52,6 @@ export class ProfileMergeService {
                 ...(newData.medicalData || {})
             },
             ...preservedFields
-        };// Merge all other fields from newData
-        const merged: Candidate = {
-            ...existingCandidate,
-            ...newData,
-            personalInfo: {
-                ...existingCandidate.personalInfo,
-                ...(newData.personalInfo || {})
-            },
-            contactInfo: {
-                ...existingCandidate.contactInfo,
-                ...(newData.contactInfo || {})
-            },
-            professionalProfile: {
-                ...existingCandidate.professionalProfile,
-                ...(newData.professionalProfile || {})
-            },
-            medicalData: {
-                ...existingCandidate.medicalData,
-                ...(newData.medicalData || {})
-            },
-            ...preservedFields
         };
 
         // Recalculate profile completion

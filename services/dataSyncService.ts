@@ -63,12 +63,12 @@ export class DataSyncService {
         const currentPP = result.professionalProfile || {} as ProfessionalProfile;
         const professionalProfile: ProfessionalProfile = {
             ...currentPP,
-            jobRoles: currentPP.jobRoles?.length ? currentPP.jobRoles : (result.jobRoles || (result.role ? [result.role] : [])),
+            jobRoles: currentPP.jobRoles !== undefined ? currentPP.jobRoles : (result.jobRoles || (result.role ? [result.role] : [])),
             experienceYears: currentPP.experienceYears ?? result.experienceYears,
-            skills: currentPP.skills?.length ? currentPP.skills : (result.skills || []),
-            education: currentPP.education?.length ? currentPP.education : (result.education || []),
-            educationalQualifications: currentPP.educationalQualifications?.length ? currentPP.educationalQualifications : (result.educationalQualifications || []),
-            employmentHistory: currentPP.employmentHistory?.length ? currentPP.employmentHistory : (result.employmentHistory || []),
+            skills: currentPP.skills !== undefined ? currentPP.skills : (result.skills || []),
+            education: currentPP.education !== undefined ? currentPP.education : (result.education || []),
+            educationalQualifications: currentPP.educationalQualifications !== undefined ? currentPP.educationalQualifications : (result.educationalQualifications || []),
+            employmentHistory: currentPP.employmentHistory !== undefined ? currentPP.employmentHistory : (result.employmentHistory || []),
             trainingDetails: currentPP.trainingDetails || result.trainingDetails || '',
             specialAchievements: currentPP.specialAchievements || result.specialAchievements || '',
             school: currentPP.school || result.school || ''
