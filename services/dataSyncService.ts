@@ -17,34 +17,34 @@ export class DataSyncService {
         const currentPI = result.personalInfo || {} as PersonalInfo;
 
         // Surname + OtherNames -> Full Name fallback
-        const surname = result.surname || currentPI.surname || '';
-        const otherNames = result.otherNames || currentPI.otherNames || '';
-        const name = result.name || currentPI.fullName || `${otherNames} ${surname}`.trim();
+        const surname = currentPI.surname || result.surname || '';
+        const otherNames = currentPI.otherNames || result.otherNames || '';
+        const name = currentPI.fullName || result.name || `${otherNames} ${surname}`.trim();
 
         const personalInfo: PersonalInfo = {
             ...currentPI,
             fullName: name,
             surname: surname,
             otherNames: otherNames,
-            firstName: result.firstName || currentPI.firstName || otherNames,
-            middleName: result.middleName || currentPI.middleName || '',
-            nic: result.nic || currentPI.nic || '',
-            dob: result.dob || currentPI.dob || '',
-            gender: result.gender || currentPI.gender || '',
-            address: result.address || currentPI.address || '',
-            city: result.city || currentPI.city || '',
-            province: result.province || currentPI.province || '',
-            district: result.district || result.city || currentPI.district || '',
-            divisionalSecretariat: result.divisionalSecretariat || currentPI.divisionalSecretariat || '',
-            gsDivision: result.gsDivision || currentPI.gsDivision || '',
-            drivingLicenseNo: result.drivingLicenseNo || currentPI.drivingLicenseNo || '',
-            nationality: result.nationality || currentPI.nationality || 'Sri Lankan',
-            placeOfBirth: result.placeOfBirth || currentPI.placeOfBirth || '',
-            passportProfession: result.passportProfession || currentPI.passportProfession || '',
-            maritalStatus: (result.maritalStatus || currentPI.maritalStatus || 'Single') as any,
-            spouseName: result.spouseName || currentPI.spouseName || '',
-            fatherName: result.fatherName || currentPI.fatherName || '',
-            motherName: result.motherName || currentPI.motherName || '',
+            firstName: currentPI.firstName || result.firstName || otherNames,
+            middleName: currentPI.middleName || result.middleName || '',
+            nic: currentPI.nic || result.nic || '',
+            dob: currentPI.dob || result.dob || '',
+            gender: currentPI.gender || result.gender || '',
+            address: currentPI.address || result.address || '',
+            city: currentPI.city || result.city || '',
+            province: currentPI.province || result.province || '',
+            district: currentPI.district || result.district || result.city || '',
+            divisionalSecretariat: currentPI.divisionalSecretariat || result.divisionalSecretariat || '',
+            gsDivision: currentPI.gsDivision || result.gsDivision || '',
+            drivingLicenseNo: currentPI.drivingLicenseNo || result.drivingLicenseNo || '',
+            nationality: currentPI.nationality || result.nationality || 'Sri Lankan',
+            placeOfBirth: currentPI.placeOfBirth || result.placeOfBirth || '',
+            passportProfession: currentPI.passportProfession || result.passportProfession || '',
+            maritalStatus: (currentPI.maritalStatus || result.maritalStatus || 'Single') as any,
+            spouseName: currentPI.spouseName || result.spouseName || '',
+            fatherName: currentPI.fatherName || result.fatherName || '',
+            motherName: currentPI.motherName || result.motherName || '',
         };
         result.personalInfo = personalInfo;
 
@@ -52,10 +52,10 @@ export class DataSyncService {
         const currentCI = result.contactInfo || {} as ContactInfo;
         const contactInfo: ContactInfo = {
             ...currentCI,
-            primaryPhone: result.phone || currentCI.primaryPhone || '',
-            whatsappPhone: result.whatsapp || currentCI.whatsappPhone || result.phone || '',
-            email: result.email || currentCI.email || '',
-            additionalPhones: result.additionalContactNumbers || currentCI.additionalPhones || (result.secondaryPhone ? [result.secondaryPhone] : [])
+            primaryPhone: currentCI.primaryPhone || result.phone || '',
+            whatsappPhone: currentCI.whatsappPhone || result.whatsapp || result.phone || '',
+            email: currentCI.email || result.email || '',
+            additionalPhones: currentCI.additionalPhones || result.additionalContactNumbers || (result.secondaryPhone ? [result.secondaryPhone] : [])
         };
         result.contactInfo = contactInfo;
 
@@ -63,15 +63,15 @@ export class DataSyncService {
         const currentPP = result.professionalProfile || {} as ProfessionalProfile;
         const professionalProfile: ProfessionalProfile = {
             ...currentPP,
-            jobRoles: result.jobRoles || currentPP.jobRoles || (result.role ? [result.role] : []),
-            experienceYears: result.experienceYears ?? currentPP.experienceYears,
-            skills: result.skills || currentPP.skills || [],
-            education: result.education || currentPP.education || [],
-            educationalQualifications: result.educationalQualifications || currentPP.educationalQualifications || [],
-            employmentHistory: result.employmentHistory || currentPP.employmentHistory || [],
-            trainingDetails: result.trainingDetails || currentPP.trainingDetails || '',
-            specialAchievements: result.specialAchievements || currentPP.specialAchievements || '',
-            school: result.school || currentPP.school || ''
+            jobRoles: currentPP.jobRoles?.length ? currentPP.jobRoles : (result.jobRoles || (result.role ? [result.role] : [])),
+            experienceYears: currentPP.experienceYears ?? result.experienceYears,
+            skills: currentPP.skills?.length ? currentPP.skills : (result.skills || []),
+            education: currentPP.education?.length ? currentPP.education : (result.education || []),
+            educationalQualifications: currentPP.educationalQualifications?.length ? currentPP.educationalQualifications : (result.educationalQualifications || []),
+            employmentHistory: currentPP.employmentHistory?.length ? currentPP.employmentHistory : (result.employmentHistory || []),
+            trainingDetails: currentPP.trainingDetails || result.trainingDetails || '',
+            specialAchievements: currentPP.specialAchievements || result.specialAchievements || '',
+            school: currentPP.school || result.school || ''
         };
         result.professionalProfile = professionalProfile;
 

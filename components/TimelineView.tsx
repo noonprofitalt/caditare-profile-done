@@ -205,12 +205,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({ events = [] }) => {
       </div>
       <div className="bg-white flex-1 overflow-y-auto">
         {filteredAndSortedEvents.length === 0 ? (
-          <div className="text-center py-20 px-4">
-            <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 shadow-sm">
-              <Filter size={24} />
+          <div className="flex flex-col items-center justify-center h-full sm:min-h-[400px] py-16 px-4">
+            <div className="mb-4">
+              <Terminal size={32} className="text-slate-300" />
             </div>
-            <h4 className="text-lg font-bold text-slate-700 mb-1">No events found</h4>
-            <p className="text-slate-500 text-sm">Try adjusting your filters or search terms.</p>
+            <h4 className="text-base font-semibold text-slate-900 mb-1">No Activity Records</h4>
+            <p className="text-sm text-slate-500 text-center max-w-sm">The timeline is currently empty based on your applied filters. Adjust your search criteria or clear filters to view historical system logs.</p>
           </div>
         ) : (
           viewMode === 'timeline' ? (

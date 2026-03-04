@@ -519,13 +519,13 @@ const DigitalApplicationForm: React.FC = () => {
         <div className="min-h-screen bg-slate-50 p-4 md:p-8">
             <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                 {/* HEADER */}
-                <div className="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-8 relative">
+                <div className="bg-white border-b border-slate-200 px-6 py-4">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h1 className="text-3xl font-black uppercase tracking-tight">Suhara Foreign Employment Agency</h1>
+                            <h1 className="text-xl font-semibold text-slate-900">Suhara Foreign Employment Agency</h1>
                             <div className="flex items-center gap-3 mt-1">
-                                <span className="bg-blue-500/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-white/10">Digital Intake Phase II</span>
-                                <p className="text-blue-100 text-sm">Case Master: {user?.name || 'Administrative staff'}</p>
+                                <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium border border-blue-100">Digital Intake Phase II</span>
+                                <p className="text-slate-500 text-sm">Case Master: {user?.name || 'Administrative staff'}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -566,8 +566,8 @@ const DigitalApplicationForm: React.FC = () => {
                                     {currentStep > s.step ? <CheckCircle size={20} className="text-emerald-300 fill-emerald-300/20" /> : s.icon}
                                 </div>
                                 <div className="hidden md:block">
-                                    <p className="text-[10px] font-black uppercase tracking-tight opacity-60">Step 0{s.step}</p>
-                                    <p className="text-xs font-black uppercase tracking-wider">{s.label}</p>
+                                    <p className="text-xs font-medium text-slate-500 opacity-60">Step 0{s.step}</p>
+                                    <p className="text-sm font-semibold">{s.label}</p>
                                 </div>
                             </div>
                         ))}
@@ -578,71 +578,71 @@ const DigitalApplicationForm: React.FC = () => {
                     {/* UNIVERSAL HEADER FIELDS (Visible across all steps) */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                         <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Reg No</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1 ml-1">Reg No</label>
                             <input
                                 type="text"
                                 value={formData.regNo || ''}
                                 onChange={(e) => handleInputChange('regNo', e.target.value)}
-                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm text-red-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                                className="w-full w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 placeholder="e.g. SC 126"
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Application Date</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1 ml-1">Application Date</label>
                             <input
                                 type="date"
                                 value={formData.applicationDate}
                                 onChange={(e) => handleInputChange('applicationDate', e.target.value)}
-                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                                className="w-full w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Target Country</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1 ml-1">Target Country</label>
                             <input
                                 type="text"
                                 value={formData.country}
                                 onChange={(e) => handleInputChange('country', e.target.value)}
-                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                                className="w-full w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 placeholder="e.g. Romania, UAE"
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Desired Position</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1 ml-1">Desired Position</label>
                             <input
                                 type="text"
                                 value={formData.position}
                                 onChange={(e) => handleInputChange('position', e.target.value)}
-                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                                className="w-full w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                 placeholder="e.g. General Worker"
                             />
                         </div>
                     </div>
                     {/* STEP 1: IDENTITY & CONTACT */}
                     {currentStep === 1 && (
-                        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="space-y-12 ">
                             <section className="space-y-6">
-                                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-blue-600 pb-2">
+                                <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-3">
                                     Personal Information
                                 </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Surname *</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Surname *</label>
                                         <input
                                             type="text"
                                             // FRICTIONLESS: Required removed
                                             value={formData.surname || ''}
                                             onChange={(e) => handleInputChange('surname', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Other Names *</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Other Names *</label>
                                         <input
                                             type="text"
                                             value={formData.otherNames || ''}
                                             onChange={(e) => handleInputChange('otherNames', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                 </div>
@@ -656,7 +656,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                 Passport Compliance
                                             </h3>
                                             {!canEditCompliance && (
-                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase border border-slate-200">
+                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50/50 text-slate-500 rounded text-[10px] font-bold uppercase border border-slate-200">
                                                     <ShieldAlert size={12} /> Read-only (Stage: {formData.stage})
                                                 </div>
                                             )}
@@ -678,7 +678,7 @@ const DigitalApplicationForm: React.FC = () => {
 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <div>
-                                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport Number</label>
+                                                            <label className="block text-sm font-medium text-slate-700 mb-1">Passport Number</label>
                                                             <input
                                                                 type="text"
                                                                 value={passport.passportNumber}
@@ -689,11 +689,11 @@ const DigitalApplicationForm: React.FC = () => {
                                                                 }}
                                                                 readOnly={!canEditCompliance}
                                                                 placeholder="e.g., N1234567"
-                                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                                className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditCompliance ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Passport Country</label>
+                                                            <label className="block text-sm font-medium text-slate-700 mb-1">Passport Country</label>
                                                             <input
                                                                 type="text"
                                                                 value={passport.country}
@@ -704,11 +704,11 @@ const DigitalApplicationForm: React.FC = () => {
                                                                 }}
                                                                 readOnly={!canEditCompliance}
                                                                 placeholder="e.g., Sri Lanka"
-                                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                                className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditCompliance ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Issued Date</label>
+                                                            <label className="block text-sm font-medium text-slate-700 mb-1">Issued Date</label>
                                                             <input
                                                                 type="date"
                                                                 value={passport.issuedDate ? new Date(passport.issuedDate).toISOString().split('T')[0] : ''}
@@ -718,11 +718,11 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     setPassports(updated);
                                                                 }}
                                                                 readOnly={!canEditCompliance}
-                                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                                className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditCompliance ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Expiry Date</label>
+                                                            <label className="block text-sm font-medium text-slate-700 mb-1">Expiry Date</label>
                                                             <input
                                                                 type="date"
                                                                 value={passport.expiryDate ? new Date(passport.expiryDate).toISOString().split('T')[0] : ''}
@@ -741,7 +741,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     setPassports(updated);
                                                                 }}
                                                                 readOnly={!canEditCompliance}
-                                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                                className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditCompliance ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                                             />
                                                             {passport.expiryDate && (
                                                                 <div className={`mt-2 flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase w-fit ${passport.status === PassportStatus.VALID ? 'bg-green-50 text-green-700 border border-green-200' :
@@ -759,7 +759,7 @@ const DigitalApplicationForm: React.FC = () => {
 
                                                     {/* Validity Status */}
                                                     {passport.passportNumber && passport.expiryDate && passport.issuedDate && (
-                                                        <div className="mt-3 pt-3 border-t border-slate-100">
+                                                        <div className="mt-3 pt-3 border-t border-slate-200">
                                                             {(() => {
                                                                 const status = ComplianceService.evaluatePassport(
                                                                     passport.expiryDate,
@@ -802,124 +802,124 @@ const DigitalApplicationForm: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Address *</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Address *</label>
                                     <textarea
                                         // FRICTIONLESS: Required removed
                                         rows={2}
                                         value={formData.address}
                                         onChange={(e) => handleInputChange('address', e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Province</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Province</label>
                                         <input
                                             type="text"
                                             value={formData.province}
                                             onChange={(e) => handleInputChange('province', e.target.value)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Divisional Secretariat</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Divisional Secretariat</label>
                                         <input
                                             type="text"
                                             value={formData.divisionalSecretariat}
                                             onChange={(e) => handleInputChange('divisionalSecretariat', e.target.value)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">GS Division</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">GS Division</label>
                                         <input
                                             type="text"
                                             value={formData.gsDivision}
                                             onChange={(e) => handleInputChange('gsDivision', e.target.value)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">District</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">District</label>
                                         <input
                                             type="text"
                                             value={formData.district}
                                             onChange={(e) => handleInputChange('district', e.target.value)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">ID No (NIC)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">ID No (NIC)</label>
                                         <input
                                             type="text"
                                             value={formData.nic}
                                             onChange={(e) => handleInputChange('nic', e.target.value)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Driving License No</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Driving License No</label>
                                         <input
                                             type="text"
                                             value={formData.drivingLicenseNo}
                                             onChange={(e) => handleInputChange('drivingLicenseNo', e.target.value)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Age / DOB</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Age / DOB</label>
                                         <input
                                             type="date"
                                             value={formData.dob}
                                             onChange={(e) => handleInputChange('dob', e.target.value)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Place of Birth</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Place of Birth</label>
                                         <input
                                             type="text"
                                             value={formData.placeOfBirth}
                                             onChange={(e) => handleInputChange('placeOfBirth', e.target.value)}
                                             placeholder="e.g. KEGALLA"
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">National Status</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">National Status</label>
                                         <input
                                             type="text"
                                             value={formData.nationality}
                                             onChange={(e) => handleInputChange('nationality', e.target.value)}
                                             placeholder="SRI LANKAN"
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Profession (on Passport)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Profession (on Passport)</label>
                                         <input
                                             type="text"
                                             value={formData.passportProfession}
                                             onChange={(e) => handleInputChange('passportProfession', e.target.value)}
                                             placeholder="e.g. HEAVY VEHICLE DRIVER"
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                 </div>
@@ -949,12 +949,12 @@ const DigitalApplicationForm: React.FC = () => {
 
                                     {/* Email */}
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Email</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                                         <input
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => handleInputChange('email', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                             placeholder="email@example.com"
                                         />
                                     </div>
@@ -962,42 +962,42 @@ const DigitalApplicationForm: React.FC = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Height (FT)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Height (FT)</label>
                                         <input
                                             type="number"
                                             value={formData.height?.feet || ''}
                                             onChange={(e) => handleNestedChange('height', 'feet', e.target.value ? parseInt(e.target.value) : undefined)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Height (IN)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Height (IN)</label>
                                         <input
                                             type="number"
                                             value={formData.height?.inches || ''}
                                             onChange={(e) => handleNestedChange('height', 'inches', e.target.value ? parseInt(e.target.value) : undefined)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Weight (KG)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Weight (KG)</label>
                                         <input
                                             type="number"
                                             value={formData.weight || ''}
                                             onChange={(e) => handleInputChange('weight', e.target.value ? parseInt(e.target.value) : undefined)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Religion</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Religion</label>
                                         <select
                                             value={formData.religion}
                                             onChange={(e) => handleInputChange('religion', e.target.value)}
                                             disabled={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         >
                                             <option value="">Select Religion</option>
                                             <option value="Buddhist">Buddhist</option>
@@ -1010,12 +1010,12 @@ const DigitalApplicationForm: React.FC = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Marital Status</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Marital Status</label>
                                         <select
                                             value={formData.maritalStatus}
                                             onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
                                             disabled={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         >
                                             <option value="Single">Single</option>
                                             <option value="Married">Married</option>
@@ -1024,13 +1024,13 @@ const DigitalApplicationForm: React.FC = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">School</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">School</label>
                                         <input
                                             type="text"
                                             value={formData.school}
                                             onChange={(e) => handleInputChange('school', e.target.value)}
                                             readOnly={!canEditPersonal}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!canEditPersonal ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                            className={`w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${!canEditPersonal ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                 </div>
@@ -1040,7 +1040,7 @@ const DigitalApplicationForm: React.FC = () => {
 
                     {/* STEP 2: PROFESSIONAL & FAMILY */}
                     {currentStep === 2 && (
-                        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="space-y-12 ">
 
 
 
@@ -1051,7 +1051,7 @@ const DigitalApplicationForm: React.FC = () => {
                                         Police Clearance Certificate (PCC)
                                     </h2>
                                     {!canEditCompliance && (
-                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase border border-slate-200">
+                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50/50 text-slate-500 rounded text-[10px] font-bold uppercase border border-slate-200">
                                             <ShieldAlert size={12} /> Read-only (Stage: {formData.stage})
                                         </div>
                                     )}
@@ -1060,7 +1060,7 @@ const DigitalApplicationForm: React.FC = () => {
                                 <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-xl">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">
                                                 PCC Issued Date
                                             </label>
                                             <input
@@ -1068,7 +1068,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                 value={pccIssuedDate}
                                                 onChange={(e) => setPccIssuedDate(e.target.value)}
                                                 readOnly={!canEditCompliance}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${!canEditCompliance ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                             />
                                             {pccIssuedDate && (() => {
                                                 const evaluation = ComplianceService.evaluatePCC(pccIssuedDate);
@@ -1086,7 +1086,7 @@ const DigitalApplicationForm: React.FC = () => {
                                             })()}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">
                                                 Last Inspection Date
                                             </label>
                                             <input
@@ -1094,7 +1094,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                 value={pccLastInspectionDate}
                                                 onChange={(e) => setPccLastInspectionDate(e.target.value)}
                                                 readOnly={!canEditCompliance}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${!canEditCompliance ? 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed' : 'border-slate-300'}`}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${!canEditCompliance ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                             />
                                         </div>
                                     </div>
@@ -1106,7 +1106,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                 const pcc = ComplianceService.evaluatePCC(pccIssuedDate, pccLastInspectionDate);
                                                 return (
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-xs font-bold text-slate-600 uppercase">PCC Status:</span>
+                                                        <span className="text-sm font-medium text-slate-700">PCC Status:</span>
                                                         <div className="flex items-center gap-2">
                                                             {pcc.status === 'VALID' && (
                                                                 <>
@@ -1143,7 +1143,7 @@ const DigitalApplicationForm: React.FC = () => {
 
                             {/* SECTION 1.7: PREFERRED COUNTRIES */}
                             <section className="space-y-4">
-                                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-indigo-600 pb-2">
+                                <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-3">
                                     Preferred Countries
                                 </h2>
 
@@ -1171,7 +1171,7 @@ const DigitalApplicationForm: React.FC = () => {
 
                             {/* SECTION 1.8: PROFESSIONAL JOB ROLES */}
                             <section className="space-y-4">
-                                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-orange-600 pb-2">
+                                <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-3">
                                     Professional Experience & Job Roles
                                 </h2>
 
@@ -1183,7 +1183,7 @@ const DigitalApplicationForm: React.FC = () => {
 
                             {/* SECTION 2: EDUCATION */}
                             <section className="space-y-4">
-                                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-blue-600 pb-2">
+                                <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-3">
                                     Educational / Professional Qualifications
                                 </h2>
 
@@ -1198,39 +1198,39 @@ const DigitalApplicationForm: React.FC = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">GCE O/L (Year)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">GCE O/L (Year)</label>
                                         <input
                                             type="text"
                                             value={formData.gceOL?.year || ''}
                                             onChange={(e) => handleNestedChange('gceOL', 'year', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">GCE A/L (Year)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">GCE A/L (Year)</label>
                                         <input
                                             type="text"
                                             value={formData.gceAL?.year || ''}
                                             onChange={(e) => handleNestedChange('gceAL', 'year', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="overflow-x-auto">
                                     <table className="w-full border border-slate-200 rounded-lg overflow-hidden">
-                                        <thead className="bg-slate-100">
+                                        <thead className="bg-slate-50/50">
                                             <tr>
-                                                <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">#</th>
-                                                <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Course Name (with NVQ / SLQF Level)</th>
-                                                <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Institute/Campus</th>
-                                                <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Year</th>
-                                                <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase w-10"></th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">#</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Course Name (with NVQ / SLQF Level)</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Institute/Campus</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Year</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-10"></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {educationRows.map((row, index) => (
-                                                <tr key={`edu-${index}`} className="border-t border-slate-100">
+                                                <tr key={`edu-${index}`} className="border-t border-slate-200">
                                                     <td className="px-3 py-2 text-sm">{index + 1}</td>
                                                     <td className="px-3 py-2">
                                                         <input
@@ -1241,7 +1241,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                 updated[index].courseName = e.target.value;
                                                                 setEducationRows(updated);
                                                             }}
-                                                            className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                            className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2">
@@ -1253,7 +1253,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                 updated[index].institute = e.target.value;
                                                                 setEducationRows(updated);
                                                             }}
-                                                            className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                            className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2">
@@ -1265,7 +1265,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                 updated[index].year = e.target.value;
                                                                 setEducationRows(updated);
                                                             }}
-                                                            className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                            className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2">
@@ -1291,19 +1291,19 @@ const DigitalApplicationForm: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Training Details (Related to the Position)</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Training Details (Related to the Position)</label>
                                     <textarea
                                         rows={2}
                                         value={formData.trainingDetails}
                                         onChange={(e) => handleInputChange('trainingDetails', e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     />
                                 </div>
                             </section>
 
                             {/* SECTION 3: PROFESSIONAL EXPERIENCE */}
                             <section className="space-y-4">
-                                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-blue-600 pb-2">
+                                <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-3">
                                     Professional Experience
                                 </h2>
 
@@ -1311,17 +1311,17 @@ const DigitalApplicationForm: React.FC = () => {
                                     <div>
                                         <h3 className="text-sm font-bold text-slate-700 mb-2">LOCAL</h3>
                                         <table className="w-full border border-slate-200 rounded-lg overflow-hidden">
-                                            <thead className="bg-slate-100">
+                                            <thead className="bg-slate-50/50">
                                                 <tr>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Position</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Company & Country</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Years</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase w-10"></th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Position</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Company & Country</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Years</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-10"></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {employmentRows.local.map((row, index) => (
-                                                    <tr key={`local-${index}`} className="border-t border-slate-100">
+                                                    <tr key={`local-${index}`} className="border-t border-slate-200">
                                                         <td className="px-3 py-2">
                                                             <input
                                                                 type="text"
@@ -1331,7 +1331,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].position = e.target.value;
                                                                     setEmploymentRows({ ...employmentRows, local: updated });
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1343,7 +1343,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].companyName = e.target.value;
                                                                     setEmploymentRows({ ...employmentRows, local: updated });
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1355,7 +1355,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].years = e.target.value ? parseInt(e.target.value) : '' as any;
                                                                     setEmploymentRows({ ...employmentRows, local: updated });
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1383,18 +1383,18 @@ const DigitalApplicationForm: React.FC = () => {
                                     <div>
                                         <h3 className="text-sm font-bold text-slate-700 mb-2">FOREIGN</h3>
                                         <table className="w-full border border-slate-200 rounded-lg overflow-hidden">
-                                            <thead className="bg-slate-100">
+                                            <thead className="bg-slate-50/50">
                                                 <tr>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Position</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Company</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Country</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Years</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase w-10"></th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Position</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Company</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Country</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Years</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-10"></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {employmentRows.foreign.map((row, index) => (
-                                                    <tr key={`foreign-${index}`} className="border-t border-slate-100">
+                                                    <tr key={`foreign-${index}`} className="border-t border-slate-200">
                                                         <td className="px-3 py-2">
                                                             <input
                                                                 type="text"
@@ -1404,7 +1404,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].position = e.target.value;
                                                                     setEmploymentRows({ ...employmentRows, foreign: updated });
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1416,7 +1416,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].companyName = e.target.value;
                                                                     setEmploymentRows({ ...employmentRows, foreign: updated });
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1428,7 +1428,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].country = e.target.value;
                                                                     setEmploymentRows({ ...employmentRows, foreign: updated });
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1440,7 +1440,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].years = e.target.value ? parseInt(e.target.value) : '' as any;
                                                                     setEmploymentRows({ ...employmentRows, foreign: updated });
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1467,90 +1467,90 @@ const DigitalApplicationForm: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Special Achievements</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Special Achievements</label>
                                     <textarea
                                         rows={2}
                                         value={formData.specialAchievements}
                                         onChange={(e) => handleInputChange('specialAchievements', e.target.value)}
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     />
                                 </div>
                             </section>
 
                             {/* SECTION 4: FAMILY INFORMATION */}
                             <section className="space-y-4">
-                                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-blue-600 pb-2">
+                                <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-3">
                                     Family Information
                                 </h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Father's Full Name</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Father's Full Name</label>
                                         <input
                                             type="text"
                                             value={formData.fatherName}
                                             onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Mother's Full Name</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Mother's Full Name</label>
                                         <input
                                             type="text"
                                             value={formData.motherName}
                                             onChange={(e) => handleInputChange('motherName', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Wife/Husband/Guardian's Full Name</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Wife/Husband/Guardian's Full Name</label>
                                         <input
                                             type="text"
                                             value={formData.guardianName}
                                             onChange={(e) => handleInputChange('guardianName', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">No of Children</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">No of Children</label>
                                         <input
                                             type="number"
                                             value={formData.numberOfChildren || ''}
                                             onChange={(e) => handleInputChange('numberOfChildren', e.target.value ? parseInt(e.target.value) : undefined)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Guardian ID No</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Guardian ID No</label>
                                         <input
                                             type="text"
                                             value={formData.guardianIdNo}
                                             onChange={(e) => handleInputChange('guardianIdNo', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Guardian Birthday</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Guardian Birthday</label>
                                         <input
                                             type="date"
                                             value={formData.guardianBirthday}
                                             onChange={(e) => handleInputChange('guardianBirthday', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Guardian Contact No</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Guardian Contact No</label>
                                         <input
                                             type="tel"
                                             value={formData.guardianContact}
                                             onChange={(e) => handleInputChange('guardianContact', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                         />
                                     </div>
                                 </div>
@@ -1559,18 +1559,18 @@ const DigitalApplicationForm: React.FC = () => {
                                     <div>
                                         <h3 className="text-sm font-bold text-slate-700 mb-2">Children Details</h3>
                                         <table className="w-full border border-slate-200 rounded-lg overflow-hidden">
-                                            <thead className="bg-slate-100">
+                                            <thead className="bg-slate-50/50">
                                                 <tr>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">#</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Child's Name</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">M/F</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase">Age</th>
-                                                    <th className="px-3 py-2 text-left text-xs font-bold text-slate-700 uppercase w-10"></th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">#</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Child's Name</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">M/F</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Age</th>
+                                                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-10"></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {childrenRows.map((row, index) => (
-                                                    <tr key={`child-${index}`} className="border-t border-slate-100">
+                                                    <tr key={`child-${index}`} className="border-t border-slate-200">
                                                         <td className="px-3 py-2 text-sm">{index + 1}</td>
                                                         <td className="px-3 py-2">
                                                             <input
@@ -1581,7 +1581,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].name = e.target.value;
                                                                     setChildrenRows(updated);
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1592,7 +1592,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].gender = e.target.value as 'M' | 'F';
                                                                     setChildrenRows(updated);
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             >
                                                                 <option value="M">M</option>
                                                                 <option value="F">F</option>
@@ -1607,7 +1607,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                                     updated[index].age = e.target.value ? parseInt(e.target.value) : '' as any;
                                                                     setChildrenRows(updated);
                                                                 }}
-                                                                className="w-full px-2 py-1 border border-slate-200 rounded"
+                                                                className="w-full px-3 py-1.5 border border-slate-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2">
@@ -1638,11 +1638,11 @@ const DigitalApplicationForm: React.FC = () => {
 
                     {/* STEP 3: MEDICAL, COMPLIANCE & FINALIZE */}
                     {currentStep === 3 && (
-                        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="space-y-12 ">
 
                             {/* SECTION 5: MEDICAL INFORMATION */}
                             <section className="space-y-4">
-                                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b-2 border-red-600 pb-2">
+                                <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-200 pb-3">
                                     Medical Information
                                 </h2>
 
@@ -1665,67 +1665,67 @@ const DigitalApplicationForm: React.FC = () => {
                             </section>
 
                             {/* OFFICE USE ONLY */}
-                            <section className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg p-6 space-y-4">
+                            <section className="bg-slate-50 border-2 border-dashed  rounded-lg p-6 space-y-4">
                                 <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
                                     Office Use Only
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Customer Care Officer</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Customer Care Officer</label>
                                         <input
                                             type="text"
                                             value={formData.officeUseOnly?.customerCareOfficer || ''}
                                             onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, customerCareOfficer: e.target.value } }))}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border  rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">File Handling Officer</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">File Handling Officer</label>
                                         <input
                                             type="text"
                                             value={formData.officeUseOnly?.fileHandlingOfficer || ''}
                                             onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, fileHandlingOfficer: e.target.value } }))}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border  rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Date</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
                                         <input
                                             type="date"
                                             value={formData.officeUseOnly?.date || ''}
                                             onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, date: e.target.value } }))}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border  rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Charges</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Charges</label>
                                         <input
                                             type="text"
                                             placeholder="e.g. 1350000 + Ticket + Medical"
                                             value={formData.officeUseOnly?.charges || ''}
                                             onChange={(e) => setFormData(p => ({ ...p, officeUseOnly: { ...p.officeUseOnly, charges: e.target.value } }))}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border  rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
                                     {/* Selection and Remark from legacy */}
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Selection</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Selection</label>
                                         <select
                                             value={formData.officeSelection || 'Select'}
                                             onChange={(e) => handleInputChange('officeSelection', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border  rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
                                         >
                                             <option value="Select">Select</option>
                                             <option value="Reject">Reject</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Remark</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Remark</label>
                                         <input
                                             type="text"
                                             value={formData.officeRemark || ''}
                                             onChange={(e) => handleInputChange('officeRemark', e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border  rounded-lg w-full bg-white transition-all focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
                                 </div>
@@ -1739,7 +1739,7 @@ const DigitalApplicationForm: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate('/candidates')}
-                            className="flex items-center gap-2 px-8 py-4 border-2 border-slate-300 text-slate-700 font-black rounded-2xl hover:bg-slate-50 transition-all active:scale-95"
+                            className="flex items-center gap-2 px-8 py-4 border-2  text-slate-700 font-black rounded-2xl hover:bg-slate-50 transition-all active:scale-95"
                         >
                             <ArrowLeft size={20} />
                             {currentStep === 1 ? 'Cancel Entry' : 'Back to Step 0' + (currentStep - 1)}
@@ -1750,7 +1750,7 @@ const DigitalApplicationForm: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setCurrentStep(currentStep + 1)}
-                                    className="flex items-center gap-2 px-10 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-95 group"
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 transition-colors group"
                                 >
                                     Proceed to Next Step
                                     <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -1758,7 +1758,7 @@ const DigitalApplicationForm: React.FC = () => {
                             ) : (
                                 <button
                                     type="submit"
-                                    className="flex items-center gap-2 px-10 py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-200 hover:bg-emerald-700 hover:-translate-y-1 transition-all active:scale-95"
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-md shadow-sm hover:bg-emerald-700 transition-colors"
                                 >
                                     <ShieldCheck size={20} />
                                     Finalize & Submit Application

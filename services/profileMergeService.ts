@@ -42,6 +42,30 @@ export class ProfileMergeService {
             },
             professionalProfile: {
                 ...existingCandidate.professionalProfile,
+                ...(newData.professionalProfile || {}),
+                // Explicitly merge sub-arrays from newData because spread operator on objects doesn't deep merge arrays
+                jobRoles: newData.professionalProfile?.jobRoles || newData.jobRoles || existingCandidate.professionalProfile?.jobRoles || [],
+                employmentHistory: newData.professionalProfile?.employmentHistory || newData.employmentHistory || existingCandidate.professionalProfile?.employmentHistory || []
+            },
+            medicalData: {
+                ...existingCandidate.medicalData,
+                ...(newData.medicalData || {})
+            },
+            ...preservedFields
+        };// Merge all other fields from newData
+        const merged: Candidate = {
+            ...existingCandidate,
+            ...newData,
+            personalInfo: {
+                ...existingCandidate.personalInfo,
+                ...(newData.personalInfo || {})
+            },
+            contactInfo: {
+                ...existingCandidate.contactInfo,
+                ...(newData.contactInfo || {})
+            },
+            professionalProfile: {
+                ...existingCandidate.professionalProfile,
                 ...(newData.professionalProfile || {})
             },
             medicalData: {

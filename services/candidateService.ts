@@ -56,9 +56,16 @@ export class CandidateService {
         }
 
         if (filters?.query) {
-            const searchTerm = `%${filters.query}%`;
-            // Searching name, email, phone, nic, and candidate_code (which maps to regNo)
-            queryBuilder = queryBuilder.or(`name.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},nic.ilike.${searchTerm},candidate_code.ilike.${searchTerm}`);
+            const q = filters.query.trim();
+            if (q.startsWith('"') && q.endsWith('"')) {
+                // Exact match mode (SURGICAL)
+                const exact = q.slice(1, -1);
+                queryBuilder = queryBuilder.or(`candidate_code.ilike.${exact},data->>regNo.ilike.${exact},nic.ilike.${exact}`);
+            } else {
+                // Fuzzy match mode prioritizing REG NO
+                const searchTerm = `%${q}%`;
+                queryBuilder = queryBuilder.or(`candidate_code.ilike.${searchTerm},data->>regNo.ilike.${searchTerm},name.ilike.${searchTerm},nic.ilike.${searchTerm},phone.ilike.${searchTerm}`);
+            }
         }
 
         if (filters?.countries && filters.countries.length > 0) {

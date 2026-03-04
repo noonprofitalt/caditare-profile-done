@@ -229,7 +229,7 @@ const CandidateList: React.FC = () => {
 
     return (
       <div style={style} className="px-4 md:px-6">
-        <div className={`glass-card-interactive mb-3 p-4 flex flex-col md:flex-row md:items-center gap-4 ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
+        <div className={`bg-white border border-slate-200 rounded-lg shadow-sm mb-3 p-4 hover:border-blue-300 transition-colors flex flex-col md:flex-row md:items-center gap-4 ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
           }`}>
           {/* Mobile Header: Checkbox + Avatar + Basic Info */}
           <div className="flex items-center gap-3 md:w-1/3 min-w-0">
@@ -251,18 +251,18 @@ const CandidateList: React.FC = () => {
                 }`} />
             </div>
             <div className="truncate flex-1">
-              <Link to={`/candidates/${candidate.id}`} className="font-black text-slate-900 hover:text-blue-600 truncate block text-lg uppercase tracking-tight">
+              <Link to={`/candidates/${candidate.id}`} className="font-semibold text-slate-900 hover:text-blue-600 truncate block text-base">
                 {candidate.regNo || candidate.candidateCode || 'NO REG'}
               </Link>
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 {(candidate.preferredCountries && candidate.preferredCountries.length > 0) ? (
                   candidate.preferredCountries.map((country: string) => (
-                    <span key={country} className="text-[9px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-200">
+                    <span key={country} className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
                       {country}
                     </span>
                   ))
                 ) : (
-                  <span className="text-[9px] bg-slate-50 text-slate-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-100">
+                  <span className="text-xs bg-slate-50 text-slate-500 font-medium px-2 py-0.5 rounded border border-slate-200">
                     No Destination
                   </span>
                 )}
@@ -306,11 +306,11 @@ const CandidateList: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden">
-      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-16 z-30 px-4 md:px-6 py-4">
+      <div className="bg-white border-b border-slate-200 px-4 md:px-6 py-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Candidates</h1>
-            <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 mt-1 font-bold uppercase tracking-widest">
+            <h1 className="text-2xl font-semibold text-slate-900">Candidates</h1>
+            <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
               <Users size={12} className="text-blue-500" />
               <span>{totalCount} Total Candidates</span>
             </div>
@@ -318,8 +318,8 @@ const CandidateList: React.FC = () => {
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
             <button
               onClick={toggleIntegrityScan}
-              className={`flex items-center gap-2 px-3 py-2 border rounded-xl transition-premium text-[10px] font-black uppercase tracking-tight shrink-0 ${isIntegrityScanActive
-                ? 'bg-red-50 border-red-200 text-red-600 shadow-lg shadow-red-100'
+              className={`flex items-center gap-2 px-3 py-2 border rounded-xl transition-premium text-sm font-medium shrink-0 ${isIntegrityScanActive
+                ? 'bg-red-50 border-red-200 text-red-700'
                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
             >
@@ -329,13 +329,13 @@ const CandidateList: React.FC = () => {
             <div className="hidden md:block h-6 w-px bg-slate-200 mx-1" />
             <Link
               to="/candidates/quick-add"
-              className="hidden md:block px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-premium text-[10px] font-black uppercase tracking-widest"
+              className="hidden md:block px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium"
             >
               Quick Create
             </Link>
             <Link
               to="/applications/new"
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-premium text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors text-sm font-medium"
             >
               Full Form
             </Link>
@@ -469,7 +469,7 @@ const CandidateList: React.FC = () => {
         <div className="lg:hidden fixed bottom-24 right-6 z-40">
           <Link
             to="/candidates/quick-add"
-            className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-slate-900/40 border border-slate-800 transition-premium active:scale-90 hover:rotate-12 animate-float"
+            className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-slate-800 transition-colors"
           >
             <Users size={24} />
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-white">+</div>

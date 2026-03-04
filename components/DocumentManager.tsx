@@ -616,11 +616,13 @@ const VerifyModal: React.FC<VerifyModalProps> = ({ selectedDoc, onClose, onVerif
                 )}
               </div>
             ) : (
-              <div className="bg-white p-8 rounded shadow-lg max-w-lg w-full text-center aspect-[3/4] flex flex-col items-center justify-center">
-                <FileText size={64} className="text-slate-300 mb-4" />
-                <p className="text-slate-500 font-medium">Digital Version Not Available</p>
-                <p className="text-slate-400 text-xs mt-2 max-w-[200px]">This document has been logged but the physical file hasn't been uploaded yet.</p>
-                <p className="font-mono text-[10px] text-slate-300 mt-4 uppercase tracking-wider">{selectedDoc.type}_v{selectedDoc.version}</p>
+              <div className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm max-w-lg w-full text-center flex flex-col items-center justify-center">
+                <FileText size={48} className="text-slate-300 mb-4" />
+                <p className="text-slate-900 font-semibold mb-1">Pending Digital Upload</p>
+                <p className="text-slate-500 text-sm max-w-[240px]">This document record has been created, but the physical file has not been digitized and uploaded to the registry.</p>
+                <div className="mt-6 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md">
+                   <p className="font-mono text-xs text-slate-500 uppercase">{selectedDoc.type} • Revision {selectedDoc.version}</p>
+                </div>
               </div>
             )}
           </div>

@@ -55,16 +55,16 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
             {/* Header */}
-            <div className="px-4 py-3 flex flex-col gap-3 border-b border-slate-100 bg-slate-50/50">
+            <div className="px-4 py-3 flex flex-col gap-3 border-b border-slate-100 bg-slate-50 border-b border-slate-200">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
                         <FastForward size={14} className="text-blue-500" />
                         Workflow Progress
                     </h3>
                     {nextStage && (
-                        <div className="text-[10px] font-semibold bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded shadow-sm">
+                        <div className="text-xs font-medium bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded shadow-sm">
                             Next: <span className="text-slate-800">{STAGE_LABELS[nextStage as WorkflowStage]}</span>
                         </div>
                     )}
@@ -75,10 +75,10 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
                     <div className="p-2.5 bg-red-50 rounded-lg border border-red-100 flex items-start gap-2">
                         <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
                         <div>
-                            <div className="text-[10px] font-bold text-red-700 uppercase tracking-tight mb-0.5">Blockers detected</div>
+                            <div className="text-xs font-semibold text-red-700 mb-0.5">Blockers detected</div>
                             <ul className="space-y-0.5">
                                 {validation?.blockers.map((blocker, idx) => (
-                                    <li key={idx} className="text-[10px] font-medium text-red-600 flex items-start gap-1.5 leading-tight">
+                                    <li key={idx} className="text-xs text-red-600 flex items-start gap-1.5 leading-tight">
                                         <span className="w-1 h-1 bg-red-400 rounded-full mt-1.5 shrink-0" />
                                         <span>{blocker}</span>
                                     </li>
@@ -98,7 +98,7 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
                                     const prevStage = WorkflowEngine.getPreviousStage(candidate.stage);
                                     if (reason && prevStage) onRollback(prevStage, reason);
                                 }}
-                                className="flex-1 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50 transition-colors flex justify-center items-center gap-1.5"
+                                className="flex-1 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50 transition-colors flex justify-center items-center gap-1.5"
                             >
                                 <RotateCcw size={12} />
                                 Rollback
@@ -107,9 +107,9 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
                         {onAdvance && (
                             <button
                                 onClick={() => onAdvance(hasBlockers)}
-                                className={`flex-1 py-1.5 text-[11px] font-bold text-white rounded transition-all shadow-sm flex justify-center items-center gap-1.5 ${hasBlockers
-                                    ? 'bg-red-500 hover:bg-red-600 shadow-red-200'
-                                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                                className={`flex-1 py-1.5 text-xs font-medium text-white rounded transition-all shadow-sm flex justify-center items-center gap-1.5 ${hasBlockers
+                                    ? 'bg-red-500 hover:bg-red-600 shadow-sm'
+                                    : 'bg-blue-600 hover:bg-blue-700 shadow-sm'
                                     }`}
                             >
                                 {hasBlockers ? 'Override' : 'Advance'}
@@ -155,8 +155,8 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
                                                 <Check size={10} className="text-white" strokeWidth={3} />
                                             </div>
                                         ) : status === 'current' ? (
-                                            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                                                <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse" />
+                                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center ring-2 ring-white">
+                                                <div className="w-2 h-2 bg-blue-600 rounded-full" />
                                             </div>
                                         ) : (
                                             <div className="w-3 h-3 border-2 border-slate-200 bg-white rounded-full group-hover:border-slate-300 transition-colors" />
@@ -177,11 +177,11 @@ const WorkflowProgressWidget: React.FC<WorkflowProgressWidgetProps> = ({ candida
                                                 {item.label}
                                             </span>
                                             {status === 'current' && (
-                                                <span className="text-[9px] text-blue-500 font-bold uppercase tracking-wider inline-block">In Progress</span>
+                                                <span className="text-xs text-blue-600 font-medium inline-block">In Progress</span>
                                             )}
                                         </div>
                                         {milestoneDate && status !== 'current' && (
-                                            <span className="text-[10px] font-medium text-slate-400">{milestoneDate}</span>
+                                            <span className="text-xs text-slate-500">{milestoneDate}</span>
                                         )}
                                     </div>
                                 </button>
