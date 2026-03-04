@@ -4,7 +4,7 @@ import { CandidateService } from '../services/candidateService';
 import { DuplicateDetectionService } from '../services/duplicateDetectionService';
 import { ProfileCompletionService } from '../services/profileCompletionService';
 import { NICService } from '../services/nicService';
-import { Save, AlertCircle, UserPlus, TrendingUp, Zap, ArrowLeft } from 'lucide-react';
+import { Save, AlertCircle, UserPlus, TrendingUp, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import PreferredCountriesSelector from './ui/PreferredCountriesSelector';
 import MultiPhoneInput from './ui/MultiPhoneInput';
 import { useCandidates } from '../context/CandidateContext';
@@ -16,7 +16,6 @@ const QuickAddForm: React.FC = () => {
     const { showToast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
-    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
     const [duplicateMatches, setDuplicateMatches] = useState<any[]>([]);
     const [duplicateFields, setDuplicateFields] = useState<string[]>([]);
@@ -74,11 +73,12 @@ const QuickAddForm: React.FC = () => {
     };
 
     // Handle duplicate check on blur
-    const handleBlur = (field: 'nic' | 'phone' | 'whatsapp') => {
+    const handleBlur = (field: 'regNo' | 'nic' | 'phone' | 'whatsapp') => {
         const value = formData[field];
         if (!value) return;
 
         const checkData: any = {};
+        if (field === 'regNo') checkData.regNo = value;
         if (field === 'nic') checkData.nic = value;
         if (field === 'phone') checkData.phone = value;
         if (field === 'whatsapp') checkData.whatsapp = value;
@@ -88,7 +88,6 @@ const QuickAddForm: React.FC = () => {
         if (isDuplicate) {
             setDuplicateMatches(matches);
             setDuplicateFields(matchedFields);
-            // Non-blocking duplicate check for Quick Add
             console.log('Duplicate detected:', matchedFields);
         }
     };
@@ -152,37 +151,30 @@ const QuickAddForm: React.FC = () => {
         }
     };
 
-    // Handle viewing existing profile
-    const handleViewExisting = () => {
-        if (duplicateMatches.length > 0) {
-            navigate(`/candidates/${duplicateMatches[0].id}`);
-        }
-    };
-
     if (showConfirmation) {
         return (
-            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-10 text-center animate-in zoom-in duration-300">
-                    <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <UserPlus size={40} />
+            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6 text-center">
+                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <UserPlus size={32} />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Confirm Registration</h3>
-                    <p className="text-slate-400 font-medium mb-8">
-                        Are you sure you want to add <span className="text-blue-600 font-bold">{formData.fullName}</span>?
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Confirm Registration</h3>
+                    <p className="text-slate-500 text-sm mb-6">
+                        Are you sure you want to add <strong>{formData.fullName}</strong>?
                     </p>
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                         <button
                             onClick={() => setShowConfirmation(false)}
-                            className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-premium"
+                            className="flex-1 py-2.5 px-4 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
                         >
                             Review
                         </button>
                         <button
                             onClick={handleSubmit}
                             disabled={isSubmitting}
-                            className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-200 hover:bg-blue-700 transition-premium disabled:opacity-50"
+                            className="flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
                         >
-                            {isSubmitting ? 'Syncing...' : 'Yes, Confirm'}
+                            {isSubmitting ? 'Saving...' : 'Confirm'}
                         </button>
                     </div>
                 </div>
@@ -190,241 +182,233 @@ const QuickAddForm: React.FC = () => {
         );
     }
 
+    const completionPercentage = ProfileCompletionService.calculateCompletionPercentage({
+        ...formData,
+        name: formData.fullName
+    });
+
     return (
-        <div className="min-h-screen bg-slate-50/50 pb-20">
+        <div className="min-h-screen bg-slate-50 pb-12">
             {/* Header / Navigation */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8 py-4">
-                <div className="max-w-5xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="p-2.5 hover:bg-slate-50 rounded-xl transition-premium text-slate-500"
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
-                        <div>
-                            <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight">New Candidate</h1>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Administrative Intake</p>
-                        </div>
+            <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8 py-4 shadow-sm">
+                <div className="max-w-6xl mx-auto flex items-center gap-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <div>
+                        <h1 className="text-xl font-semibold text-slate-900">New Candidate</h1>
+                        <p className="text-sm text-slate-500">Quick Registration Form</p>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+            <div className="max-w-6xl mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Main Form Area */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="mb-4">
-                            <div className="flex items-center gap-5 mb-6">
-                                <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-slate-200 animate-float">
-                                    <Zap size={28} className="fill-blue-400 text-blue-400" />
+                    <div className="lg:col-span-2">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+
+                            {/* Personal Information */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+                                    <h2 className="text-base font-semibold text-slate-800">1. Personal Details</h2>
                                 </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-1">Quick Add</h3>
-                                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                        Fill in the basic details. You can add documents, photos, and other info later.
-                                    </p>
+                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Registration No.</label>
+                                        <input
+                                            type="text"
+                                            name="regNo"
+                                            value={formData.regNo}
+                                            onChange={handleChange}
+                                            onBlur={() => handleBlur('regNo')}
+                                            className="w-full max-w-sm px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            placeholder="e.g. SPA 14-180125"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Surname</label>
+                                        <input
+                                            type="text"
+                                            name="surname"
+                                            value={formData.surname}
+                                            onChange={handleChange}
+                                            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.surname ? 'border-red-300' : 'border-slate-300'}`}
+                                            placeholder="As in Passport"
+                                        />
+                                        <p className={`text-xs mt-1 transition-opacity ${errors.surname ? "text-red-600 opacity-100" : "opacity-0"}`}>{errors.surname || "Error placeholder"}</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Other Names</label>
+                                        <input
+                                            type="text"
+                                            name="otherNames"
+                                            value={formData.otherNames}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            placeholder="Given names"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Full Legal Name</label>
+                                        <input
+                                            type="text"
+                                            name="fullName"
+                                            value={formData.fullName}
+                                            onChange={handleChange}
+                                            className={`w-full px-3 py-2 border rounded-md shadow-sm bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.fullName ? 'border-red-300' : 'border-slate-300'}`}
+                                            placeholder="Auto-generated from above"
+                                        />
+                                        <p className={`text-xs mt-1 transition-opacity ${errors.fullName ? "text-red-600 opacity-100" : "opacity-0"}`}>{errors.fullName || "Error placeholder"}</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">NIC Number</label>
+                                        <input
+                                            type="text"
+                                            name="nic"
+                                            value={formData.nic}
+                                            onChange={handleChange}
+                                            onBlur={() => handleBlur('nic')}
+                                            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.nic ? 'border-red-300' : 'border-slate-300'}`}
+                                            placeholder="NIC number"
+                                        />
+                                        {formData.dob && (
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                    DOB: {formData.dob}
+                                                </span>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                    {formData.gender}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <p className={`text-xs mt-1 transition-opacity ${errors.nic ? "text-red-600 opacity-100" : "opacity-0"}`}>{errors.nic || "Error placeholder"}</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            placeholder="Email address"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                                        <input
+                                            type="text"
+                                            name="address"
+                                            value={formData.address}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            placeholder="Residential address"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <form onSubmit={handleSubmit} className="glass-card p-6 md:p-10 space-y-12">
-                            <div className="space-y-12">
-                                {/* Personal Information */}
-                                <section>
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
-                                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">1. Registration & Personal Details</h2>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-1.5 md:col-span-2">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reg No</label>
-                                            <input
-                                                type="text"
-                                                name="regNo"
-                                                value={formData.regNo}
-                                                onChange={handleChange}
-                                                className={`w-full max-w-sm px-4 py-3 bg-blue-50/50 border border-blue-200 rounded-xl font-black text-blue-900 text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 uppercase`}
-                                                placeholder="e.g. SPA 14-180125"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Surname</label>
-                                            <input
-                                                type="text"
-                                                name="surname"
-                                                value={formData.surname}
-                                                onChange={handleChange}
-                                                className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 ${errors.surname ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
-                                                placeholder="As in Passport"
-                                            />
-                                            {errors.surname && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-tight ml-1">{errors.surname}</p>}
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Other Names</label>
-                                            <input
-                                                type="text"
-                                                name="otherNames"
-                                                value={formData.otherNames}
-                                                onChange={handleChange}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                                                placeholder="Given names"
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2 space-y-1.5">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Legal Name</label>
-                                            <input
-                                                type="text"
-                                                name="fullName"
-                                                value={formData.fullName}
-                                                onChange={handleChange}
-                                                className={`w-full px-4 py-3 bg-white/50 border rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 ${errors.fullName ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
-                                                placeholder="Auto-generated from above"
-                                            />
-                                            {errors.fullName && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-tight ml-1">{errors.fullName}</p>}
-                                        </div>
+                            {/* Contact Details */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+                                    <h2 className="text-base font-semibold text-slate-800">2. Contact Numbers</h2>
+                                </div>
+                                <div className="p-6">
+                                    <MultiPhoneInput
+                                        primaryPhone={formData.phone}
+                                        whatsappPhone={formData.whatsapp}
+                                        additionalPhones={formData.additionalContactNumbers}
+                                        onPrimaryPhoneChange={(value) => {
+                                            setFormData(prev => ({ ...prev, phone: value }));
+                                            if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                                            handleBlur('phone');
+                                        }}
+                                        onWhatsappPhoneChange={(value) => {
+                                            setFormData(prev => ({ ...prev, whatsapp: value }));
+                                            handleBlur('whatsapp');
+                                        }}
+                                        onAdditionalPhonesChange={(phones) => setFormData(prev => ({ ...prev, additionalContactNumbers: phones }))}
+                                        onDuplicateDetected={(phone, type) => {
+                                            console.log(`Duplicate detected: ${phone} (${type})`);
+                                        }}
+                                    />
+                                    <p className={`text-xs mt-1 transition-opacity ${errors.phone ? "text-red-600 opacity-100" : "opacity-0"}`}>{errors.phone || "Error placeholder"}</p>
+                                </div>
+                            </div>
 
-                                        <div className="space-y-1.5">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">NIC Number</label>
-                                            <input
-                                                type="text"
-                                                name="nic"
-                                                value={formData.nic}
-                                                onChange={handleChange}
-                                                onBlur={() => handleBlur('nic')}
-                                                className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 ${errors.nic ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
-                                                placeholder="NIC number"
-                                            />
-                                            {formData.dob && (
-                                                <div className="flex items-center gap-2 mt-2 ml-1">
-                                                    <div className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black tracking-widest">DOB: {formData.dob}</div>
-                                                    <div className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black tracking-widest">{formData.gender}</div>
-                                                </div>
-                                            )}
-                                            {errors.nic && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-tight ml-1">{errors.nic}</p>}
-                                        </div>
-
-                                        <div className="space-y-1.5">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                                            <input
-                                                type="email"
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleChange}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                                                placeholder="Email address"
-                                            />
-                                        </div>
-
-                                        <div className="md:col-span-2 space-y-1.5">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
-                                            <input
-                                                type="text"
-                                                name="address"
-                                                value={formData.address}
-                                                onChange={handleChange}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                                                placeholder="Address"
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Contact Information */}
-                                <section>
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
-                                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">2. Contact Details</h2>
-                                    </div>
-                                    <div className="glass-card p-6 bg-slate-50/50 border-slate-100">
-                                        <MultiPhoneInput
-                                            primaryPhone={formData.phone}
-                                            whatsappPhone={formData.whatsapp}
-                                            additionalPhones={formData.additionalContactNumbers}
-                                            onPrimaryPhoneChange={(value) => {
-                                                setFormData(prev => ({ ...prev, phone: value }));
-                                                if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
-                                                handleBlur('phone');
-                                            }}
-                                            onWhatsappPhoneChange={(value) => {
-                                                setFormData(prev => ({ ...prev, whatsapp: value }));
-                                                handleBlur('whatsapp');
-                                            }}
-                                            onAdditionalPhonesChange={(phones) => setFormData(prev => ({ ...prev, additionalContactNumbers: phones }))}
-                                            onDuplicateDetected={(phone, type) => {
-                                                console.log(`Duplicate detected: ${phone} (${type})`);
-                                            }}
-                                        />
-                                        {errors.phone && <p className="text-red-500 text-[10px] font-bold mt-2 uppercase tracking-tight ml-1">{errors.phone}</p>}
-                                    </div>
-                                </section>
-
-                                {/* Job Preferences */}
-                                <section>
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="w-1 h-8 bg-blue-600 rounded-full"></div>
-                                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">3. Job Preferences</h2>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-1.5">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Job Role</label>
-                                            <input
-                                                type="text"
-                                                name="role"
-                                                value={formData.role}
-                                                onChange={handleChange}
-                                                className={`w-full px-4 py-3 bg-slate-50 border rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 ${errors.role ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
-                                                placeholder="e.g. Nurse, Driver, Chef"
-                                            />
-                                            {errors.role && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-tight ml-1">{errors.role}</p>}
-                                        </div>
-
-                                        <div className="md:col-span-2">
-                                            <PreferredCountriesSelector
-                                                label="Preferred Countries"
-                                                selectedCountries={formData.preferredCountries}
-                                                onChange={(countries) => {
-                                                    setFormData(prev => ({ ...prev, preferredCountries: countries }));
-                                                    if (errors.preferredCountries) {
-                                                        setErrors(prev => ({ ...prev, preferredCountries: '' }));
-                                                    }
-                                                }}
-                                            />
-                                            {errors.preferredCountries && <p className="text-red-500 text-[10px] font-bold mt-2 uppercase tracking-tight ml-1">{errors.preferredCountries}</p>}
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* Notes */}
-                                <section>
-                                    <div className="space-y-1.5">
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes</label>
-                                        <textarea
-                                            name="notes"
-                                            value={formData.notes}
+                            {/* Job Preferences */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+                                    <h2 className="text-base font-semibold text-slate-800">3. Job Preferences</h2>
+                                </div>
+                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Job Role</label>
+                                        <input
+                                            type="text"
+                                            name="role"
+                                            value={formData.role}
                                             onChange={handleChange}
-                                            rows={4}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 resize-none"
-                                            placeholder="Add any special notes..."
+                                            className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.role ? 'border-red-300' : 'border-slate-300'}`}
+                                            placeholder="e.g. Nurse, Driver, Chef"
                                         />
+                                        <p className={`text-xs mt-1 transition-opacity ${errors.role ? "text-red-600 opacity-100" : "opacity-0"}`}>{errors.role || "Error placeholder"}</p>
                                     </div>
-                                </section>
+
+                                    <div className="md:col-span-2">
+                                        <PreferredCountriesSelector
+                                            label="Preferred Countries"
+                                            selectedCountries={formData.preferredCountries}
+                                            onChange={(countries) => {
+                                                setFormData(prev => ({ ...prev, preferredCountries: countries }));
+                                                if (errors.preferredCountries) {
+                                                    setErrors(prev => ({ ...prev, preferredCountries: '' }));
+                                                }
+                                            }}
+                                        />
+                                        <p className={`text-xs mt-1 transition-opacity ${errors.preferredCountries ? "text-red-600 opacity-100" : "opacity-0"}`}>{errors.preferredCountries || "Error placeholder"}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Notes */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+                                    <h2 className="text-base font-semibold text-slate-800">Notes (Optional)</h2>
+                                </div>
+                                <div className="p-6">
+                                    <textarea
+                                        name="notes"
+                                        value={formData.notes}
+                                        onChange={handleChange}
+                                        rows={4}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm resize-y"
+                                        placeholder="Add any special notes..."
+                                    />
+                                </div>
                             </div>
 
                             {/* Actions Dock */}
-                            <div className="flex flex-col md:flex-row items-center justify-end gap-4 mt-12 pt-8 border-t border-slate-100">
+                            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4">
                                 <button
                                     type="button"
                                     onClick={() => navigate('/candidates')}
-                                    className="w-full md:w-auto px-8 py-3.5 text-slate-500 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-premium font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95"
+                                    className="w-full sm:w-auto px-6 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="w-full md:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-premium font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-slate-900/40 active:scale-95 flex items-center justify-center gap-3"
+                                    className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 border border-transparent text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center gap-2"
                                 >
-                                    <Save size={18} className="text-blue-400" />
+                                    <Save size={16} />
                                     Save Candidate
                                 </button>
                             </div>
@@ -433,59 +417,56 @@ const QuickAddForm: React.FC = () => {
 
                     {/* Right Side Sidebar */}
                     <div className="lg:col-span-1 space-y-6">
-                        <div className="lg:sticky lg:top-28">
-                            {(() => {
-                                const completionPercentage = ProfileCompletionService.calculateCompletionPercentage({
-                                    ...formData,
-                                    name: formData.fullName
-                                });
-                                return (
-                                    <div className="glass-card p-8 bg-white/50 backdrop-blur-xl mb-6">
-                                        <div className="flex items-center justify-between mb-8">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-xl">
-                                                    <TrendingUp size={18} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Profile</h3>
-                                                    <p className="text-[9px] font-bold text-slate-300 uppercase">Completion</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-3xl font-black tracking-tighter text-blue-600 leading-none">{completionPercentage}%</span>
-                                        </div>
-                                        <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner p-1">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-blue-500 to-blue-700 rounded-full transition-all duration-1000 ease-out shadow-lg shadow-blue-500/20"
-                                                style={{ width: `${completionPercentage}%` }}
-                                            />
-                                        </div>
-                                        <div className="mt-8">
-                                            <div className={`p-4 rounded-2xl border text-center transition-premium ${completionPercentage < 40 ? 'bg-red-50 border-red-100 text-red-600' :
-                                                completionPercentage < 80 ? 'bg-amber-50 border-amber-100 text-amber-600' :
-                                                    'bg-emerald-50 border-emerald-100 text-emerald-600'
-                                                }`}>
-                                                <span className="text-[10px] font-black uppercase tracking-widest leading-none block opacity-60">Status</span>
-                                                <span className="text-sm font-black mt-2 block tracking-tight">
-                                                    {completionPercentage < 40 ? 'NEEDS MORE INFO' :
-                                                        completionPercentage < 80 ? 'ALMOST COMPLETE' :
-                                                            'COMPLETE'}
-                                                </span>
-                                            </div>
+                        <div className="lg:sticky lg:top-24 space-y-4">
+
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <TrendingUp size={20} className="text-blue-600" />
+                                        <h3 className="font-semibold text-slate-900">Profile Status</h3>
+                                    </div>
+                                    <span className="text-2xl font-bold text-blue-600">{completionPercentage}%</span>
+                                </div>
+
+                                <div className="w-full bg-slate-100 rounded-full h-2 mb-6 overflow-hidden">
+                                    <div
+                                        className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                                        style={{ width: `${completionPercentage}%` }}
+                                    />
+                                </div>
+
+                                <div className={`p-3 rounded-lg border text-center transition-colors ${completionPercentage < 40 ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                                    completionPercentage < 80 ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                                        'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                    }`}>
+                                    <span className="text-sm font-medium block">
+                                        {completionPercentage < 40 ? 'Needs More Info' :
+                                            completionPercentage < 80 ? 'Almost Complete' :
+                                                'Complete'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {(duplicateMatches.length > 0) && (
+                                <div className="bg-amber-50 rounded-xl shadow-sm border border-amber-200 p-5">
+                                    <div className="flex items-start gap-3">
+                                        <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                                        <div>
+                                            <h4 className="font-medium text-amber-800 text-sm">Potential Duplicate Found</h4>
+                                            <p className="text-xs text-amber-700 mt-1 mb-3">
+                                                A candidate with similar details ({duplicateFields.join(', ')}) already exists.
+                                            </p>
+                                            <button
+                                                onClick={() => navigate(`/candidates/${duplicateMatches[0].id}`)}
+                                                className="text-xs font-semibold text-amber-700 hover:text-amber-900 underline"
+                                            >
+                                                View existing profile
+                                            </button>
                                         </div>
                                     </div>
-                                );
-                            })()}
-
-                            <div className="glass-card p-6 bg-slate-900 text-white overflow-hidden relative border-none">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
-                                <div className="flex items-center gap-2 mb-4">
-                                    <AlertCircle size={14} className="text-blue-400" />
-                                    <h4 className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Note</h4>
                                 </div>
-                                <p className="text-xs text-slate-400 font-medium leading-relaxed relative z-10">
-                                    Duplicate detection is active. Records are checked against NIC and phone numbers to ensure data integrity.
-                                </p>
-                            </div>
+                            )}
+
                         </div>
                     </div>
                 </div>

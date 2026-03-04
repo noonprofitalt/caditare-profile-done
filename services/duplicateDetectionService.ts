@@ -20,6 +20,18 @@ export class DuplicateDetectionService {
                 return false;
             }
 
+            // Exact match on REG NO
+            if (candidateData.regNo && existing.regNo &&
+                candidateData.regNo.trim().toUpperCase() === existing.regNo.trim().toUpperCase()) {
+                return true;
+            }
+
+            // Exact match on Candidate Code
+            if (candidateData.candidateCode && existing.candidateCode &&
+                candidateData.candidateCode.trim().toUpperCase() === existing.candidateCode.trim().toUpperCase()) {
+                return true;
+            }
+
             // Exact match on NIC
             if (candidateData.nic && existing.nic &&
                 candidateData.nic.trim().toLowerCase() === existing.nic.trim().toLowerCase()) {
@@ -73,6 +85,14 @@ export class DuplicateDetectionService {
         if (matches.length > 0) {
             // Determine which fields matched
             matches.forEach(match => {
+                if (candidateData.regNo && match.regNo &&
+                    candidateData.regNo.trim().toUpperCase() === match.regNo.trim().toUpperCase()) {
+                    if (!matchedFields.includes('Registration Number')) matchedFields.push('Registration Number');
+                }
+                if (candidateData.candidateCode && match.candidateCode &&
+                    candidateData.candidateCode.trim().toUpperCase() === match.candidateCode.trim().toUpperCase()) {
+                    if (!matchedFields.includes('Candidate Code')) matchedFields.push('Candidate Code');
+                }
                 if (candidateData.nic && match.nic &&
                     candidateData.nic.trim().toLowerCase() === match.nic.trim().toLowerCase()) {
                     if (!matchedFields.includes('NIC')) matchedFields.push('NIC');

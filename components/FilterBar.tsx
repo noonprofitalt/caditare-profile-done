@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProfileCompletionStatus, WorkflowStage, Country } from '../types';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, Search, Command } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface FilterBarProps {
     activeStatus: ProfileCompletionStatus | 'ALL';
@@ -34,6 +35,20 @@ const FilterBar: React.FC<FilterBarProps> = ({
     onClearFilters,
     hasActiveFilters
 }) => {
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('global-search-input')?.focus();
+            } else if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                document.getElementById('global-search-input')?.focus();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const statusTabs = [
         { value: 'ALL' as const, label: 'All Candidates', count: candidateCounts.all, color: 'slate' },
         { value: ProfileCompletionStatus.QUICK, label: 'Quick Create', count: candidateCounts.quick, color: 'red' },
@@ -74,15 +89,23 @@ const FilterBar: React.FC<FilterBarProps> = ({
             <div className="px-6 py-4 space-y-4">
                 {/* Search Bar */}
                 <div className="flex items-center gap-3">
-                    <div className="flex-1 relative">
+                    <div className="flex-1 relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <Search size={16} className="text-slate-400 group-focus-within:text-slate-700 transition-colors" />
+                        </div>
                         <input
+                            id="global-search-input"
                             type="text"
-                            placeholder="Search candidates..."
+                            placeholder="Find REG NO, Name or Phone..."
                             value={searchQuery}
                             onChange={(e) => onSearchChange(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            className="w-full pl-10 pr-14 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-slate-300 focus:border-slate-300 text-sm text-slate-800 transition-colors outline-none placeholder:text-slate-400"
                         />
-                        <Filter size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+                            <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-400 bg-white border border-slate-100 rounded">
+                                <Command size={9} /> K
+                            </kbd>
+                        </div>
                     </div>
                     {hasActiveFilters && (
                         <button
@@ -147,9 +170,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
                                         onCountryChange([...activeCountries, country]);
                                     }
                                 }}
-                                className={`px-2.5 py-1.5 rounded-lg border transition-all whitespace-nowrap text-[10px] uppercase font-black tracking-tight ${isActive
+                                className={`px-3 py-1.5 rounded-md border transition-all whitespace-nowrap text-xs font-medium ${isActive
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-sm'
-                                    : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200'
+                                    : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                                     }`}
                             >
                                 {country}

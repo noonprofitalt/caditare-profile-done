@@ -583,8 +583,8 @@ const CandidateDetail: React.FC = () => {
   if (isLocalLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center animate-pulse">
-          <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-6 shadow-lg shadow-blue-50/50">
+        <div className="text-center ">
+          <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mx-auto mb-6 shadow-lg shadow-blue-50/50">
             <RefreshCw size={32} className="animate-spin" />
           </div>
           <p className="text-slate-800 font-bold text-lg mb-1 tracking-tight">Syncing Workforce Data</p>
@@ -598,14 +598,14 @@ const CandidateDetail: React.FC = () => {
   if (fetchError || !candidate) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 text-center relative overflow-hidden">
+        <div className="max-w-md w-full bg-white rounded-xl border border-slate-200 shadow-md p-8 text-center">
           {/* Background Decoration */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-amber-400" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-red-500" />
 
-          <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-8">
+          <div className="w-20 h-20 bg-red-50 rounded-lg flex items-center justify-center text-red-500 mx-auto mb-8">
             <ShieldAlert size={40} />
           </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-2">Access Alert</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Access Alert</h2>
           <p className="text-slate-500 mb-8 font-medium">
             {fetchError || "The personnel record you are attempting to access is either restricted or does not exist in the current registry."}
           </p>
@@ -674,7 +674,7 @@ const CandidateDetail: React.FC = () => {
                 {/* === REG NO BADGE — PRIMARY IDENTIFIER (Red ink on paper forms) === */}
                 <div className="mb-6 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.15em] px-3 py-1 rounded-md shadow-sm">REG NO</div>
+                    <div className="bg-red-600 text-white text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-md shadow-sm">REG NO</div>
                     {isEditingProfile ? (
                       <input
                         type="text"
@@ -685,7 +685,7 @@ const CandidateDetail: React.FC = () => {
                         style={{ minWidth: '220px' }}
                       />
                     ) : (
-                      <span className="text-2xl font-black text-red-700 tracking-wide">{candidate.regNo ?? '-'}</span>
+                      <span className="text-2xl font-semibold text-red-700">{candidate.regNo ?? '-'}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-6 text-xs text-slate-500">
@@ -740,19 +740,19 @@ const CandidateDetail: React.FC = () => {
                   </h3>
 
                   {isEditingProfile ? (
-                    <div className="bg-gradient-to-br from-amber-50/40 to-slate-50 p-5 rounded-xl border border-amber-200/80 space-y-4">
+                    <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
                       {/* Row 1: Type, Country Code, Passport No */}
                       <div className="grid grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Type</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Type</label>
                           <input type="text" value="PB" disabled className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Country Code</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Country Code</label>
                           <input type="text" value="LKA" disabled className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-mono" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Passport No.</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Passport No.</label>
                           <input
                             type="text"
                             value={(editedProfile.passports || [])[0]?.passportNumber || ''}
@@ -769,7 +769,7 @@ const CandidateDetail: React.FC = () => {
 
                       {/* Row 2: Surname */}
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Surname</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-0.5">Surname</label>
                         <input
                           type="text"
                           value={editedProfile.personalInfo?.surname || editedProfile.personalInfo?.firstName || ''}
@@ -784,7 +784,7 @@ const CandidateDetail: React.FC = () => {
 
                       {/* Row 3: Other Names */}
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Other Names</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-0.5">Other Names</label>
                         <input
                           type="text"
                           value={editedProfile.personalInfo?.otherNames || editedProfile.personalInfo?.middleName || ''}
@@ -800,11 +800,11 @@ const CandidateDetail: React.FC = () => {
                       {/* Row 4: National Status + Profession */}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">National Status</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">National Status</label>
                           <input type="text" value="SRI LANKAN" disabled className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500 font-bold" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Profession</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Profession</label>
                           <input
                             type="text"
                             value={(editedProfile as any).passportProfession || ''}
@@ -818,7 +818,7 @@ const CandidateDetail: React.FC = () => {
                       {/* Row 5: DOB + ID No. */}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Date of Birth</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Date of Birth</label>
                           <input
                             type="date"
                             value={editedProfile.personalInfo?.dob || ''}
@@ -830,7 +830,7 @@ const CandidateDetail: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">ID No. (NIC)</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">ID No. (NIC)</label>
                           <input
                             type="text"
                             value={editedProfile.personalInfo?.nic || ''}
@@ -847,7 +847,7 @@ const CandidateDetail: React.FC = () => {
                       {/* Row 6: Sex + Place of Birth */}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Sex</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Sex</label>
                           <select
                             value={editedProfile.personalInfo?.gender || ''}
                             onChange={(e) => setEditedProfile({
@@ -862,7 +862,7 @@ const CandidateDetail: React.FC = () => {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Place of Birth</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Place of Birth</label>
                           <input
                             type="text"
                             value={(editedProfile as any).placeOfBirth || ''}
@@ -876,7 +876,7 @@ const CandidateDetail: React.FC = () => {
                       {/* Row 7: Date of Issue + Date of Expiry */}
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Date of Issue</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Date of Issue</label>
                           <input
                             type="date"
                             value={(editedProfile.passports || [])[0]?.issuedDate ? new Date((editedProfile.passports || [])[0].issuedDate).toISOString().split('T')[0] : ''}
@@ -889,7 +889,7 @@ const CandidateDetail: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Date of Expiry</label>
+                          <label className="block text-xs font-medium text-slate-500 mb-0.5">Date of Expiry</label>
                           <input
                             type="date"
                             value={(editedProfile.passports || [])[0]?.expiryDate ? new Date((editedProfile.passports || [])[0].expiryDate).toISOString().split('T')[0] : ''}
@@ -906,13 +906,13 @@ const CandidateDetail: React.FC = () => {
 
                       {/* Row 8: Authority */}
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Authority</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-0.5">Authority</label>
                         <input type="text" value="AUTHORITY COLOMBO" disabled className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500" />
                       </div>
 
                       {/* Row 9: Passport Remark */}
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Passport Remark</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-0.5">Passport Remark</label>
                         <textarea
                           value={(editedProfile as any).passportRemark || ''}
                           onChange={(e) => setEditedProfile({ ...editedProfile, passportRemark: e.target.value } as any)}
@@ -932,12 +932,12 @@ const CandidateDetail: React.FC = () => {
                               <div className="flex items-center gap-3">
                                 <div className="text-amber-300 text-lg">🇱🇰</div>
                                 <div>
-                                  <div className="text-[9px] text-blue-200 uppercase tracking-widest">Democratic Socialist Republic of</div>
+                                  <div className="text-xs text-blue-200 uppercase tracking-widest">Democratic Socialist Republic of</div>
                                   <div className="text-xs font-bold text-white tracking-wide">SRI LANKA</div>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-[9px] text-blue-200 uppercase">Passport No.</div>
+                                <div className="text-xs text-blue-200 uppercase">Passport No.</div>
                                 <div className="text-sm font-bold text-amber-300 font-mono tracking-wider">{passport.passportNumber || '-'}</div>
                               </div>
                             </div>
@@ -946,28 +946,28 @@ const CandidateDetail: React.FC = () => {
                             <div className="px-5 py-4 space-y-3">
                               <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Type</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Type</label>
                                   <div className="text-sm font-bold text-slate-800 font-mono">PB</div>
                                 </div>
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Country Code</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Country Code</label>
                                   <div className="text-sm font-bold text-slate-800 font-mono">LKA</div>
                                 </div>
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Passport No.</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Passport No.</label>
                                   <div className="text-sm font-bold text-slate-900 font-mono">{passport.passportNumber || '-'}</div>
                                 </div>
                               </div>
 
                               <div className="pt-1 border-t border-amber-100">
-                                <label className="text-[9px] font-medium text-slate-400 uppercase">Surname</label>
+                                <label className="text-xs font-medium text-slate-400 uppercase">Surname</label>
                                 <div className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
                                   {candidate?.personalInfo?.surname || candidate?.personalInfo?.firstName || candidate?.firstName || '-'}
                                 </div>
                               </div>
 
                               <div>
-                                <label className="text-[9px] font-medium text-slate-400 uppercase">Other Names</label>
+                                <label className="text-xs font-medium text-slate-400 uppercase">Other Names</label>
                                 <div className="text-base font-bold text-slate-800 uppercase">
                                   {candidate?.personalInfo?.otherNames || candidate?.personalInfo?.middleName || candidate?.middleName || '-'}
                                 </div>
@@ -975,44 +975,44 @@ const CandidateDetail: React.FC = () => {
 
                               <div className="grid grid-cols-2 gap-4 pt-1 border-t border-amber-100">
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">National Status</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">National Status</label>
                                   <div className="text-sm font-bold text-slate-800">SRI LANKAN</div>
                                 </div>
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Profession</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Profession</label>
                                   <div className="text-sm font-medium text-slate-700">{(candidate as any)?.passportProfession || '-'}</div>
                                 </div>
                               </div>
 
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Date of Birth</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Date of Birth</label>
                                   <div className="text-sm font-bold text-slate-800">{candidate?.personalInfo?.dob || candidate?.dob || '-'}</div>
                                 </div>
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">ID No.</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">ID No.</label>
                                   <div className="text-sm font-bold text-slate-800 font-mono">{candidate?.personalInfo?.nic || candidate?.nic || '-'}</div>
                                 </div>
                               </div>
 
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Sex</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Sex</label>
                                   <div className="text-sm font-bold text-slate-800">{candidate?.personalInfo?.gender || candidate?.gender || '-'}</div>
                                 </div>
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Place of Birth</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Place of Birth</label>
                                   <div className="text-sm font-bold text-slate-800 uppercase">{(candidate as any)?.placeOfBirth || '-'}</div>
                                 </div>
                               </div>
 
                               <div className="grid grid-cols-2 gap-4 pt-1 border-t border-amber-100">
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Date of Issue</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Date of Issue</label>
                                   <div className="text-sm font-medium text-slate-800">{passport.issuedDate || '-'}</div>
                                 </div>
                                 <div>
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Date of Expiry</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Date of Expiry</label>
                                   <div className="text-sm font-medium text-slate-800 mb-1">{passport.expiryDate || '-'}</div>
                                   {passport.expiryDate && (
                                     <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${passport.status === PassportStatus.VALID ? 'bg-green-50 text-green-700 border-green-200' :
@@ -1027,13 +1027,13 @@ const CandidateDetail: React.FC = () => {
                               </div>
 
                               <div className="pt-1 border-t border-amber-100">
-                                <label className="text-[9px] font-medium text-slate-400 uppercase">Authority</label>
+                                <label className="text-xs font-medium text-slate-400 uppercase">Authority</label>
                                 <div className="text-sm font-medium text-slate-600">AUTHORITY COLOMBO</div>
                               </div>
 
                               {(candidate as any)?.passportRemark && (
                                 <div className="pt-1 border-t border-amber-100">
-                                  <label className="text-[9px] font-medium text-slate-400 uppercase">Remark</label>
+                                  <label className="text-xs font-medium text-slate-400 uppercase">Remark</label>
                                   <div className="text-xs text-slate-600 italic leading-relaxed">{(candidate as any).passportRemark}</div>
                                 </div>
                               )}
@@ -1730,7 +1730,7 @@ const CandidateDetail: React.FC = () => {
 
                       {candidate.medicalData?.medicalRecords && candidate.medicalData.medicalRecords.length > 0 && (
                         <div className="pt-4 border-t border-slate-100">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Past Medical History</label>
+                          <label className="text-xs font-medium text-slate-500 tracking-widest block mb-3">Past Medical History</label>
                           <div className="grid grid-cols-1 gap-2">
                             {candidate.medicalData.medicalRecords.map((m, idx) => (
                               <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded border border-slate-100 text-xs text-slate-600">
@@ -2258,7 +2258,7 @@ const CandidateDetail: React.FC = () => {
                 </section>
 
                 {/* SECTION 1.57: ADVANCE PAYMENT TRACKING */}
-                {isAdmin && (
+                {true && (
                   <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                       <span className="w-6 h-1 bg-green-500 rounded-full"></span>
@@ -2438,18 +2438,31 @@ const CandidateDetail: React.FC = () => {
                 {/* SECTION 1.575: DATE/REMARK LOG (handwritten notes section on paper forms) */}
                 <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-orange-500 rounded-full"></span>
+                    <span className="w-6 h-1 bg-slate-300 rounded-full"></span>
                     Date / Remark Log
                   </h3>
-                  <div className="bg-orange-50/30 rounded-xl border border-orange-200/60 overflow-hidden">
+                  <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     {/* Existing remarks */}
-                    <div className="px-5 py-3">
+                    <div className="px-5 py-2">
                       {((candidate as any).remarkLog && (candidate as any).remarkLog.length > 0) ? (
-                        <div className="space-y-2">
-                          {(candidate as any).remarkLog.map((entry: any, idx: number) => (
-                            <div key={idx} className="flex gap-3 py-2 border-b border-orange-100/50 last:border-0">
-                              <div className="text-[11px] font-bold text-orange-600 whitespace-nowrap min-w-[80px]">{entry.date}</div>
-                              <div className="text-xs text-slate-700 leading-relaxed">{entry.remark}</div>
+                        <div className="space-y-0">
+                          {((candidate as any).remarkLog).map((entry: any, idx: number) => (
+                            <div key={idx} className="flex gap-3 py-2.5 border-b border-slate-100 last:border-0 group items-start">
+                              <div className="text-[11px] font-semibold text-slate-500 whitespace-nowrap min-w-[80px] mt-0.5">{entry.date}</div>
+                              <div className="text-xs text-slate-700 leading-relaxed flex-1">{entry.remark}</div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const existing = (candidate as any).remarkLog || [];
+                                  const updated = [...existing];
+                                  updated.splice(idx, 1);
+                                  handleRemarkLogUpdate(updated);
+                                }}
+                                className="p-1 text-slate-300 hover:text-red-500 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Delete Remark"
+                              >
+                                <Trash2 size={14} />
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -2461,49 +2474,54 @@ const CandidateDetail: React.FC = () => {
                     </div>
 
                     {/* Add new remark */}
-                    {isEditingProfile && (
-                      <div className="px-5 py-3 bg-orange-100/30 border-t border-orange-200/50">
-                        <div className="flex gap-3 items-end">
-                          <div className="flex-shrink-0">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Date</label>
-                            <input
-                              type="date"
-                              id="new-remark-date"
-                              defaultValue={new Date().toISOString().split('T')[0]}
-                              className="px-2 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-orange-500"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Remark</label>
-                            <input
-                              type="text"
-                              id="new-remark-text"
-                              placeholder="Enter remark / note..."
-                              className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-orange-500"
-                            />
-                          </div>
-                          <button
-                            onClick={() => {
-                              const dateInput = document.getElementById('new-remark-date') as HTMLInputElement;
-                              const textInput = document.getElementById('new-remark-text') as HTMLInputElement;
-                              if (dateInput?.value && textInput?.value) {
-                                const existing = (editedProfile as any).remarkLog || [];
-                                setEditedProfile({ ...editedProfile, remarkLog: [...existing, { date: dateInput.value, remark: textInput.value }] } as any);
-                                textInput.value = '';
+                    <div className="px-5 py-3 bg-slate-50 border-t border-slate-200">
+                      <div className="flex gap-3 items-end">
+                        <div className="flex-shrink-0">
+                          <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1 tracking-wider">Date</label>
+                          <input
+                            type="date"
+                            id="new-remark-date"
+                            defaultValue={new Date().toISOString().split('T')[0]}
+                            className="px-2 py-1.5 border border-slate-300 rounded-md text-[11px] font-medium text-slate-700 focus:ring-1 focus:ring-slate-300 outline-none"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1 tracking-wider">Remark</label>
+                          <input
+                            type="text"
+                            id="new-remark-text"
+                            placeholder="Enter remark... (Press Add)"
+                            className="w-full px-3 py-1.5 border border-slate-300 rounded-md text-[11px] text-slate-700 focus:ring-1 focus:ring-slate-300 outline-none"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                document.getElementById('add-remark-btn')?.click();
                               }
                             }}
-                            className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 flex-shrink-0"
-                          >
-                            + Add
-                          </button>
+                          />
                         </div>
+                        <button
+                          id="add-remark-btn"
+                          onClick={() => {
+                            const dateInput = document.getElementById('new-remark-date') as HTMLInputElement;
+                            const textInput = document.getElementById('new-remark-text') as HTMLInputElement;
+                            if (dateInput?.value && textInput?.value) {
+                              const existing = (candidate as any).remarkLog || [];
+                              handleRemarkLogUpdate([...existing, { date: dateInput.value, remark: textInput.value }]);
+                              textInput.value = '';
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-slate-800 text-white rounded-md text-[11px] font-medium hover:bg-slate-900 transition-colors flex-shrink-0"
+                        >
+                          Add Entry
+                        </button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </section>
 
                 {/* SECTION 1.57b: ADVANCE PAYMENTS / FINANCIAL LEDGER */}
-                {isAdmin && (
+                {true && (
                   <section className="mt-8 pt-8 border-t border-slate-100 mb-6 w-full overflow-hidden">
                     <FinancialLedgerWidget
                       candidate={(isEditingProfile ? editedProfile : candidate) as any}
@@ -2664,7 +2682,7 @@ const CandidateDetail: React.FC = () => {
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${isCompleted ? 'bg-cyan-600 text-white shadow-md shadow-cyan-200' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>
                                   {isCompleted ? '✓' : milestone.icon}
                                 </div>
-                                <span className="text-[9px] font-bold text-slate-600 mt-1.5 text-center whitespace-pre-line leading-tight">{milestone.label}</span>
+                                <span className="text-xs font-bold text-slate-600 mt-1.5 text-center whitespace-pre-line leading-tight">{milestone.label}</span>
                                 <span className="text-[8px] font-medium text-cyan-700 mt-0.5">{date || '-'}</span>
                               </div>
                               {!isLast && (
@@ -2847,7 +2865,7 @@ const CandidateDetail: React.FC = () => {
                         </div>
                         <div className="flex items-center justify-between mt-1.5">
                           <span className="text-[10px] text-green-600 font-bold">{job.salaryRange}</span>
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${job.status === 'Open' ? 'bg-green-50 text-green-600' :
+                          <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${job.status === 'Open' ? 'bg-green-50 text-green-600' :
                             job.status === 'Filled' ? 'bg-blue-50 text-blue-600' :
                               'bg-slate-100 text-slate-500'
                             }`}>{job.status}</span>
