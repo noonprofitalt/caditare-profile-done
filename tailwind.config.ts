@@ -30,6 +30,26 @@ export default {
                     950: '#020617',
                 },
             },
+            screens: {
+                'xs': '475px',
+                // Tailwind defaults remain: sm:640, md:768, lg:1024, xl:1280, 2xl:1536
+                'touch': { 'raw': '(hover: none) and (pointer: coarse)' },
+                'hover-device': { 'raw': '(hover: hover)' },
+                'landscape': { 'raw': '(orientation: landscape) and (max-height: 500px)' },
+            },
+            spacing: {
+                'safe-bottom': 'env(safe-area-inset-bottom, 0px)',
+                'safe-top': 'env(safe-area-inset-top, 0px)',
+                'nav-height': 'var(--bottom-nav-height, 72px)',
+                'header-height': 'var(--header-height, 64px)',
+                'sidebar-width': 'var(--sidebar-width, 256px)',
+            },
+            minHeight: {
+                'dvh': '100dvh',
+            },
+            height: {
+                'dvh': '100dvh',
+            },
         },
     },
     plugins: [],

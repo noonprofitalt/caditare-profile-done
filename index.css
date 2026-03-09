@@ -25,24 +25,37 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
 
-  /* Mobile Specific */
+  /* Layout — Responsive */
   --header-height: 64px;
   --bottom-nav-height: 72px;
+  --sidebar-width: 256px;
+
+  /* Dynamic viewport height — works on modern browsers, falls back gracefully */
+  --app-vh: 1vh;
 }
 
+/* ─── BASE LAYER ─────────────────────────────────────────── */
 @layer base {
-  body {
-    @apply bg-slate-50 text-slate-900 antialiased;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Smooth Scrolling */
   html {
     scroll-behavior: smooth;
+    /* Prevent horizontal overflow on mobile */
+    overflow-x: hidden;
+    /* Use dynamic viewport height where supported */
+    height: 100dvh;
   }
 
-  /* Remove number input spinners globally — users type numbers manually */
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    /* Prevent pull-to-refresh on mobile in-app content */
+    overscroll-behavior-y: contain;
+    /* Minimum height = full viewport */
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* Remove number input spinners globally */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -53,8 +66,21 @@
     -moz-appearance: textfield;
     appearance: textfield;
   }
+
+  /* Better focus visibility for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-blue-500 outline-offset-2;
+  }
+
+  /* Ensure images are responsive by default */
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
+/* ─── COMPONENTS LAYER ───────────────────────────────────── */
 @layer components {
 
   /* Premium Glass Card System */
@@ -64,10 +90,15 @@
   }
 
   .glass-card-interactive {
-    @apply glass-card hover:bg-white/80 hover:-translate-y-0.5 active:scale-[0.98];
+    @apply glass-card hover:bg-white/80 active:scale-[0.98];
 
     &:hover {
       box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
+    }
+
+    /* Only translate on non-touch (desktop hover) */
+    @media (hover: hover) {
+      @apply hover:-translate-y-0.5;
     }
   }
 
@@ -79,12 +110,15 @@
 
   .slate-header {
     @apply font-black tracking-tighter text-slate-950;
-    font-feature-settings: \"ss01\" on, \"cv02\" on;
+    font-feature-settings: "ss01" on, "cv02" on;
   }
 
   /* Mobile-First Navigation Classes */
   .mobile-nav-item {
     @apply flex flex-col items-center justify-center gap-1 p-2 text-slate-400 transition-premium;
+    /* Minimum touch target size (44px per WCAG) */
+    min-height: 44px;
+    min-width: 44px;
   }
 
   .mobile-nav-item.active {
@@ -94,6 +128,8 @@
   /* Badge System */
   .badge {
     @apply px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-premium;
+    /* Prevent badge text from wrapping */
+    white-space: nowrap;
   }
 
   .badge-blue {
@@ -111,8 +147,43 @@
   .badge-red {
     @apply bg-red-50/50 text-red-600 border-red-100;
   }
+
+  .badge-slate {
+    @apply bg-slate-50 text-slate-600 border-slate-200;
+  }
+
+  .badge-purple {
+    @apply bg-purple-50/50 text-purple-600 border-purple-100;
+  }
+
+  /* ─── RESPONSIVE CARD SYSTEM ──────────────────────── */
+  .responsive-card {
+    @apply bg-white border border-slate-200 rounded-xl shadow-sm;
+    @apply p-4 sm:p-5 md:p-6;
+  }
+
+  /* ─── TOUCH-FRIENDLY BUTTONS ──────────────────────── */
+  .btn-touch {
+    @apply inline-flex items-center justify-center;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* ─── RESPONSIVE CONTAINER ────────────────────────── */
+  .container-responsive {
+    @apply w-full mx-auto;
+    @apply px-4 sm:px-6 md:px-8 lg:px-8;
+    @apply max-w-[1600px];
+  }
+
+  /* ─── SLATE CARD (for PipelineBoard etc.) ─────────── */
+  .slate-card-interactive {
+    @apply bg-white border border-slate-200 rounded-xl shadow-sm transition-all duration-200;
+    @apply hover:border-blue-300 hover:shadow-md active:scale-[0.98];
+  }
 }
 
+/* ─── UTILITIES LAYER ────────────────────────────────────── */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -122,16 +193,95 @@
     display: none;
   }
 
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Dynamic viewport height utility */
+  .h-dvh {
+    height: 100dvh;
+    height: 100vh;
+    /* fallback */
+  }
+
+  .min-h-dvh {
+    min-height: 100dvh;
+    min-height: 100vh;
+    /* fallback */
+  }
+
+  /* Touch manipulation for scroll containers */
+  .touch-pan {
+    touch-action: pan-x pan-y;
+  }
+
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+
+  /* Hide on specific device types */
+  .mobile-only {
+    @apply block lg:hidden;
+  }
+
+  .desktop-only {
+    @apply hidden lg:block;
+  }
+
+  .tablet-up {
+    @apply hidden md:block;
+  }
+
+  /* Truncate multiple lines */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 
-/* Custom Scrollbar Enhancement */
+/* ─── CUSTOM SCROLLBAR ───────────────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -145,7 +295,19 @@
   @apply bg-slate-200/50 rounded-full hover:bg-slate-300/50 transition-colors;
 }
 
-/* ANIMATIONS */
+/* On touch devices, hide scrollbars entirely for cleaner look */
+@media (hover: none) and (pointer: coarse) {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 2px;
+    height: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200/30;
+  }
+}
+
+/* ─── ANIMATIONS ─────────────────────────────────────────── */
 @keyframes float {
   0% {
     transform: translateY(0px);
@@ -164,18 +326,76 @@
   animation: float 3s ease-in-out infinite;
 }
 
-/* MOBILE RESPONSIVE TWEAKS */
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-float,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-ping,
+  .animate-spin {
+    animation: none !important;
+  }
+
+  .transition-premium,
+  .transition-all,
+  .transition-colors,
+  .transition-transform,
+  .transition-opacity {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── RESPONSIVE BREAKPOINT OVERRIDES ────────────────────── */
+
+/* SMALL MOBILE (< 640px) */
+@media (max-width: 639px) {
+
+  /* Prevent content from being too wide */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* TABLET (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+
+  /* Tablet-specific grid adjustments */
+  .tablet-2-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* MOBILE SIDEBAR (< 1024px) */
 @media (max-width: 1024px) {
   .sidebar-hidden {
     @apply -translate-x-full;
   }
 
   .main-content-mobile {
-    @apply ml-0 !important;
+    margin-left: 0 !important;
   }
 }
 
-/* PRINT STYLES */
+/* LANDSCAPE MODE ON MOBILE */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --bottom-nav-height: 56px;
+    --header-height: 48px;
+  }
+
+  /* Compact bottom nav in landscape */
+  .mobile-nav-item {
+    @apply gap-0 p-1;
+    min-height: 36px;
+  }
+
+  .mobile-nav-item span {
+    @apply text-[7px];
+  }
+}
+
+/* ─── PRINT STYLES ───────────────────────────────────────── */
 @media print {
   @page {
     margin: 0.5cm;
@@ -188,7 +408,7 @@
   button,
   .no-print,
   .fixed,
-  [role=\"dialog\"],
+  [role="dialog"],
   .mobile-nav {
     display: none !important;
   }

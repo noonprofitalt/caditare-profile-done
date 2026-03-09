@@ -51,8 +51,13 @@ export class CandidateService {
         }
 
         if (filters?.status && filters.status !== 'ALL') {
-            // querying inside the JSONB 'data' column
-            queryBuilder = queryBuilder.contains('data', { profileCompletionStatus: filters.status });
+            if (filters.status === 'COMPLETE') {
+                queryBuilder = queryBuilder.or('data->>profileCompletionStatus.eq.COMPLETE,data->profileCompletionPercentage.gte.75');
+            } else if (filters.status === 'PARTIAL') {
+                queryBuilder = queryBuilder.or('and(data->>profileCompletionStatus.eq.PARTIAL,data->profileCompletionPercentage.lt.75)');
+            } else {
+                queryBuilder = queryBuilder.contains('data', { profileCompletionStatus: filters.status });
+            }
         }
 
         if (filters?.query) {
@@ -371,7 +376,7 @@ export class CandidateService {
         return DataSyncService.fullSync(candidate);
     }
 
-    private static mapCandidateToRow(candidate: Candidate): any {
+    static mapCandidateToRow(candidate: Candidate): any {
         return {
             id: candidate.id,
             candidate_code: candidate.candidateCode,

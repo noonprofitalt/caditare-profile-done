@@ -6,7 +6,7 @@ import {
     Users, UserCheck, Video, Phone, Eye, CheckCircle2,
     FileText, ThumbsUp, XCircle, ChevronLeft, Plus,
     GripVertical, Clock, Star, ArrowRight, MessageSquare,
-    Send, X, Loader
+    Send, X, Loader, Trash2
 } from 'lucide-react';
 
 interface SelectionBoardProps {
@@ -143,6 +143,18 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
         }
     };
 
+    const handleDeleteSelection = async (selection: CandidateSelection) => {
+        if (!window.confirm(`Are you sure you want to remove "${selection.candidateName}" from this demand order? This will delete the matching record.`)) return;
+        try {
+            await SelectionService.delete(selection.id);
+            if (detailPanel?.id === selection.id) setDetailPanel(null);
+            loadSelections();
+            onRefresh();
+        } catch (error) {
+            console.error("Failed to delete selection", error);
+        }
+    };
+
     const fillPercent = demandOrder.positionsRequired > 0
         ? Math.round((demandOrder.positionsFilled / demandOrder.positionsRequired) * 100)
         : 0;
@@ -255,13 +267,22 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
                                                 <span className="text-[9px] text-slate-400">
                                                     {new Date(sel.updatedAt).toLocaleDateString()}
                                                 </span>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleAdvance(sel); }}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all"
-                                                    title="Advance to next stage"
-                                                >
-                                                    <ArrowRight size={12} />
-                                                </button>
+                                                <div className="flex items-center gap-1.5 peer opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDeleteSelection(sel); }}
+                                                        className="p-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all"
+                                                        title="Remove from board"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleAdvance(sel); }}
+                                                        className="p-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all"
+                                                        title="Advance to next stage"
+                                                    >
+                                                        <ArrowRight size={12} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -388,6 +409,12 @@ const SelectionBoard: React.FC<SelectionBoardProps> = ({
                                         className="w-full py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                                     >
                                         <XCircle size={16} /> Reject Candidate
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteSelection(detailPanel)}
+                                        className="w-full py-3 bg-slate-50 text-slate-400 rounded-xl text-sm font-bold hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Trash2 size={16} /> Delete Selection Record
                                     </button>
                                 </>
                             )}

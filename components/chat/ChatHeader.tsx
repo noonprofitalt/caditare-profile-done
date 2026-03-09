@@ -1,15 +1,17 @@
 import React from 'react';
-import { Users, Info, Search as SearchIcon, Hash, Star } from 'lucide-react';
+import { Search as SearchIcon, Hash, Star, Users, Info } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
+import { useAuth } from '../../context/AuthContext';
 import { ChatService } from '../../services/chatService';
 
 export const ChatHeader: React.FC<{ onToggleInfo: () => void }> = ({ onToggleInfo }) => {
     const { activeChannelId, users, toggleMobileSidebar, isMobileSidebarOpen } = useChat();
+    const { user: currentUser } = useAuth();
 
     const currentChatInfo = React.useMemo(() => {
         if (!activeChannelId) return null;
-        return ChatService.getChannelDisplay(activeChannelId, users);
-    }, [activeChannelId, users]);
+        return ChatService.getChannelDisplay(activeChannelId, users, currentUser?.id);
+    }, [activeChannelId, users, currentUser?.id]);
 
     if (!currentChatInfo) return null;
 

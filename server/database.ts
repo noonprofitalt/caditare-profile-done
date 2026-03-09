@@ -19,9 +19,15 @@ class MemoryDB {
             { id: '00000000-0000-0000-0000-000000000002', name: 'Announcements', description: 'Official company announcements', type: 'public', created_by: '00000000-0000-0000-0000-000000000000', created_at: new Date(), updated_at: new Date(), is_archived: false },
         ],
         chat_channel_members: [],
-        chat_messages: [],
+        chat_messages: [
+            { id: 'msg-1', channel_id: 'test-channel', text: 'Initial message', sender_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', sender_name: 'Test Admin', created_at: new Date(), is_deleted: false, is_system: false }
+        ],
         chat_message_reactions: [],
         chat_message_attachments: [],
+        profiles: [
+            { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', full_name: 'Test Admin', avatar_url: '' },
+            { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', full_name: 'testuser', avatar_url: '' }
+        ],
         chat_notifications: [],
         chat_typing_indicators: []
     };
@@ -72,11 +78,18 @@ class MemoryDB {
                 createdBy: c.created_by,
                 createdAt: c.created_at,
                 updatedAt: c.updated_at,
-                isArchived: c.is_archived
+                isArchived: c.is_archived,
+                contextType: c.context_type,
+                contextId: c.context_id
             }));
 
             if (sql.includes('is_archived = false')) rows = rows.filter(r => !r.isArchived);
-            if (sql.includes('c.id = $1')) rows = rows.filter(r => r.id === params[0]);
+            if (sql.includes('c.id = $1') || sql.includes('id = $1')) rows = rows.filter(r => r.id === params[0]);
+            if (sql.includes('context_type = $1') && sql.includes('context_id = $2')) {
+                rows = rows.filter(r => r.contextType === params[0] && r.contextId === params[1]);
+            } else if (sql.includes('context_type = $1')) {
+                rows = rows.filter(r => r.contextType === params[0]);
+            }
 
             return { rows, rowCount: rows.length };
         }
@@ -99,15 +112,36 @@ class MemoryDB {
             return { rows: [newChannel], rowCount: 1 };
         }
 
+        // 2.5 SELECT members
+        if (sql.includes('from chat_channel_members') && sql.startsWith('select')) {
+            let rows = [...this.tables.chat_channel_members];
+            if (sql.includes('channel_id = $1') && (sql.includes('user_id = $2') || sql.includes('user_id = $3'))) {
+                const uid = sql.includes('user_id = $2') ? params[1] : params[2];
+                rows = rows.filter(m => m.channel_id === params[0] && m.user_id === uid);
+            } else if (sql.includes('channel_id = $1')) {
+                rows = rows.filter(m => m.channel_id === params[0]);
+            }
+
+            if (sql.includes("role = 'owner'")) {
+                rows = rows.filter(m => m.role === 'owner');
+            }
+
+            return { rows, rowCount: rows.length };
+        }
+
         // 3. INSERT member
         if (sql.startsWith('insert into chat_channel_members')) {
+            let role = params[4] || 'member';
+            if (sql.includes("'owner'")) role = 'owner';
+            if (sql.includes("'admin'")) role = 'admin';
+
             const newMember = {
                 id: generateId(),
                 channel_id: params[0],
                 user_id: params[1],
                 user_name: params[2],
                 user_avatar: params[3],
-                role: params[4] || 'member',
+                role: role,
                 joined_at: new Date()
             };
             this.tables.chat_channel_members.push(newMember);
@@ -230,12 +264,76 @@ class MemoryDB {
         }
 
         // 9. Generic SELECT 1 check / mark_channel_read / notifications / cleanup / typing indicators
+        if (sql.includes('from profiles')) {
+            let rows = [...this.tables.profiles].map(p => ({ ...p, fullName: p.full_name }));
+            if (sql.includes('replace(lower(full_name), \' \', \'\') = lower($1)')) {
+                const search = params[0].toLowerCase().replace(/\s/g, '');
+                rows = rows.filter(p => p.full_name.toLowerCase().replace(/\s/g, '') === search || p.id === params[0]);
+            } else if (sql.includes('id = $1')) {
+                rows = rows.filter(p => p.id === params[0]);
+            }
+            return { rows, rowCount: rows.length };
+        }
+
+        if (sql.includes('from chat_notifications n')) {
+            const rows = [...this.tables.chat_notifications]
+                .filter(n => n.user_id === params[0])
+                .map(n => ({
+                    ...n,
+                    channelid: n.channel_id,
+                    messageid: n.message_id,
+                    isread: n.is_read || false,
+                    createdat: n.created_at || new Date(),
+                    channelname: 'Test Channel'
+                }));
+            return { rows, rowCount: rows.length };
+        }
+
+        if (sql.includes('insert into chat_notifications')) {
+            const newNotif = {
+                id: generateId(),
+                user_id: params[0],
+                type: params[1],
+                title: params[2],
+                message: params[3],
+                channel_id: params[4],
+                message_id: params[5],
+                created_at: new Date()
+            };
+            this.tables.chat_notifications.push(newNotif);
+            return { rows: [newNotif], rowCount: 1 };
+        }
+
+        if (sql.includes('insert into chat_typing_indicators') || sql.includes('delete from chat_typing_indicators')) {
+            return { rows: [], rowCount: 1 };
+        }
+
+        if (sql.includes('from users')) {
+            return { rows: [{ id: params[0], email: 'user@example.com' }], rowCount: 1 };
+        }
+
+        // Reaction aggregation query
+        if (sql.includes('count(*) as count') && sql.includes('json_agg') && sql.includes('chat_message_reactions')) {
+            const emoji = params[1];
+            const matching = this.tables.chat_message_reactions.filter(r => r.message_id === params[0] && r.emoji === emoji);
+            if (matching.length === 0) return { rows: [], rowCount: 0 };
+            return {
+                rows: [{
+                    emoji: emoji,
+                    count: matching.length,
+                    users: matching.map(r => ({ id: r.user_id, name: r.user_name }))
+                }],
+                rowCount: 1
+            };
+        }
+
         if (sql === 'select 1' || sql.includes('mark_channel_read') ||
             sql.includes('create_mention_notification') ||
             sql.includes('cleanup_old_typing_indicators') ||
             sql.includes('select 1 from chat_channels') ||
-            sql.includes('select user_id as "userid"')) {
-            return { rows: [{ id: generateId(), '1': 1 }], rowCount: 1 };
+            sql.includes('user_id as "userId"') ||
+            sql.includes('user_id as "userid"')) {
+            return { rows: [{ id: generateId(), '1': 1, userId: 'test-user', userName: 'Test' }], rowCount: 1 };
         }
 
         // Default: return empty for unhandled mock queries to avoid crashing

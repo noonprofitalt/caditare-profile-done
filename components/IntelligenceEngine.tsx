@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
    LayoutDashboard, Activity, Users, AlertTriangle, TrendingUp, DollarSign,
-   Download, RefreshCw, Server, BrainCircuit, ShieldCheck, MessageSquare, ShieldAlert
+   Download, RefreshCw, Server, BrainCircuit, ShieldCheck, MessageSquare, ShieldAlert, Bot
 } from 'lucide-react';
 import AIPlayground from './AIPlayground';
 import StaffPerformanceDashboard from './StaffPerformanceDashboard';
@@ -18,6 +18,13 @@ const IntelligenceEngine: React.FC = () => {
    const [snapshot, setSnapshot] = useState<SystemSnapshot | null>(null);
    const [activeTab, setActiveTab] = useState<'dashboard' | 'workflow' | 'staff' | 'financial' | 'assistant'>('dashboard');
    const [isLoading, setIsLoading] = useState(false);
+   const [aiPrompt, setAiPrompt] = useState<string | undefined>(undefined);
+
+   const askAI = (prompt: string) => {
+      setAiPrompt(prompt);
+      setActiveTab('assistant');
+      setTimeout(() => setAiPrompt(undefined), 100);
+   };
 
    const refreshData = async () => {
       setIsLoading(true);
@@ -69,7 +76,7 @@ const IntelligenceEngine: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                      <div>
                         <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">Est. Revenue</p>
-                        <h3 className="text-3xl font-bold text-slate-800">${snapshot.kpi.revenueEst.toLocaleString()}</h3>
+                        <h3 className="text-3xl font-bold text-slate-800">${snapshot.kpi.revenueEst.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                      </div>
                      <DollarSign className="text-green-500 bg-green-50 p-1.5 rounded-lg" size={32} />
                   </div>
@@ -85,7 +92,13 @@ const IntelligenceEngine: React.FC = () => {
                   </div>
                   <AlertTriangle className="text-red-500 bg-red-50 p-1.5 rounded-lg" size={32} />
                </div>
-               <p className="text-xs text-red-500 font-medium">SLA Breaches Detected</p>
+               <p className="text-xs text-red-500 font-medium mb-3">SLA Breaches Detected</p>
+               <button
+                  onClick={() => askAI("Audit our current bottlenecks. Which stages are most critical and what's the recommended fix?")}
+                  className="w-full py-2 bg-white border border-slate-200 text-slate-700 text-[11px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center justify-center gap-2 shadow-sm"
+               >
+                  <Bot size={14} className="text-blue-500" /> AI Audit Stages
+               </button>
             </div>
 
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
@@ -198,6 +211,16 @@ const IntelligenceEngine: React.FC = () => {
          <h3 className="text-xl font-bold text-slate-800 mb-2">Detailed Workflow Analytics</h3>
          <p className="text-slate-500 mb-8">Process mining data regarding stage duration and efficiency.</p>
 
+         <div className="flex gap-4 mb-8">
+            <button
+               onClick={() => askAI("Analyze our workflow efficiency. Which stage has the highest attrition or delay, and how can we optimize it based on SLA compliance?")}
+               className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
+            >
+               <Bot size={16} className="text-blue-500" />
+               AI Process Mining Audit
+            </button>
+         </div>
+
          <div className="h-96 w-full">
             <ResponsiveContainer width="100%" height="100%">
                <AreaChart data={snapshot.bottlenecks}>
@@ -259,7 +282,22 @@ const IntelligenceEngine: React.FC = () => {
    );
 
    const renderStaffMetrics = () => (
-      <StaffPerformanceDashboard staffMetrics={snapshot.staffMetrics} />
+      <div className="space-y-6">
+         <div className="flex justify-between items-end">
+            <div>
+               <h3 className="text-xl font-bold text-slate-800 mb-2">Staff Productivity Performance</h3>
+               <p className="text-slate-500">Cross-departmental activity analysis and throughput metrics.</p>
+            </div>
+            <button
+               onClick={() => askAI("Analyze our staff performance metrics. Who are the top performers, and where do we need additional training or resource allocation based on current action volumes?")}
+               className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
+            >
+               <Bot size={16} className="text-blue-500" />
+               AI Performance Audit
+            </button>
+         </div>
+         <StaffPerformanceDashboard staffMetrics={snapshot.staffMetrics} />
+      </div>
    );
 
    return (
@@ -299,7 +337,7 @@ const IntelligenceEngine: React.FC = () => {
                { id: 'workflow', label: 'Workflow Analytics', icon: Server },
                { id: 'staff', label: 'Staff Performance', icon: Users },
                ...(isAdmin ? [{ id: 'financial', label: 'Financials', icon: DollarSign }] : []),
-               { id: 'assistant', label: 'AI Assistant', icon: BrainCircuit },
+               { id: 'assistant', label: 'AI Assistant', icon: Bot },
             ].map(tab => (
                <button
                   key={tab.id}
@@ -319,13 +357,26 @@ const IntelligenceEngine: React.FC = () => {
             {activeTab === 'staff' && renderStaffMetrics()}
             {activeTab === 'financial' && (
                <div className="space-y-6">
+                  <div className="flex justify-between items-end mb-2">
+                     <div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">Financial Performance</h3>
+                        <p className="text-slate-500">Revenue tracking, conversion value, and collection metrics.</p>
+                     </div>
+                     <button
+                        onClick={() => askAI("Analyze our financial health. Are we meeting our collection targets? What is the projected revenue discrepancy and how can we optimize current invoice clearing?")}
+                        className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
+                     >
+                        <Bot size={16} className="text-blue-500" />
+                        AI Revenue Strategy
+                     </button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex justify-between items-start mb-2">
                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Collected</p>
                            <div className="p-1.5 bg-green-50 text-green-600 rounded-lg"><DollarSign size={16} /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.totalCollected.toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                         <div className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
                            <TrendingUp size={12} /> Cash on hand
                         </div>
@@ -336,7 +387,7 @@ const IntelligenceEngine: React.FC = () => {
                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending (Invoiced)</p>
                            <div className="p-1.5 bg-orange-50 text-orange-600 rounded-lg"><Activity size={16} /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.pendingCollection.toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.pendingCollection.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                         <div className="mt-2 text-xs text-orange-600 font-medium">Outstanding receivables</div>
                      </div>
 
@@ -345,7 +396,7 @@ const IntelligenceEngine: React.FC = () => {
                            <p className="text-xs font-bold text-blue-500 uppercase tracking-wider">Projected (30 Days)</p>
                            <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg"><TrendingUp size={16} /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-blue-900">${snapshot.financials.projectedRevenue.toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-blue-900">${snapshot.financials.projectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                         <div className="mt-2 text-xs text-blue-600 font-medium">Estimated from high-prob leads</div>
                      </div>
 
@@ -354,7 +405,7 @@ const IntelligenceEngine: React.FC = () => {
                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pipeline Value</p>
                            <div className="p-1.5 bg-slate-100 text-slate-600 rounded-lg"><LayoutDashboard size={16} /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.pipelineValue.toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.pipelineValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                         <div className="mt-2 text-xs text-slate-400 font-medium">Full potential of active funnel</div>
                      </div>
                   </div>
@@ -398,7 +449,7 @@ const IntelligenceEngine: React.FC = () => {
                               />
                               <RechartsTooltip
                                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                 formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                                 formatter={(value: number) => [`$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
                               />
                               <Area
                                  type="monotone"
@@ -443,7 +494,7 @@ const IntelligenceEngine: React.FC = () => {
                                  <p className="text-xs text-slate-500">Expected revenue from candidates near departure</p>
                               </div>
                               <span className="text-sm font-bold text-blue-600">
-                                 +${snapshot.financials.projectedRevenue.toLocaleString()}
+                                 +${snapshot.financials.projectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                            </div>
                            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
@@ -464,7 +515,7 @@ const IntelligenceEngine: React.FC = () => {
                   </div>
                </div>
             )}
-            {activeTab === 'assistant' && <AIPlayground />}
+            {activeTab === 'assistant' && <AIPlayground snapshot={snapshot} initialPrompt={aiPrompt} />}
          </div>
       </div>
    );

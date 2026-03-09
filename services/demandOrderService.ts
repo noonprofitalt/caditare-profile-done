@@ -81,6 +81,7 @@ export class DemandOrderService {
                 benefits: order.benefits,
                 deadline: order.deadline,
                 notes: order.notes,
+                country: order.country,
                 activityLog: order.activityLog || [{
                     id: `act-${Date.now()}`,
                     type: 'Note',
@@ -136,6 +137,7 @@ export class DemandOrderService {
                 benefits: updated.benefits,
                 deadline: updated.deadline,
                 notes: updated.notes,
+                country: updated.country,
                 activityLog: updated.activityLog || []
             }
         };
@@ -216,7 +218,7 @@ export class DemandOrderService {
             employerId: dbRecord.employer_id,
             title: dbRecord.title || '',
             jobCategory: dbRecord.category || '',
-            country: dbRecord.country || dbRecord.location?.split(',').pop()?.trim() || 'Qatar', // Use db value if available, or try to infer from location
+            country: dbRecord.data?.country || dbRecord.location?.split(',').pop()?.trim() || 'Qatar', // Use data value if available, or try to infer from location
             location: dbRecord.location || '',
             positionsRequired: dbRecord.positions || 1,
             positionsFilled: dbRecord.data?.positionsFilled || 0,

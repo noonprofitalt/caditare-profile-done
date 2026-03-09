@@ -13,7 +13,7 @@ import {
     Building2, Users, MapPin, Mail,
     ShieldCheck, AlertTriangle, Clock, Search, Plus,
     ChevronRight, FileText, Star,
-    Briefcase, Package, LayoutDashboard, Kanban
+    Briefcase, Package, LayoutDashboard, Kanban, Edit2, Trash2
 } from 'lucide-react';
 import DemandOrderList from './employer/DemandOrderList';
 import DemandOrderForm from './employer/DemandOrderForm';
@@ -45,6 +45,7 @@ const PartnerManager: React.FC = () => {
 
     // Modal State
     const [showAddPartner, setShowAddPartner] = useState(false);
+    const [showEditPartner, setShowEditPartner] = useState(false);
     const [showDemandForm, setShowDemandForm] = useState(false);
     const [editingOrder, setEditingOrder] = useState<DemandOrder | undefined>();
     const [selectedOrder, setSelectedOrder] = useState<DemandOrder | null>(null);
@@ -162,6 +163,32 @@ const PartnerManager: React.FC = () => {
         setSelectedOrder(null);
     };
 
+    const handleDeletePartner = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this partner? This action cannot be undone.")) return;
+        try {
+            await PartnerService.deleteEmployer(id);
+            triggerRefresh();
+            setSelectedEmployer(null);
+        } catch (error) {
+            console.error("Failed to delete partner", error);
+        }
+    };
+
+    const handleEditDemandOrder = (order: DemandOrder) => {
+        setEditingOrder(order);
+        setShowDemandForm(true);
+    };
+
+    const handleDeleteDemandOrder = async (id: string, name: string) => {
+        if (!window.confirm(`Are you sure you want to delete the demand order "${name}"? This action cannot be undone.`)) return;
+        try {
+            await DemandOrderService.delete(id);
+            triggerRefresh();
+        } catch (error) {
+            console.error("Failed to delete demand order", error);
+        }
+    };
+
     if (isLoading) return (
         <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center h-96 gap-4">
             <Building2 size={48} className="text-blue-600 animate-pulse" />
@@ -178,7 +205,7 @@ const PartnerManager: React.FC = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in pb-24 md:pb-8 duration-500">
+        <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in pb-24 md:pb-8 duration-500">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-bold text-slate-900">Employer CRM</h2>
@@ -186,9 +213,9 @@ const PartnerManager: React.FC = () => {
                 </div>
                 <button
                     onClick={() => setShowAddPartner(true)}
-                    className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all"
+                    className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm btn-touch"
                 >
-                    <Plus size={18} /> Add New Partner
+                    <Plus size={16} /> <span className="hidden sm:inline">Add New Partner</span><span className="sm:hidden">Add</span>
                 </button>
             </div>
 
@@ -202,12 +229,12 @@ const PartnerManager: React.FC = () => {
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-4">
-                            <div className={`p-3 ${stat.bg} ${stat.color} rounded-xl`}>
-                                <stat.icon size={24} />
+                            <div className={`p-2.5 md:p-3 ${stat.bg} ${stat.color} rounded-xl shrink-0`}>
+                                <stat.icon size={20} className="md:w-6 md:h-6" />
                             </div>
-                            <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                                <h4 className="text-2xl font-black text-slate-800">{stat.value}</h4>
+                            <div className="min-w-0">
+                                <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest truncate">{stat.label}</p>
+                                <h4 className="text-xl md:text-2xl font-black text-slate-800">{stat.value}</h4>
                             </div>
                         </div>
                     </div>
@@ -228,7 +255,7 @@ const PartnerManager: React.FC = () => {
                         />
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden max-h-[calc(100vh-360px)] overflow-y-auto">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden max-h-[50dvh] lg:max-h-[calc(100dvh-360px)] overflow-y-auto touch-pan-y">
                         {filteredEmployers.map(employer => {
                             const quotaPercent = employer.quotaTotal ? Math.round((employer.quotaUsed || 0) / employer.quotaTotal * 100) : 0;
                             // Need to count orders from allOrders since we can't fetch per employer in list efficiently without N+1
@@ -314,10 +341,16 @@ const PartnerManager: React.FC = () => {
                                         </span>
                                         <Link
                                             to={`/jobs?employer=${selectedEmployer.id}`}
-                                            className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-all shrink-0"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-white text-slate-700 rounded-lg text-xs font-medium border border-slate-200 hover:text-blue-600 transition-all shrink-0 shadow-sm"
                                         >
-                                            <Briefcase size={12} className="hidden sm:block" /> View Jobs ({employerJobs.length})
+                                            <Briefcase size={12} className="hidden sm:block text-slate-400 group-hover:text-blue-500" /> View Jobs ({employerJobs.length})
                                         </Link>
+                                        <button onClick={() => setShowEditPartner(true)} className="p-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-blue-100 hover:text-blue-600 transition-colors" title="Edit Partner">
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button onClick={() => handleDeletePartner(selectedEmployer.id)} className="p-1.5 bg-slate-100 text-red-500 rounded-lg hover:bg-red-100 transition-colors" title="Delete Partner">
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
                                 </div>
 
@@ -347,7 +380,7 @@ const PartnerManager: React.FC = () => {
                             </div>
 
                             {/* Tab Navigation */}
-                            <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                            <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto scrollbar-none snap-x snap-mandatory shrink-0">
                                 {([
                                     { key: 'overview' as DetailTab, label: 'Overview', icon: <LayoutDashboard size={14} /> },
                                     { key: 'demands' as DetailTab, label: 'Demand Orders', icon: <Package size={14} /> },
@@ -359,7 +392,7 @@ const PartnerManager: React.FC = () => {
                                             setActiveTab(tab.key);
                                             if (tab.key !== 'selection') setSelectedOrder(null);
                                         }}
-                                        className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === tab.key
+                                        className={`flex-1 shrink-0 px-4 py-3 md:py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all whitespace-nowrap btn-touch snap-start ${activeTab === tab.key
                                             ? 'bg-white text-slate-800 shadow-sm'
                                             : 'text-slate-500 hover:text-slate-700'
                                             }`}
@@ -473,22 +506,22 @@ const PartnerManager: React.FC = () => {
                                     </div>
 
                                     {/* Action Buttons */}
-                                    <div className="lg:col-span-2 flex gap-3">
+                                    <div className="lg:col-span-2 flex flex-col sm:flex-row gap-3">
                                         <button
                                             onClick={() => navigate(`/jobs?employer=${selectedEmployer.id}`)}
-                                            className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all"
+                                            className="flex-1 py-3 sm:py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm flex justify-center items-center btn-touch"
                                         >
                                             Manage Jobs
                                         </button>
                                         <button
                                             onClick={() => { setActiveTab('demands'); setShowDemandForm(true); }}
-                                            className="flex-1 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 transition-all"
+                                            className="flex-1 py-3 sm:py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm flex justify-center items-center btn-touch"
                                         >
                                             Create Demand Order
                                         </button>
                                         <a
                                             href={`mailto:${selectedEmployer.email}`}
-                                            className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center"
+                                            className="p-3 sm:p-2.5 bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center justify-center shadow-sm shrink-0 btn-touch"
                                         >
                                             <Mail size={18} />
                                         </a>
@@ -504,6 +537,8 @@ const PartnerManager: React.FC = () => {
                                         setSelectedOrder(order);
                                         setActiveTab('selection');
                                     }}
+                                    onEditOrder={handleEditDemandOrder}
+                                    onDeleteOrder={handleDeleteDemandOrder}
                                     selectedOrderId={selectedOrder?.id}
                                     onCreateNew={() => {
                                         setEditingOrder(undefined);
@@ -553,6 +588,18 @@ const PartnerManager: React.FC = () => {
                     onClose={() => setShowAddPartner(false)}
                     onSaved={(emp) => {
                         setShowAddPartner(false);
+                        setSelectedEmployer(emp);
+                        triggerRefresh();
+                    }}
+                />
+            )}
+
+            {showEditPartner && selectedEmployer && (
+                <AddPartnerModal
+                    existingEmployer={selectedEmployer}
+                    onClose={() => setShowEditPartner(false)}
+                    onSaved={(emp) => {
+                        setShowEditPartner(false);
                         setSelectedEmployer(emp);
                         triggerRefresh();
                     }}

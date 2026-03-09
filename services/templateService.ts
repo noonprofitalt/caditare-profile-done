@@ -12,6 +12,11 @@ const REGISTRATION_DOCS: CountryTemplate['requiredDocuments'] = [
     { type: DocumentType.PASSPORT_PHOTOS, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
     { type: DocumentType.FULL_PHOTO, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
     { type: DocumentType.EDU_OL, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
+    { type: DocumentType.CDF, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
+    { type: DocumentType.ADDITIONAL_DOCUMENTS, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: false },
+    { type: DocumentType.ID_CARD, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: true },
+    { type: DocumentType.DRIVING_LICENSE, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: false },
+    { type: DocumentType.DRIVING_LICENSE_INTERNATIONAL, category: DocumentCategory.MANDATORY_REGISTRATION, mandatory: false },
 ];
 
 const MEDICAL_SECURITY_DOCS: CountryTemplate['requiredDocuments'] = [

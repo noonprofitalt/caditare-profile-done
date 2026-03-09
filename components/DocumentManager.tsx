@@ -18,6 +18,12 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   const [dragActive, setDragActive] = useState(false);
   const [isUploadingZip, setIsUploadingZip] = useState(false);
 
+  // Synchronous ref to prevent stale closures during rapid-fire verifications/uploads
+  const docsRef = React.useRef<CandidateDocument[]>(candidate.documents || []);
+  React.useEffect(() => {
+    docsRef.current = candidate.documents || [];
+  }, [candidate.documents]);
+
   // Document Type to Category Mapping
   const docTypeToCategory: Record<DocType, DocumentCategory> = {
     [DocType.PASSPORT]: DocumentCategory.MANDATORY_REGISTRATION,
@@ -28,6 +34,11 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     [DocType.EDU_AL]: DocumentCategory.MANDATORY_REGISTRATION,
     [DocType.EDU_LEARNING]: DocumentCategory.MANDATORY_REGISTRATION,
     [DocType.EDU_PROFESSIONAL]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.CDF]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.ADDITIONAL_DOCUMENTS]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.ID_CARD]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.DRIVING_LICENSE]: DocumentCategory.MANDATORY_REGISTRATION,
+    [DocType.DRIVING_LICENSE_INTERNATIONAL]: DocumentCategory.MANDATORY_REGISTRATION,
     // Medical & Security
     [DocType.MEDICAL_REPORT]: DocumentCategory.MEDICAL_SECURITY,
     [DocType.POLICE_CLEARANCE]: DocumentCategory.MEDICAL_SECURITY,
@@ -66,7 +77,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   // Generate full document list with placeholders for missing ones
   const allDocTypes = Object.values(DocType);
   const fullDocumentList: CandidateDocument[] = allDocTypes.map(type => {
-    const existing = candidate.documents?.find(d => d.type === type);
+    const existing = docsRef.current.find(d => d.type === type);
     if (existing) return existing;
 
     // Create a virtual missing document
@@ -130,6 +141,13 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
     if (fn.includes('course')) return DocType.COURSE_CERTIFICATES;
     if (fn.includes('family')) return DocType.FAMILY_BACKGROUND_REPORT;
     if (fn.includes('advance')) return DocType.ADVANCE_PAYMENT_RECEIPT;
+    if (fn.includes('cdf')) return DocType.CDF;
+    if (fn.match(/\bid\b|id card/i)) return DocType.ID_CARD;
+    if (fn.match(/driving|license|licence/i)) {
+      if (fn.match(/international/i)) return DocType.DRIVING_LICENSE_INTERNATIONAL;
+      return DocType.DRIVING_LICENSE;
+    }
+    if (fn.includes('additional')) return DocType.ADDITIONAL_DOCUMENTS;
     if (fn.includes('d-form') || fn.includes('d form')) return DocType.D_FORM;
     if (fn.includes('insurance')) return fn.includes('travel') ? DocType.TRAVEL_INSURANCE : DocType.SLBFE_INSURANCE;
 
@@ -168,7 +186,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
           file: f,
           type: docType,
           category,
-          existingDoc: candidate.documents?.find(d => d.type === docType)
+          existingDoc: docsRef.current.find(d => d.type === docType)
         });
       }
 
@@ -188,7 +206,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
         message: `Starting upload of ${filesToUpload.length} recognized documents...`
       });
 
-      const newAuthDocsList: CandidateDocument[] = [...(candidate.documents || [])];
+      const newAuthDocsList: CandidateDocument[] = [...docsRef.current];
       let uploadCount = 0;
 
       for (const item of filesToUpload) {
@@ -230,6 +248,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
         uploadCount++;
       }
 
+      docsRef.current = newAuthDocsList; // Keep reference strictly up to date
       // Trigger parent update
       onUpdate(newAuthDocsList);
 
@@ -252,13 +271,17 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   };
 
   const handleFileUpload = async (type: DocType, category: DocumentCategory, file: File) => {
-    const existingDoc = candidate.documents?.find(d => d.type === type);
+    const existingDoc = docsRef.current.find(d => d.type === type);
 
     // Upload to Supabase Storage
     const { path, url, error } = await DocumentService.uploadDocument(file, candidate.id, type);
 
     if (error) {
-      alert(`Failed to upload document: ${error.message}`);
+      NotificationService.addNotification({
+        type: 'WARNING',
+        title: 'Upload Failed',
+        message: `Failed to upload document: ${error.message}`
+      });
       return;
     }
 
@@ -328,7 +351,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
   };
 
   const updateDocumentInList = (updatedDoc: CandidateDocument) => {
-    const currentDocuments = candidate.documents || [];
+    const currentDocuments = docsRef.current;
     const index = currentDocuments.findIndex(d => d.id === updatedDoc.id || (d.id.startsWith('virtual-') && d.type === updatedDoc.type));
 
     let newDocs: CandidateDocument[];
@@ -339,6 +362,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
       newDocs = [...currentDocuments, updatedDoc];
     }
 
+    docsRef.current = newDocs; // Lock in the synchronous change
     onUpdate(newDocs);
   };
 
@@ -452,8 +476,8 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
               <label
                 htmlFor="bulk-zip-upload"
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-premium cursor-pointer ${isUploadingZip
-                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm'
+                  ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm'
                   }`}
               >
                 {isUploadingZip ? (
@@ -621,7 +645,7 @@ const VerifyModal: React.FC<VerifyModalProps> = ({ selectedDoc, onClose, onVerif
                 <p className="text-slate-900 font-semibold mb-1">Pending Digital Upload</p>
                 <p className="text-slate-500 text-sm max-w-[240px]">This document record has been created, but the physical file has not been digitized and uploaded to the registry.</p>
                 <div className="mt-6 px-3 py-1 bg-slate-50 border border-slate-200 rounded-md">
-                   <p className="font-mono text-xs text-slate-500 uppercase">{selectedDoc.type} • Revision {selectedDoc.version}</p>
+                  <p className="font-mono text-xs text-slate-500 uppercase">{selectedDoc.type} • Revision {selectedDoc.version}</p>
                 </div>
               </div>
             )}

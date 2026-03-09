@@ -3,6 +3,8 @@ import {
     DndContext,
     DragOverlay,
     PointerSensor,
+    TouchSensor,
+    KeyboardSensor,
     useSensor,
     useSensors,
     closestCorners,
@@ -14,7 +16,8 @@ import { useCandidates } from '../context/CandidateContext';
 import {
     SortableContext,
     verticalListSortingStrategy,
-    useSortable
+    useSortable,
+    sortableKeyboardCoordinates
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { CandidateService } from '../services/candidateService';
@@ -157,7 +160,9 @@ const PipelineBoard: React.FC = () => {
 
     // FRICTIONLESS: Removed activationConstraint (distance: 8) so drag starts instantly without requiring initial movement.
     const sensors = useSensors(
-        useSensor(PointerSensor)
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
     // Initial load handled by context
@@ -228,9 +233,9 @@ const PipelineBoard: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-50">
+        <div className="flex flex-col h-[calc(100dvh-4rem)] h-[calc(100vh-4rem)] bg-slate-50">
             {/* Search & Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between px-4 md:px-8 py-4 bg-white border-b border-slate-200 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 md:px-8 py-3 sm:py-4 bg-white border-b border-slate-200 gap-3 sm:gap-4 shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <h1 className="slate-header text-lg md:text-xl">Visual Pipeline</h1>
@@ -242,26 +247,26 @@ const PipelineBoard: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="relative group flex-1 md:flex-none">
+                    <div className="relative group flex-1 sm:flex-none">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={14} />
                         <input
                             type="text"
                             placeholder="Locate Identity..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all md:w-64 uppercase tracking-tighter"
+                            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all sm:w-48 md:w-64 uppercase tracking-tighter btn-touch"
                         />
                     </div>
-                    <button className="slate-card flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 transition-premium active:scale-95 shadow-sm">
+                    <button className="slate-card-interactive flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 transition-premium active:scale-95 shadow-sm btn-touch">
                         <Filter size={14} />
-                        <span className="hidden md:block text-[10px] font-black uppercase tracking-widest">Filters</span>
+                        <span className="hidden sm:block text-[10px] font-black uppercase tracking-widest">Filters</span>
                     </button>
                 </div>
             </div>
 
             {/* Board Container */}
-            <div className="flex-1 overflow-x-auto p-4 md:p-8 custom-scrollbar">
-                <div className="flex h-full gap-6 min-w-max">
+            <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-4 md:p-8 custom-scrollbar touch-pan-x pb-[calc(var(--bottom-nav-height)+1rem)] lg:pb-8">
+                <div className="flex h-full gap-4 sm:gap-6 min-w-max">
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCorners}

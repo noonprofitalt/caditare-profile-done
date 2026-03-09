@@ -10,31 +10,29 @@ interface CandidateHeroProps {
 const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
     // Get profile completion badge
     const getCompletionBadge = () => {
-        switch (candidate.profileCompletionStatus) {
-            case ProfileCompletionStatus.QUICK:
-                return (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 text-red-700 border border-red-200 rounded-md">
-                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Quick Form</span>
-                    </div>
-                );
-            case ProfileCompletionStatus.PARTIAL:
-                return (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-md">
-                        <TrendingUp size={12} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">{candidate.profileCompletionPercentage}% Complete</span>
-                    </div>
-                );
-            case ProfileCompletionStatus.COMPLETE:
-                return (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 border border-green-200 rounded-md">
-                        <CheckCircle size={12} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Profile Complete</span>
-                    </div>
-                );
-            default:
-                return null;
+        if (candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || candidate.profileCompletionPercentage >= 75) {
+            return (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 border border-green-200 rounded-md">
+                    <CheckCircle size={12} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Profile Complete</span>
+                </div>
+            );
+        } else if (candidate.profileCompletionStatus === ProfileCompletionStatus.PARTIAL) {
+            return (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-md">
+                    <TrendingUp size={12} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">{candidate.profileCompletionPercentage}% Complete</span>
+                </div>
+            );
+        } else if (candidate.profileCompletionStatus === ProfileCompletionStatus.QUICK) {
+            return (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 text-red-700 border border-red-200 rounded-md">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Quick Form</span>
+                </div>
+            );
         }
+        return null;
     };
 
     const getStageColor = () => {
@@ -99,8 +97,11 @@ const CandidateHero: React.FC<CandidateHeroProps> = ({ candidate }) => {
                             alt={candidate.name}
                             className="w-24 h-24 rounded-full border border-slate-200 shadow-sm object-cover"
                         />
-                        <div className="absolute bottom-0 right-0 w-6 h-6 bg-emerald-100 border-2 border-white rounded-full flex items-center justify-center">
-                            <CheckCircle size={12} className="text-emerald-600" />
+                        <div className={`absolute bottom-0 right-0 w-6 h-6 border-2 border-white rounded-full flex items-center justify-center ${candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || candidate.profileCompletionPercentage >= 75 ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                            {candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || candidate.profileCompletionPercentage >= 75 ?
+                                <CheckCircle size={12} className="text-emerald-600" /> :
+                                <TrendingUp size={12} className="text-amber-600" />
+                            }
                         </div>
                     </div>
 

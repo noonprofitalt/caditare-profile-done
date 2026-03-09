@@ -4,6 +4,7 @@ import { GEMINI_PROMPTS } from "./geminiPrompts";
 import { CacheEntry, GeminiMatchResult, GeminiReportInsightsResult } from "./geminiTypes";
 
 const API_KEY_STORAGE_KEY = 'globalworkforce_gemini_api_key';
+const MODEL_STORAGE_KEY = 'globalworkforce_gemini_model';
 const CACHE_KEY_PREFIX = 'gemini_cache_';
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes
 
@@ -14,13 +15,18 @@ export class GeminiService {
         return localStorage.getItem(API_KEY_STORAGE_KEY);
     }
 
+    static getModelPref(): string {
+        return localStorage.getItem(MODEL_STORAGE_KEY) || 'gemini-1.5-flash';
+    }
+
     private static async getModel() {
         const apiKey = this.getApiKey();
         if (!apiKey) {
             throw new Error("Gemini API Key not found in settings.");
         }
         const genAI = new GoogleGenerativeAI(apiKey);
-        return genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const modelName = this.getModelPref();
+        return genAI.getGenerativeModel({ model: modelName });
     }
 
     static clearCache(): void {
@@ -139,26 +145,26 @@ export class GeminiService {
         }
     }
 
-    static async chat(message: string, context?: string): Promise<string> {
+    static async chat(message: string, snapshot?: SystemSnapshot | null): Promise<string> {
         try {
             return await this.withRetry(async () => {
                 const model = await this.getModel();
 
-                // If context isn't provided, try to generate a brief system context if it's the first message or data is requested
-                let activeContext = context || "";
-                if (!context && (message.toLowerCase().includes('data') || message.toLowerCase().includes('stat') || message.toLowerCase().includes('candidate') || message.toLowerCase().includes('who') || message.toLowerCase().includes('how'))) {
-                    const { ReportingService } = await import('./reportingService');
-                    const { CandidateService } = await import('./candidateService');
-                    const snapshot = await ReportingService.getSystemSnapshot();
-                    const candidates = await CandidateService.getCandidates();
+                let activeContext = "";
 
-                    activeContext = `SYSTEM SNAPSHOT (CURRENT LIVE DATA):
-- Total: ${snapshot.kpi.totalCandidates} candidates
-- Active: ${snapshot.kpi.activeProcessing} processing
-- Revenue Collected: $${snapshot.financials.totalCollected.toLocaleString()}
-- Pipeline Value: $${snapshot.financials.pipelineValue.toLocaleString()}
-- Critical Bottlenecks: ${snapshot.bottlenecks.filter(b => b.status === 'Critical').map(b => `${b.stage} (${b.count} delayed, ${b.avgDays}d avg)`).join(', ') || 'None'}
-- Top Candidates: ${candidates.slice(0, 3).map(c => `${c.name} (${c.stage})`).join(', ')}`;
+                if (snapshot) {
+                    activeContext = `SYSTEM SNAPSHOT (LIVE DATA FEED):
+- Metrics: ${snapshot.kpi.totalCandidates} Total, ${snapshot.kpi.activeProcessing} Active.
+- Financials: $${snapshot.financials.totalCollected.toLocaleString()} Collected.
+- Potential: $${snapshot.financials.pipelineValue.toLocaleString()}.
+- Critical Bottlenecks: ${snapshot.bottlenecks.filter(b => b.status === 'Critical').map(b => `${b.stage} (${b.count} delayed)`).join(', ') || 'None'}.`;
+                } else if (message.toLowerCase().includes('data') || message.toLowerCase().includes('stat')) {
+                    const { ReportingService } = await import('./reportingService');
+                    const lazySnapshot = await ReportingService.getSystemSnapshot();
+                    activeContext = `SYSTEM SNAPSHOT (AUTO):
+- Total: ${lazySnapshot.kpi.totalCandidates}
+- Collected: $${lazySnapshot.financials.totalCollected.toLocaleString()}
+- Bottlenecks: ${lazySnapshot.bottlenecks.filter(b => b.status === 'Critical').length} Critical stages.`;
                 }
 
                 const prompt = `
@@ -216,7 +222,35 @@ RESPONSE:`;
         localStorage.setItem(API_KEY_STORAGE_KEY, key);
     }
 
+    static saveModelPref(modelName: string): void {
+        localStorage.setItem(MODEL_STORAGE_KEY, modelName);
+    }
+
     static hasApiKey(): boolean {
         return !!this.getApiKey();
+    }
+
+    static async testConnection(apiKey: string, modelName: string): Promise<{ success: boolean; message: string }> {
+        try {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: modelName });
+
+            // Send a tiny prompt just to verify the handshake works
+            const result = await model.generateContent("Respond with the exact word: OK");
+            const responseText = await result.response.text();
+
+            if (responseText.toLowerCase().includes('ok')) {
+                return { success: true, message: `Successfully connected to ${modelName}` };
+            } else {
+                return { success: false, message: 'Connected, but received unexpected response format.' };
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                message: error.message?.includes('API key not valid')
+                    ? 'Invalid API Key provided.'
+                    : `Connection Error: ${error.message || 'Unknown error'}`
+            };
+        }
     }
 }

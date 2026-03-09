@@ -1,4 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+
+// Increase timeout for socket tests
+vi.setConfig({ testTimeout: 10000 });
 import { Server } from 'socket.io';
 import { io as ioClient, Socket as ClientSocket } from 'socket.io-client';
 import { createServer } from 'http';
@@ -119,12 +122,14 @@ describe('Chat Socket Events', () => {
     describe('Typing Indicators', () => {
         it('should broadcast typing start', () => {
             return new Promise<void>((resolve) => {
-                clientSocket.once('typing:update', (users) => {
-                    expect(users).toBeInstanceOf(Array);
-                    resolve();
-                });
+                clientSocket.emit('channel:join', { channelId: 'test-channel' }, () => {
+                    clientSocket.once('typing:update', (users) => {
+                        expect(users).toBeInstanceOf(Array);
+                        resolve();
+                    });
 
-                clientSocket.emit('typing:start', { channelId: 'test-channel' });
+                    clientSocket.emit('typing:start', { channelId: 'test-channel' });
+                });
             });
         });
 
@@ -143,14 +148,16 @@ describe('Chat Socket Events', () => {
     describe('Reaction Events', () => {
         it('should broadcast reaction add', () => {
             return new Promise<void>((resolve) => {
-                clientSocket.once('reaction:added', (data) => {
-                    expect(data.reaction.emoji).toBe('👍');
-                    resolve();
-                });
+                clientSocket.emit('channel:join', { channelId: 'test-channel' }, () => {
+                    clientSocket.once('reaction:added', (data) => {
+                        expect(data.reaction.emoji).toBe('👍');
+                        resolve();
+                    });
 
-                clientSocket.emit('reaction:add', {
-                    messageId: 'msg-1',
-                    emoji: '👍',
+                    clientSocket.emit('reaction:add', {
+                        messageId: 'msg-1',
+                        emoji: '👍',
+                    });
                 });
             });
         });

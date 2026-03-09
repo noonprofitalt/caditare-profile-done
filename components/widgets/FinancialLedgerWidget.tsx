@@ -1,229 +1,270 @@
 import React from 'react';
 import { Candidate, AdvancePayment, AdvancePaymentType } from '../../types';
-import { DollarSign, FileText, Calendar, CheckSquare, Square, Save, Info, Plus } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 
 interface FinancialLedgerWidgetProps {
     candidate: Candidate;
     isEditing?: boolean;
-    onUpdate?: (payments: AdvancePayment[]) => void;
+    onUpdate?: (payments: AdvancePayment[], usdRateEmb?: number, usdRateFA?: number) => void;
 }
 
-const DEFAULT_ROWS: AdvancePaymentType[] = [
-    AdvancePaymentType.REGISTER_FEE,
-    AdvancePaymentType.OFFER,
-    AdvancePaymentType.WORK_PERMIT,
-    AdvancePaymentType.EMB_USD,
-    AdvancePaymentType.BALANCE_PAY,
-    AdvancePaymentType.TICKET,
-    AdvancePaymentType.DEPOSIT,
-    AdvancePaymentType.OTHER,
+const DEFAULT_ROWS: string[] = [
+    'Register Fee',
+    'Offer',
+    'Work Permit',
+    'Embassy USD',
+    'Balance Pay',
+    'Ticket',
+    'Deposit',
+    'Other'
 ];
-
-// Helper to get consistent row label
-const getRowLabel = (type: AdvancePaymentType): string => {
-    switch (type) {
-        case AdvancePaymentType.REGISTER_FEE: return 'REGISTER FEE';
-        case AdvancePaymentType.OFFER: return 'OFFER';
-        case AdvancePaymentType.WORK_PERMIT: return 'WORKPERMIT';
-        case AdvancePaymentType.EMB_USD: return 'EMB USD';
-        case AdvancePaymentType.BALANCE_PAY: return 'BALANCE PAY.';
-        case AdvancePaymentType.TICKET: return 'TICKET';
-        case AdvancePaymentType.DEPOSIT: return 'DEPOSIT';
-        case AdvancePaymentType.OTHER: return 'OTHER';
-        default: return String(type).toUpperCase();
-    }
-};
 
 const FinancialLedgerWidget: React.FC<FinancialLedgerWidgetProps> = ({
     candidate,
     isEditing = false,
     onUpdate
 }) => {
-    // Merge existing payments with default empty rows to guarantee the 8-row table
-    const currentPayments = candidate.advancePayments || [];
+    const payments = candidate.advancePayments || [];
+    const customTypes = payments
+        .filter(p => !DEFAULT_ROWS.includes(p.type))
+        .map(p => p.type);
 
-    const formattedRows = DEFAULT_ROWS.map(rowType => {
-        return currentPayments.find(p => p.type === rowType) || {
-            id: crypto.randomUUID(), // Temp ID for UI purposes
-            type: rowType,
-            informed: false,
-            informedDate: '',
-            signDate: '',
-            invoiceNo: '',
-            amount: undefined,
-            remarks: '',
-        };
-    });
+    const allTypes = Array.from(new Set([...DEFAULT_ROWS, ...customTypes]));
 
-    const handleFieldChange = (idx: number, field: keyof AdvancePayment, value: any) => {
+    const totalAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+    const handleUpdatePayment = (type: string, field: keyof AdvancePayment, value: any) => {
         if (!onUpdate) return;
+        const all = [...payments];
+        const existIdx = all.findIndex(p => p.type === type);
 
-        // Create a new array with updated reference
-        const updatedRows = [...formattedRows];
-        updatedRows[idx] = { ...updatedRows[idx], [field]: value };
+        const paymentToUpdate = existIdx >= 0 ? { ...all[existIdx] } : { id: `adv-${Date.now()}-${type}`, type: type as AdvancePaymentType };
 
-        // Only pass back the rows that have actual data (filtering empty defaults from payload)
-        const validPayments = updatedRows.filter(r =>
-            r.informed || !!r.signDate || !!r.invoiceNo || r.amount !== undefined || !!r.remarks
-        );
+        // Special mapping for dates vs booleans if needed, but keeping the original string structure
+        (paymentToUpdate as any)[field] = value;
 
-        onUpdate(validPayments);
+        if (field === 'informedDate' && value) {
+            paymentToUpdate.informed = true;
+        }
+
+        if (existIdx >= 0) {
+            all[existIdx] = paymentToUpdate;
+        } else {
+            all.push(paymentToUpdate);
+        }
+
+        onUpdate(all, candidate.usdRateEmb, candidate.usdRateFA);
     };
 
-    const totalAmount = formattedRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+    const handleDeleteCustom = (type: string) => {
+        if (!onUpdate) return;
+        const all = payments.filter(p => p.type !== type);
+        onUpdate(all, candidate.usdRateEmb, candidate.usdRateFA);
+    };
+
+    const handleAddCustom = () => {
+        const newType = window.prompt("Enter new custom payment type:");
+        if (newType && newType.trim()) {
+            const trimmed = newType.trim();
+            if (!allTypes.find(t => t.toLowerCase() === trimmed.toLowerCase())) {
+                const all = [...payments, { type: trimmed as AdvancePaymentType, id: `adv-${Date.now()}` }];
+                if (onUpdate) onUpdate(all, candidate.usdRateEmb, candidate.usdRateFA);
+            } else {
+                alert('This payment type already exists.');
+            }
+        }
+    };
+
+    const handleUsdRateEmbChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!onUpdate) return;
+        onUpdate(payments, e.target.value ? parseFloat(e.target.value) : undefined, candidate.usdRateFA);
+    };
+
+    const handleUsdRateFAChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!onUpdate) return;
+        onUpdate(payments, candidate.usdRateEmb, e.target.value ? parseFloat(e.target.value) : undefined);
+    };
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="bg-slate-50 border-b border-slate-200 px-5 py-4 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                        <DollarSign size={14} strokeWidth={3} />
-                    </div>
-                    Financial Ledger & Payments
+        <div className="w-full">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-6 h-1 bg-green-500 rounded-full"></span>
+                    Advance Payment Tracking
                 </h3>
-
                 <div className="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
                     Total Paid:
-                    <span className="text-emerald-600 text-sm">
-                        Rs. {totalAmount.toLocaleString()}
+                    <span className="text-green-600 text-sm">
+                        Rs. {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-400 uppercase w-40">Advance</th>
-                            <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-400 uppercase w-24 text-center">Informed</th>
-                            <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-400 uppercase w-32">Sign Date</th>
-                            <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-400 uppercase w-32">Invoice No</th>
-                            <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-400 uppercase w-40">Amount (RS)</th>
-                            <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-400 uppercase">Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {formattedRows.map((row, idx) => {
-                            const hasData = row.informed || !!row.signDate || !!row.invoiceNo || row.amount !== undefined || !!row.remarks;
-                            const isHighlight = hasData && !isEditing;
+            {isEditing ? (
+                <div className="bg-green-50/50 p-6 rounded-xl border border-green-200 border-dashed">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                            <thead>
+                                <tr className="border-b-2 border-green-200">
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Payment Type</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice No</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Amount (Rs)</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {allTypes.map((type, idx) => {
+                                    const payment = payments.find(p => p.type === type) || {} as Partial<AdvancePayment>;
+                                    const isDefault = DEFAULT_ROWS.includes(type);
 
-                            return (
-                                <tr key={row.type} className={`hover:bg-slate-50/50 transition-colors ${isHighlight ? 'bg-emerald-50/20' : ''}`}>
-                                    {/* Advance Column */}
-                                    <td className="py-2.5 px-4">
-                                        <span className={`text-[11px] font-bold uppercase ${isHighlight ? 'text-slate-800' : 'text-slate-500'}`}>
-                                            {getRowLabel(row.type)}
-                                        </span>
-                                    </td>
-
-                                    {/* Informed Column */}
-                                    <td className="py-2.5 px-4 text-center">
-                                        {isEditing ? (
-                                            <button
-                                                onClick={() => handleFieldChange(idx, 'informed', !row.informed)}
-                                                className={`w-5 h-5 rounded mx-auto flex items-center justify-center transition-colors ${row.informed ? 'bg-blue-500 text-white border-blue-600' : 'bg-white border-2 border-slate-300 text-transparent hover:border-blue-400'}`}
-                                            >
-                                                {row.informed && <CheckSquare size={12} strokeWidth={3} />}
-                                            </button>
-                                        ) : (
-                                            <div className={`w-5 h-5 rounded mx-auto flex items-center justify-center ${row.informed ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-300'}`}>
-                                                {row.informed ? <CheckSquare size={12} /> : <Square size={12} />}
-                                            </div>
-                                        )}
-                                    </td>
-
-                                    {/* Sign Date Column */}
-                                    <td className="py-2.5 px-4">
-                                        {isEditing ? (
-                                            <input
-                                                type="date"
-                                                value={row.signDate || ''}
-                                                onChange={(e) => handleFieldChange(idx, 'signDate', e.target.value)}
-                                                className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none"
-                                            />
-                                        ) : (
-                                            <span className="text-xs font-semibold text-slate-700">
-                                                {row.signDate ? new Date(row.signDate).toLocaleDateString('en-GB') : '-'}
-                                            </span>
-                                        )}
-                                    </td>
-
-                                    {/* Invoice No Column */}
-                                    <td className="py-2.5 px-4">
-                                        {isEditing ? (
-                                            <input
-                                                type="text"
-                                                value={row.invoiceNo || ''}
-                                                onChange={(e) => handleFieldChange(idx, 'invoiceNo', e.target.value)}
-                                                placeholder="e.g. 3416"
-                                                className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none"
-                                            />
-                                        ) : (
-                                            <div className="flex items-center gap-1.5">
-                                                {row.invoiceNo && <FileText size={10} className="text-slate-400" />}
-                                                <span className="text-xs font-bold text-slate-700">
-                                                    {row.invoiceNo || '-'}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </td>
-
-                                    {/* Amount Column */}
-                                    <td className="py-2.5 px-4">
-                                        {isEditing ? (
-                                            <div className="relative">
-                                                <span className="absolute left-2.5 top-1.5 text-xs text-slate-400 font-bold">Rs.</span>
+                                    return (
+                                        <tr key={type} className="border-b border-green-100 hover:bg-green-50/50">
+                                            <td className="py-2 px-2 font-bold text-slate-500">{idx + 1}</td>
+                                            <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
+                                            <td className="py-2 px-2">
+                                                <input
+                                                    type="date"
+                                                    value={payment.informedDate || ''}
+                                                    onChange={(e) => handleUpdatePayment(type, 'informedDate', e.target.value)}
+                                                    className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                                                />
+                                            </td>
+                                            <td className="py-2 px-2">
+                                                <input
+                                                    type="date"
+                                                    value={payment.signDate || ''}
+                                                    onChange={(e) => handleUpdatePayment(type, 'signDate', e.target.value)}
+                                                    className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                                                />
+                                            </td>
+                                            <td className="py-2 px-2">
+                                                <input
+                                                    type="text"
+                                                    value={payment.invoiceNo || ''}
+                                                    onChange={(e) => handleUpdatePayment(type, 'invoiceNo', e.target.value)}
+                                                    placeholder="Inv#"
+                                                    className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                                                />
+                                            </td>
+                                            <td className="py-2 px-2">
                                                 <input
                                                     type="number"
-                                                    value={row.amount || ''}
-                                                    onChange={(e) => handleFieldChange(idx, 'amount', e.target.value ? Number(e.target.value) : undefined)}
-                                                    placeholder="0.00"
-                                                    className="w-full text-xs pl-8 pr-2 py-1.5 border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                    value={payment.amount || ''}
+                                                    onChange={(e) => handleUpdatePayment(type, 'amount', e.target.value ? parseFloat(e.target.value) : undefined)}
+                                                    placeholder="0"
+                                                    className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
                                                 />
-                                            </div>
-                                        ) : (
-                                            <span className={`text-xs font-bold ${row.amount ? 'text-emerald-700' : 'text-slate-400'}`}>
-                                                {row.amount ? `Rs. ${row.amount.toLocaleString()}` : '-'}
-                                            </span>
-                                        )}
-                                    </td>
+                                            </td>
+                                            <td className="py-2 px-2 flex gap-1 items-center">
+                                                <input
+                                                    type="text"
+                                                    value={payment.remarks || ''}
+                                                    onChange={(e) => handleUpdatePayment(type, 'remarks', e.target.value)}
+                                                    placeholder="Notes..."
+                                                    className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                                                />
+                                                {!isDefault && (
+                                                    <button
+                                                        type="button"
+                                                        className="text-red-400 hover:text-red-600 p-1 flex-shrink-0"
+                                                        onClick={() => handleDeleteCustom(type)}
+                                                        title="Delete custom payment type"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
 
-                                    {/* Remarks Column */}
-                                    <td className="py-2.5 px-4">
-                                        {isEditing ? (
-                                            <input
-                                                type="text"
-                                                value={row.remarks || ''}
-                                                onChange={(e) => handleFieldChange(idx, 'remarks', e.target.value)}
-                                                placeholder="e.g. Euro 500 Paid"
-                                                className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none text-red-600"
-                                            />
-                                        ) : (
-                                            <span className={`text-[11px] font-semibold ${row.remarks?.toLowerCase().includes('euro') || row.remarks?.toLowerCase().includes('usd') ? 'text-red-600' : 'text-slate-600'}`}>
-                                                {row.remarks || '-'}
-                                            </span>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                    <div className="mt-3 flex justify-end">
+                        <button
+                            type="button"
+                            className="flex items-center gap-1.5 text-xs font-bold text-green-700 hover:text-green-800 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-lg transition-colors"
+                            onClick={handleAddCustom}
+                        >
+                            <Plus size={14} /> Add Custom Payment
+                        </button>
+                    </div>
 
-            {candidate.workflowMilestones?.stampResult && !isEditing && (
-                <div className="bg-red-50 border-t border-red-100 p-3 px-5 flex items-start gap-3">
-                    <Info size={14} className="text-red-500 mt-0.5" />
-                    <div>
-                        <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-0.5">Payment Remark (from bottom of form)</p>
-                        <p className="text-xs font-medium text-red-800">{candidate.workflowMilestones.stampResult}</p>
+                    <div className="mt-4 grid grid-cols-2 gap-4 pt-3 border-t border-green-200">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate EMB</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={candidate.usdRateEmb ?? ''}
+                                onChange={handleUsdRateEmbChange}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate F/A</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={candidate.usdRateFA ?? ''}
+                                onChange={handleUsdRateFAChange}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                            />
+                        </div>
                     </div>
                 </div>
-            )}
+            ) : (
+                <div className="bg-green-50/30 p-5 rounded-xl border border-green-100">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                            <thead>
+                                <tr className="border-b-2 border-green-200">
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Type</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice</th>
+                                    <th className="text-right py-2 px-2 font-bold text-slate-600 uppercase">Amount</th>
+                                    <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {allTypes.map((type, idx) => {
+                                    const payment = payments.find(p => p.type === type);
+                                    const hasData = payment && (payment.amount || payment.invoiceNo || payment.informedDate || payment.signDate || payment.remarks);
 
-            {isEditing && (
-                <div className="bg-slate-50 border-t border-slate-200 p-3 px-5 flex justify-between items-center text-xs text-slate-500">
-                    <span>Editing ledger. All changes save with the main profile save button.</span>
+                                    // Optionally hide purely empty rows in read-only to save space, like the previous iteration.
+                                    // But the original component from the screenshot left them all visible to act as an actual checklist/ledger!
+                                    // I will leave them visible to match the user's preference for the exact old view.
+                                    return (
+                                        <tr key={type} className={`border-b border-green-100 ${hasData ? 'bg-green-50/50' : ''}`}>
+                                            <td className="py-2 px-2 font-bold text-slate-400">{idx + 1}</td>
+                                            <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
+                                            <td className="py-2 px-2 text-slate-600">{payment?.informedDate ? new Date(payment.informedDate).toLocaleDateString() : '-'}</td>
+                                            <td className="py-2 px-2 text-slate-600">{payment?.signDate ? new Date(payment.signDate).toLocaleDateString() : '-'}</td>
+                                            <td className="py-2 px-2 font-mono text-slate-600">{payment?.invoiceNo || '-'}</td>
+                                            <td className="py-2 px-2 text-right font-bold text-green-700">{payment?.amount !== undefined ? `Rs. ${payment.amount.toLocaleString()}` : '-'}</td>
+                                            <td className="py-2 px-2 text-slate-500 italic">{payment?.remarks || '-'}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    {(candidate.usdRateEmb !== undefined || candidate.usdRateFA !== undefined) && (
+                        <div className="mt-3 pt-3 border-t border-green-100 flex gap-6 text-xs">
+                            {candidate.usdRateEmb !== undefined && (
+                                <div><span className="font-bold text-slate-500 uppercase">USD Rate EMB:</span> <span className="font-bold text-slate-800 ml-1">{candidate.usdRateEmb}</span></div>
+                            )}
+                            {candidate.usdRateFA !== undefined && (
+                                <div><span className="font-bold text-slate-500 uppercase">USD Rate F/A:</span> <span className="font-bold text-slate-800 ml-1">{candidate.usdRateFA}</span></div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

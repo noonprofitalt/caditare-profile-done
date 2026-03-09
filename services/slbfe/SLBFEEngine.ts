@@ -58,14 +58,16 @@ export class SLBFEAutomationEngine {
         });
 
         // 3. Insurance
-        const hasInsurance = slbfeData?.insurancePolicyNumber && slbfeData?.insuranceExpiryDate;
-        const isInsuranceValid = hasInsurance && new Date(slbfeData!.insuranceExpiryDate!) > new Date();
+        const polNumber = slbfeData?.insurancePolicyNumber || candidate.stageData?.travelInsurancePolicyNumber;
+        const expiry = slbfeData?.insuranceExpiryDate || candidate.stageData?.travelInsuranceCoverageEndDate;
+        const hasInsurance = !!(polNumber && expiry);
+        const isInsuranceValid = hasInsurance && new Date(expiry!) > new Date();
 
         items.push({
             label: 'Valid Insurance Policy',
             isMandatory: true,
             status: isInsuranceValid ? 'Complete' : (hasInsurance ? 'Failed' : 'Pending'),
-            details: hasInsurance ? (isInsuranceValid ? slbfeData!.insurancePolicyNumber : 'Expired') : undefined
+            details: hasInsurance ? (isInsuranceValid ? polNumber : 'Expired') : undefined
         });
 
         // 4. Biometrics
@@ -78,7 +80,9 @@ export class SLBFEAutomationEngine {
 
         // 5. Family Consent (Required for Females in Domestic roles usually, but implementing generic check if data present)
         // Assuming mandatory if candidate is Female + Domestic (Mock logic: always check if present in data model)
-        const isFemaleDomestic = candidate.gender === 'Female' && (candidate.role?.toLowerCase().includes('house') || candidate.role?.toLowerCase().includes('maid'));
+        const gender = candidate.personalInfo?.gender || candidate.gender;
+        const role = candidate.professionalProfile?.jobRoles?.[0] || candidate.role;
+        const isFemaleDomestic = gender === 'Female' && (String(role).toLowerCase().includes('house') || String(role).toLowerCase().includes('maid'));
         if (isFemaleDomestic) {
             items.push({
                 label: 'Family Consent Verification',
@@ -97,7 +101,7 @@ export class SLBFEAutomationEngine {
         });
 
         // 7. Visa Verification (Cross-check with other modules)
-        const visaDoc = candidate.documents?.find(d => d.type.toLowerCase().includes('visa') && d.status === DocumentStatus.APPROVED);
+        const visaDoc = candidate.documents?.find(d => String(d.type).toLowerCase().includes('visa') && d.status === DocumentStatus.APPROVED);
         items.push({
             label: 'Valid Visa on File',
             isMandatory: true,
@@ -106,12 +110,12 @@ export class SLBFEAutomationEngine {
         });
 
         // 8. Medical (Double Check)
-        const medicalOk = candidate.stageData?.medicalStatus === MedicalStatus.COMPLETED;
+        const medicalOk = candidate.stageData?.medicalStatus === MedicalStatus.COMPLETED || candidate.medicalData?.status === MedicalStatus.COMPLETED;
         items.push({
             label: 'Final Medical Clearance',
             isMandatory: true,
             status: medicalOk ? 'Complete' : 'Pending',
-            details: candidate.stageData?.medicalStatus
+            details: candidate.medicalData?.status || candidate.stageData?.medicalStatus
         });
 
         return items;

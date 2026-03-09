@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { User, AuthState } from '../types';
 import { AuthService } from '../services/authService';
 import { AuditService } from '../services/auditService';
+import socketService from '../services/socketService';
 
 interface AuthContextType extends AuthState {
     login: (email: string, password: string) => Promise<void>;
@@ -9,7 +10,7 @@ interface AuthContextType extends AuthState {
     updateUser: (user: User) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, setState] = useState<AuthState>({
@@ -115,6 +116,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
     }, [state.isAuthenticated]);
 
+    // Listen for real-time forced revokes
+    React.useEffect(() => {
+        if (!state.isAuthenticated) return;
+
+        const handleRevoke = (data: any) => {
+            console.error('[Auth] Forcefully revoked via WebSocket:', data?.message);
+            // Drop frontend states immediately
+            AuthService.logout().then(() => {
+                setState({ user: null, isAuthenticated: false, isLoading: false });
+                window.location.href = '/login';
+            });
+        };
+
+        socketService.on('session:revoked', handleRevoke);
+
+        return () => {
+            socketService.off('session:revoked', handleRevoke);
+        };
+    }, [state.isAuthenticated]);
+
     return (
         <AuthContext.Provider value={{ ...state, login, logout, updateUser }}>
             {children}
@@ -122,7 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
 };
 
- 
+
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {

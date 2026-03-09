@@ -41,16 +41,6 @@ const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
         });
     }
 
-    // Schedule Interview
-    actions.push({
-        id: 'schedule_interview',
-        icon: Calendar,
-        label: 'Schedule Interview',
-        description: schedulePolicy.allowed ? 'Set interview date and time' : schedulePolicy.reason,
-        color: 'blue',
-        allowed: schedulePolicy.allowed,
-        onClick: () => alert('Interview scheduling coming soon!')
-    });
 
     // Send Message
     actions.push({

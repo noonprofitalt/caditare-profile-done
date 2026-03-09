@@ -182,14 +182,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   return (
     <>
       <ToastContainer />
-      <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between shadow-sm">
-        <div className={`flex items-center gap-4 flex-1 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
+      <header className="h-[var(--header-height)] bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 px-3 sm:px-4 md:px-6 flex items-center justify-between shadow-sm">
+        <div className={`flex items-center gap-2 sm:gap-4 flex-1 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
           <button
             onClick={onMenuClick}
-            className="p-2 lg:hidden text-slate-500 hover:bg-slate-100 rounded-lg transition-premium"
+            className="p-2 lg:hidden text-slate-500 hover:bg-slate-100 rounded-lg transition-premium btn-touch"
             aria-label="Open menu"
           >
-            <Menu size={22} />
+            <Menu size={22} className="shrink-0" />
           </button>
 
           {/* Logo/Title on Mobile */}
@@ -204,9 +204,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         </div>
 
         {/* Smart Global Search */}
-        <div className={`flex-[2] max-w-xl transition-all duration-300 ${isMobileSearchOpen ? 'flex' : 'hidden md:flex'} relative`} ref={wrapperRef}>
+        <div className={`flex-[2] max-w-xl transition-all duration-300 ${isMobileSearchOpen ? 'flex absolute inset-x-2 top-2 z-50 bg-white rounded-xl shadow-lg border border-slate-200 p-1' : 'hidden md:flex'} relative`} ref={wrapperRef}>
           <div className="relative group w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={isMobileSearchOpen ? 20 : 16} />
             <input
               type="text"
               value={query}
@@ -214,19 +214,19 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               onKeyDown={handleKeyDown}
               onFocus={() => query.length >= 2 && setIsOpen(true)}
               placeholder="Quick Find..."
-              className="w-full pl-9 pr-12 py-2 bg-slate-100/50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm outline-none font-medium text-slate-800 placeholder:text-slate-400 h-10"
+              className={`w-full pl-9 pr-12 py-2 bg-slate-100/50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none font-medium text-slate-800 placeholder:text-slate-400 ${isMobileSearchOpen ? 'h-12 text-base pl-11 btn-touch' : 'h-10 text-sm'}`}
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
               {isMobileSearchOpen && (
                 <button
                   onClick={() => setIsMobileSearchOpen(false)}
-                  className="md:hidden p-1 hover:bg-slate-200 rounded-full text-slate-400 transition-premium"
+                  className="md:hidden p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-premium btn-touch"
                 >
                   <X size={16} />
                 </button>
               )}
               {!isMobileSearchOpen && query && (
-                <button onClick={() => setQuery('')} className="text-slate-400 hover:text-red-500 transition-premium">
+                <button onClick={() => setQuery('')} className="text-slate-400 hover:text-red-500 transition-premium p-1 btn-touch">
                   <X size={14} />
                 </button>
               )}
@@ -359,10 +359,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </div>
         </div>
 
-        <div className={`flex items-center gap-1.5 sm:gap-3 md:gap-4 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex items-center gap-1 sm:gap-2 md:gap-4 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
           <button
             onClick={() => setIsMobileSearchOpen(true)}
-            className="p-1.5 sm:p-2 text-slate-500 hover:bg-slate-50 rounded-full md:hidden transition-premium active:scale-90"
+            className="p-1.5 sm:p-2 text-slate-500 hover:bg-slate-50 rounded-full md:hidden transition-premium active:scale-90 btn-touch"
           >
             <Search size={20} />
           </button>
@@ -382,7 +382,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             </button>
 
             {isNotificationOpen && (
-              <div className="absolute right-0 mt-3 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 origin-top-right z-50">
+              <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto sm:right-0 top-[var(--header-height)] sm:top-auto sm:mt-3 w-auto sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 origin-top-right z-50">
                 <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 backdrop-blur-sm">
                   <h3 className="font-black text-slate-900 text-xs uppercase tracking-tight">Notifications</h3>
                   <button
@@ -390,7 +390,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       NotificationService.markAllAsRead();
                       refreshNotifications();
                     }}
-                    className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-premium"
+                    className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-premium p-1 btn-touch"
                   >
                     Clear All
                   </button>
@@ -459,7 +459,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 </div>
 
                 <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 text-center">
-                  <button className="text-[10px] font-black text-slate-500 hover:text-blue-600 uppercase tracking-widest transition-premium">
+                  <button className="text-[10px] font-black text-slate-500 hover:text-blue-600 uppercase tracking-widest transition-premium p-2 btn-touch w-full">
                     View Comprehensive Log
                   </button>
                 </div>
@@ -482,7 +482,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 pl-3 md:pl-4 border-l border-slate-200 hover:opacity-80 transition-premium active:scale-95"
+              className="flex items-center gap-2 pl-2 sm:pl-3 md:pl-4 border-l border-slate-200 hover:opacity-80 transition-premium active:scale-95 btn-touch"
             >
               <div className="text-right hidden lg:block">
                 <p className="text-[12px] font-black text-slate-900 leading-none uppercase tracking-tighter">{user?.name || 'User'}</p>
@@ -498,7 +498,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             </button>
 
             {showUserMenu && (
-              <div className="absolute top-full right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 origin-top-right z-50">
+              <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto sm:right-0 top-[var(--header-height)] sm:top-auto sm:mt-3 w-auto sm:w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 origin-top-right z-50">
                 <div className="p-4 border-b border-slate-50 bg-slate-50/50 backdrop-blur-sm">
                   <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{user?.name}</p>
                   <p className="text-[10px] text-slate-500 truncate font-bold uppercase tracking-widest mt-1">{user?.email}</p>

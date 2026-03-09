@@ -14,10 +14,9 @@ const Breadcrumbs: React.FC = () => {
         const resolveNames = async () => {
             try {
                 const names: Record<string, string> = {};
-                // Parallelize fetching
                 const [candidates, employers] = await Promise.all([
                     CandidateService.getCandidates(),
-                    Promise.resolve(PartnerService.getEmployers()) // Wrap in promise to keep structure consistent if PartnerService becomes async
+                    Promise.resolve(PartnerService.getEmployers())
                 ]);
 
                 pathnames.forEach((value, index) => {
@@ -40,16 +39,15 @@ const Breadcrumbs: React.FC = () => {
 
     const getBreadcrumbName = (value: string) => {
         if (breadcrumbNames[value]) return breadcrumbNames[value];
-        // Default formatting
         return value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
     };
 
     if (pathnames.length === 0) return null;
 
     return (
-        <div className="bg-white border-b border-slate-200 px-8 py-3 flex items-center gap-2 text-sm text-slate-500">
-            <Link to="/" className="hover:text-blue-600 transition-colors">
-                <Home size={16} />
+        <div className="bg-white border-b border-slate-200 px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-500 overflow-x-auto scrollbar-none">
+            <Link to="/" className="hover:text-blue-600 transition-colors shrink-0 btn-touch flex items-center justify-center w-auto min-w-0 p-1">
+                <Home size={15} />
             </Link>
             {pathnames.map((value, index) => {
                 const to = `/${pathnames.slice(0, index + 1).join('/')}`;
@@ -58,11 +56,11 @@ const Breadcrumbs: React.FC = () => {
 
                 return (
                     <React.Fragment key={to}>
-                        <ChevronRight size={14} className="text-slate-300" />
+                        <ChevronRight size={12} className="text-slate-300 shrink-0" />
                         {isLast ? (
-                            <span className="font-semibold text-slate-800">{name}</span>
+                            <span className="font-semibold text-slate-800 truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">{name}</span>
                         ) : (
-                            <Link to={to} className="hover:text-blue-600 transition-colors">
+                            <Link to={to} className="hover:text-blue-600 transition-colors truncate max-w-[100px] sm:max-w-[160px] md:max-w-none">
                                 {name}
                             </Link>
                         )}

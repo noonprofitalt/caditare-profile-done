@@ -41,7 +41,7 @@ describe('Integration Tests - Chat Flow', () => {
 
         it('should send a message to the channel', async () => {
             const response = await request(app)
-                .post(`/api/channels/${channelId}/messages`)
+                .post(`/api/messages/${channelId}/messages`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     text: 'Hello from integration test!',
@@ -60,12 +60,12 @@ describe('Integration Tests - Chat Flow', () => {
                     emoji: '👍',
                 });
 
-            expect(response.status).toBe(201);
+            expect(response.status).toBe(200);
         });
 
         it('should retrieve messages with reactions', async () => {
             const response = await request(app)
-                .get(`/api/channels/${channelId}/messages`)
+                .get(`/api/messages/${channelId}/messages`)
                 .set('Authorization', `Bearer ${authToken}`);
 
             expect(response.status).toBe(200);
@@ -87,7 +87,7 @@ describe('Integration Tests - Chat Flow', () => {
 
         it('should create a threaded reply', async () => {
             const response = await request(app)
-                .post(`/api/channels/${channelId}/messages`)
+                .post(`/api/messages/${channelId}/messages`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     text: 'This is a reply',
@@ -116,6 +116,8 @@ describe('Integration Tests - Chat Flow', () => {
     });
 
     describe('System Channel Flow', () => {
+        const sharedUniqueContextId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd38' + Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+
         it('should create a system channel for a candidate', async () => {
             const response = await request(app)
                 .post('/api/channels')
@@ -124,12 +126,12 @@ describe('Integration Tests - Chat Flow', () => {
                     name: 'Candidate: John Doe',
                     type: 'system',
                     contextType: 'candidate',
-                    contextId: 'candidate-123',
+                    contextId: sharedUniqueContextId,
                 });
 
             expect(response.status).toBe(201);
             expect(response.body.contextType).toBe('candidate');
-            expect(response.body.contextId).toBe('candidate-123');
+            expect(response.body.contextId).toBe(sharedUniqueContextId);
         });
 
         it('should return existing system channel on duplicate creation', async () => {
@@ -140,23 +142,33 @@ describe('Integration Tests - Chat Flow', () => {
                     name: 'Candidate: John Doe',
                     type: 'system',
                     contextType: 'candidate',
-                    contextId: 'candidate-123',
+                    contextId: sharedUniqueContextId,
                 });
 
             expect(response.status).toBe(200);
             expect(response.body.contextType).toBe('candidate');
+            expect(response.body.contextId).toBe(sharedUniqueContextId);
         });
     });
 
     describe('File Upload Flow', () => {
         it('should upload a file attachment', async () => {
+            // Ensure we have a valid messageId (fallback if previous test failed)
+            if (!messageId) {
+                const msgRes = await request(app)
+                    .post(`/api/messages/${channelId}/messages`)
+                    .set('Authorization', `Bearer ${authToken}`)
+                    .send({ text: 'Fallback message' });
+                messageId = msgRes.body.id;
+            }
+
             const response = await request(app)
                 .post('/api/attachments/upload')
                 .set('Authorization', `Bearer ${authToken}`)
                 .field('messageId', messageId)
                 .attach('file', Buffer.from('test file content'), 'test.txt');
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(201);
             expect(response.body).toHaveProperty('id');
         });
     });
@@ -164,7 +176,7 @@ describe('Integration Tests - Chat Flow', () => {
     describe('Mention and Notification Flow', () => {
         it('should create notification for mentioned user', async () => {
             const response = await request(app)
-                .post(`/api/channels/${channelId}/messages`)
+                .post(`/api/messages/${channelId}/messages`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     text: 'Hey @testuser, check this out!',

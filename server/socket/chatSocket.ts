@@ -7,7 +7,10 @@ interface AuthenticatedSocket extends Socket {
     userName?: string;
 }
 
+let ioInstance: SocketIOServer | null = null;
+
 export const setupChatSocket = (io: SocketIOServer) => {
+    ioInstance = io;
     // Authentication middleware for Socket.IO
     io.use((socket: AuthenticatedSocket, next) => {
         try {
@@ -50,15 +53,17 @@ export const setupChatSocket = (io: SocketIOServer) => {
         // ========================================================================
 
         // Join a channel room
-        socket.on('channel:join', async (data: { channelId: string }) => {
+        socket.on('channel:join', async (data: { channelId: string }, callback?: Function) => {
             try {
                 const { channelId } = data;
 
                 // FRICTIONLESS: Allow all users to join any channel without access check
                 socket.join(`channel:${channelId}`);
                 console.log(`User ${socket.userName} joined channel ${channelId}`);
+                if (callback) callback({ success: true });
             } catch (error) {
                 console.error('Error joining channel:', error);
+                if (callback) callback({ success: false, error: 'Failed to join' });
             }
         });
 
@@ -371,8 +376,8 @@ export const setupChatSocket = (io: SocketIOServer) => {
           WHERE channel_id = $1 AND user_id != $2
         `, [channelId, socket.userId]);
 
-                // Broadcast to others in channel
-                socket.to(`channel:${channelId}`).emit('typing:update', result.rows);
+                // Broadcast to channel
+                io.to(`channel:${channelId}`).emit('typing:update', result.rows);
             } catch (error) {
                 console.error('Error updating typing indicator:', error);
             }
@@ -428,4 +433,8 @@ export const setupChatSocket = (io: SocketIOServer) => {
             console.error('Error cleaning up typing indicators:', error);
         }
     }, 5000); // Every 5 seconds
+};
+
+export const getIO = (): SocketIOServer | null => {
+    return ioInstance;
 };

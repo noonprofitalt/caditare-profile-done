@@ -63,7 +63,7 @@ export class DataSyncService {
         const currentPP = result.professionalProfile || {} as ProfessionalProfile;
         const professionalProfile: ProfessionalProfile = {
             ...currentPP,
-            jobRoles: currentPP.jobRoles !== undefined ? currentPP.jobRoles : (result.jobRoles || (result.role ? [result.role] : [])),
+            jobRoles: currentPP.jobRoles !== undefined ? currentPP.jobRoles : (result.jobRoles || (result.position ? [result.position] : (result.role ? [result.role] : []))),
             experienceYears: currentPP.experienceYears ?? result.experienceYears,
             skills: currentPP.skills !== undefined ? currentPP.skills : (result.skills || []),
             education: currentPP.education !== undefined ? currentPP.education : (result.education || []),
@@ -74,6 +74,13 @@ export class DataSyncService {
             school: currentPP.school || result.school || ''
         };
         result.professionalProfile = professionalProfile;
+
+        // 4. Application Intent Sync
+        result.targetCountry = result.targetCountry || result.country || '';
+        result.country = result.targetCountry;
+
+        result.position = result.position || result.role || '';
+        result.role = result.position;
 
         return result;
     }
@@ -167,8 +174,13 @@ export class DataSyncService {
         result.passportProfession = result.personalInfo?.passportProfession || result.passportProfession || '';
         result.drivingLicenseNo = result.personalInfo?.drivingLicenseNo || result.drivingLicenseNo || '';
         result.religion = result.personalInfo?.religion || result.religion || '';
-        result.height = result.personalInfo?.height ?? result.height;
         result.weight = result.personalInfo?.weight ?? result.weight;
+
+        // Cross-sync intention fields
+        result.targetCountry = result.targetCountry || result.country || '';
+        result.country = result.targetCountry;
+        result.position = result.position || result.role || '';
+        result.role = result.position;
 
         return result;
     }

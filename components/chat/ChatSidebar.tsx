@@ -121,7 +121,7 @@ export const ChatSidebar: React.FC = () => {
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    if (confirm(`Delete channel #${channel.name}?`)) {
+                                                    if (window.confirm(`Delete channel #${channel.name}?`)) {
                                                         deleteChannel(channel.id);
                                                     }
                                                 }}
@@ -183,8 +183,8 @@ export const ChatSidebar: React.FC = () => {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (confirm(`Clear all messages and close chat with ${user.name}?`)) {
-                                                deleteChannel(ChatService.getDmChannelId(user.id));
+                                            if (window.confirm(`Clear all messages and close chat with ${user.name}?`)) {
+                                                deleteChannel(dmId);
                                             }
                                         }}
                                         className="opacity-20 group-hover/dm-info:opacity-100 p-1 hover:bg-red-50 hover:text-red-600 rounded text-slate-500 transition-all"

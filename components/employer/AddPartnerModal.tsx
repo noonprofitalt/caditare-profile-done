@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Employer, EmployerStatus, EmployerDocument, EmployerActivity } from '../../types';
 import { PartnerService } from '../../services/partnerService';
 import { X, Building2, MapPin, Mail, Phone, DollarSign, FileText, User } from 'lucide-react';
@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 interface AddPartnerModalProps {
     onClose: () => void;
     onSaved: (employer: Employer) => void;
+    existingEmployer?: Employer;
 }
 
 const COUNTRIES = [
@@ -15,20 +16,21 @@ const COUNTRIES = [
     'Singapore', 'Italy', 'Romania', 'Poland', 'Other',
 ];
 
-const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) => {
+const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved, existingEmployer }) => {
     const { user } = useAuth();
     const [form, setForm] = useState({
-        companyName: '',
-        regNumber: '',
-        country: '',
-        address: '',
-        contactPerson: '',
-        email: '',
-        phone: '',
-        commissionPerHire: '',
-        paymentTermDays: '30',
-        quotaTotal: '50',
-        notes: '',
+        companyName: existingEmployer?.companyName || '',
+        regNumber: existingEmployer?.regNumber || '',
+        country: existingEmployer?.country || '',
+        address: '', // not directly in Employer type but kept for UI form
+        contactPerson: existingEmployer?.contactPerson || '',
+        email: existingEmployer?.email || '',
+        phone: existingEmployer?.phone || '',
+        status: existingEmployer?.status || EmployerStatus.PENDING_APPROVAL,
+        commissionPerHire: existingEmployer?.commissionPerHire?.toString() || '',
+        paymentTermDays: existingEmployer?.paymentTermDays?.toString() || '30',
+        quotaTotal: existingEmployer?.quotaTotal?.toString() || '50',
+        notes: existingEmployer?.notes || '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -44,55 +46,80 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
         if (!validate()) return;
 
         const now = new Date().toISOString();
-        const employer: Employer = {
-            id: `emp-${Date.now()}`,
-            companyName: form.companyName,
-            regNumber: form.regNumber || `REG-${Date.now().toString().slice(-6)}`,
-            country: form.country,
-            contactPerson: form.contactPerson,
-            email: form.email,
-            phone: form.phone,
-            status: EmployerStatus.PENDING_APPROVAL,
-            commissionPerHire: form.commissionPerHire ? parseFloat(form.commissionPerHire) : undefined,
-            paymentTermDays: parseInt(form.paymentTermDays) || 30,
-            quotaTotal: parseInt(form.quotaTotal) || 50,
-            quotaUsed: 0,
-            selectionRatio: 0,
-            joinedDate: now,
-            documents: [
-                {
-                    id: `doc-${Date.now()}-1`,
-                    title: 'Trade License',
-                    type: 'License',
-                    status: 'Pending',
-                    expiryDate: '',
-                } as EmployerDocument,
-                {
-                    id: `doc-${Date.now()}-2`,
-                    title: 'Power of Attorney',
-                    type: 'POA',
-                    status: 'Pending',
-                    expiryDate: '',
-                    uploadedAt: now,
-                } as EmployerDocument,
-            ],
-            activityLog: [
-                {
-                    id: `act-${Date.now()}`,
-                    type: 'Note',
-                    content: 'Partner account created',
-                    timestamp: now,
-                    actor: user?.name || 'Internal Staff',
-                    userId: user?.id,
-                } as EmployerActivity,
-            ],
-        };
 
-        try {
-            await PartnerService.addEmployer(employer);
-            onSaved(employer);
-        } catch (error) {
-            console.error("Failed to add partner:", error);
+        let employer: Employer;
+
+        if (existingEmployer) {
+            employer = {
+                ...existingEmployer,
+                companyName: form.companyName,
+                regNumber: form.regNumber || existingEmployer.regNumber,
+                country: form.country,
+                contactPerson: form.contactPerson,
+                email: form.email,
+                phone: form.phone,
+                status: form.status,
+                commissionPerHire: form.commissionPerHire ? parseFloat(form.commissionPerHire) : undefined,
+                paymentTermDays: parseInt(form.paymentTermDays) || 30,
+                quotaTotal: parseInt(form.quotaTotal) || 50,
+                notes: form.notes,
+            };
+            try {
+                const updated = await PartnerService.updateEmployer(employer);
+                if (updated) onSaved(updated);
+            } catch (error) {
+                console.error("Failed to update partner:", error);
+            }
+        } else {
+            employer = {
+                id: `emp-${Date.now()}`,
+                companyName: form.companyName,
+                regNumber: form.regNumber || `REG-${Date.now().toString().slice(-6)}`,
+                country: form.country,
+                contactPerson: form.contactPerson,
+                email: form.email,
+                phone: form.phone,
+                status: form.status,
+                commissionPerHire: form.commissionPerHire ? parseFloat(form.commissionPerHire) : undefined,
+                paymentTermDays: parseInt(form.paymentTermDays) || 30,
+                quotaTotal: parseInt(form.quotaTotal) || 50,
+                quotaUsed: 0,
+                selectionRatio: 0,
+                joinedDate: now,
+                documents: [
+                    {
+                        id: `doc-${Date.now()}-1`,
+                        title: 'Trade License',
+                        type: 'License',
+                        status: 'Pending',
+                        expiryDate: '',
+                    } as EmployerDocument,
+                    {
+                        id: `doc-${Date.now()}-2`,
+                        title: 'Power of Attorney',
+                        type: 'POA',
+                        status: 'Pending',
+                        expiryDate: '',
+                        uploadedAt: now,
+                    } as EmployerDocument,
+                ],
+                activityLog: [
+                    {
+                        id: `act-${Date.now()}`,
+                        type: 'Note',
+                        content: 'Partner account created',
+                        timestamp: now,
+                        actor: user?.name || 'Internal Staff',
+                        userId: user?.id,
+                    } as EmployerActivity,
+                ],
+            };
+            try {
+                const added = await PartnerService.addEmployer(employer);
+                if (added) onSaved(added);
+            } catch (error) {
+                console.error("Failed to add partner:", error);
+            }
         }
     };
 
@@ -105,15 +132,14 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                {/* Header */}
                 <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100 px-8 py-5 rounded-t-3xl flex items-center justify-between z-10">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
                             <Building2 size={20} />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-slate-800">Add New Partner</h3>
-                            <p className="text-xs text-slate-500">Register a new employer / recruitment partner</p>
+                            <h3 className="text-lg font-bold text-slate-800">{existingEmployer ? 'Edit Partner' : 'Add New Partner'}</h3>
+                            <p className="text-xs text-slate-500">{existingEmployer ? 'Update partner details' : 'Register a new employer / recruitment partner'}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
@@ -165,16 +191,18 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
                                     {errors.country && <p className="text-xs text-red-500 mt-1">{errors.country}</p>}
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-600 mb-1.5 block">Address</label>
-                                <input
-                                    type="text"
-                                    placeholder="Full company address"
-                                    className={inputClasses('address')}
-                                    value={form.address}
-                                    onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
-                                />
-                            </div>
+                            {existingEmployer && (
+                                <div>
+                                    <label className="text-xs font-bold text-slate-600 mb-1.5 block">Status</label>
+                                    <select
+                                        className={inputClasses('status')}
+                                        value={form.status}
+                                        onChange={e => setForm(p => ({ ...p, status: e.target.value as EmployerStatus }))}
+                                    >
+                                        {Object.values(EmployerStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -284,7 +312,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ onClose, onSaved }) =
                             type="submit"
                             className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
                         >
-                            Create Partner
+                            {existingEmployer ? 'Update Partner' : 'Create Partner'}
                         </button>
                     </div>
                 </form>

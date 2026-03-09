@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { User, Smile, Image as ImageIcon, FileText, ExternalLink, Download, X, Maximize2, FileDigit, FileSpreadsheet } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { ChatAttachment, MessageReaction, ChatMessage } from '../../types';
 
 export const ChatMessageList: React.FC = () => {
     const { messages, addReaction, removeReaction } = useChat();
+    const { user: currentUser } = useAuth();
     const [previewAttachment, setPreviewAttachment] = useState<ChatAttachment | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -128,7 +130,7 @@ export const ChatMessageList: React.FC = () => {
                                                     {/* Reactions Display */}
                                                     <div className="flex flex-wrap gap-1">
                                                         {msg.reactions && msg.reactions.map((reaction: MessageReaction) => {
-                                                            const hasLiked = reaction.users.find((u: any) => u.id === 'current-user');
+                                                            const hasLiked = reaction.users.find((u: any) => u.id === currentUser?.id);
                                                             return (
                                                                 <button
                                                                     key={reaction.emoji}

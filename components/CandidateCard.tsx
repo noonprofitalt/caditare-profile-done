@@ -19,27 +19,26 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
 
     // Get profile completion badge
     const getCompletionBadge = () => {
-        switch (candidate.profileCompletionStatus) {
-            case ProfileCompletionStatus.QUICK:
-                return (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-red-50 border border-red-200 rounded-full">
-                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                        <span className="text-xs font-bold text-red-700">QUICK ADD</span>
-                    </div>
-                );
-            case ProfileCompletionStatus.PARTIAL:
-                return (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-50 border border-yellow-200 rounded-full">
-                        <span className="text-xs font-bold text-yellow-700">{candidate.profileCompletionPercentage}%</span>
-                    </div>
-                );
-            case ProfileCompletionStatus.COMPLETE:
-                return (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
-                        <CheckCircle size={14} className="text-green-600" />
-                        <span className="text-xs font-bold text-green-700">COMPLETE</span>
-                    </div>
-                );
+        if (candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || candidate.profileCompletionPercentage >= 75) {
+            return (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                    <CheckCircle size={14} className="text-green-600" />
+                    <span className="text-xs font-bold text-green-700">COMPLETE</span>
+                </div>
+            );
+        } else if (candidate.profileCompletionStatus === ProfileCompletionStatus.PARTIAL) {
+            return (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-50 border border-yellow-200 rounded-full">
+                    <span className="text-xs font-bold text-yellow-700">{candidate.profileCompletionPercentage}%</span>
+                </div>
+            );
+        } else {
+            return (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-red-50 border border-red-200 rounded-full">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    <span className="text-xs font-bold text-red-700">QUICK ADD</span>
+                </div>
+            );
         }
     };
 
@@ -63,7 +62,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
 
     // Get quick actions based on profile status
     const getQuickActions = () => {
-        if (candidate.profileCompletionStatus !== ProfileCompletionStatus.COMPLETE) {
+        if (candidate.profileCompletionStatus !== ProfileCompletionStatus.COMPLETE && candidate.profileCompletionPercentage < 75) {
             return (
                 <Link
                     to={`/applications/new?upgrade=${candidate.id}`}
@@ -148,7 +147,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
                         alt={candidate.name}
                         className="w-14 h-14 rounded-full object-cover border-2 border-slate-200"
                     />
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || candidate.profileCompletionPercentage >= 75 ? 'bg-green-500' : 'bg-amber-500'}`} />
                 </div>
 
                 {/* Main Info */}
@@ -170,7 +169,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
                                 <span className={`px-2 py-0.5 rounded border text-xs font-medium ${getStageColor()}`}>
                                     {candidate.stage}
                                 </span>
-                                {candidate.profileCompletionStatus !== ProfileCompletionStatus.COMPLETE && (
+                                {candidate.profileCompletionStatus !== ProfileCompletionStatus.COMPLETE && candidate.profileCompletionPercentage < 75 && (
                                     <>
                                         <span className="text-slate-400">•</span>
                                         <span className="text-slate-500">{candidate.profileCompletionPercentage}% Complete</span>
@@ -240,7 +239,7 @@ const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onSelect, isSe
             {isExpanded && (
                 <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
                     {/* Missing Fields (for incomplete profiles) */}
-                    {candidate.profileCompletionStatus !== ProfileCompletionStatus.COMPLETE && (
+                    {candidate.profileCompletionStatus !== ProfileCompletionStatus.COMPLETE && candidate.profileCompletionPercentage < 75 && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <AlertCircle size={16} className="text-yellow-600" />

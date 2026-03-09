@@ -144,7 +144,7 @@ const JobBoard: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 pb-24 md:pb-12">
+    <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-6 pb-24 md:pb-12 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -153,24 +153,24 @@ const JobBoard: React.FC = () => {
         </div>
         <button
           onClick={() => { setEditingJob(null); setShowForm(true); }}
-          className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all"
+          className="px-4 py-2.5 sm:py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium flex items-center justify-center gap-2 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm btn-touch"
         >
-          <Plus size={18} /> Post New Job
+          <Plus size={16} /> <span className="hidden sm:inline">Post New Job</span><span className="sm:hidden">Post Job</span>
         </button>
       </div>
 
       {/* Employer filter banner */}
       {filterEmployerId && (
-        <div className="bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center justify-between">
+        <div className="bg-blue-50 border border-blue-100 text-blue-800 px-5 py-3 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Building2 size={16} />
-            <span className="text-sm font-bold">
-              Showing jobs for: {getEmployerName(filterEmployerId)}
+            <Building2 size={16} className="text-blue-600" />
+            <span className="text-sm font-medium">
+              Showing jobs for: <strong>{getEmployerName(filterEmployerId)}</strong>
             </span>
           </div>
           <button
             onClick={() => setSearchParams({})}
-            className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-bold transition-all"
+            className="px-3 py-1 bg-white border border-blue-200 hover:bg-blue-100 rounded-lg text-xs font-medium transition-colors shadow-sm"
           >
             Clear Filter
           </button>
@@ -178,7 +178,7 @@ const JobBoard: React.FC = () => {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {[
           { label: 'Total Jobs', value: stats.total, icon: Briefcase, color: 'text-slate-600', bg: 'bg-slate-50' },
           { label: 'Open', value: stats.open, icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50' },
@@ -186,14 +186,14 @@ const JobBoard: React.FC = () => {
           { label: 'Total Positions', value: stats.totalPositions, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
           { label: 'Fill Rate', value: `${stats.totalPositions > 0 ? Math.round((stats.filledPositions / stats.totalPositions) * 100) : 0}%`, icon: Award, color: 'text-amber-600', bg: 'bg-amber-50' },
         ].map((s, i) => (
-          <div key={i} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div key={i} className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className={`p-2 ${s.bg} ${s.color} rounded-xl`}>
+              <div className={`p-2.5 ${s.bg} ${s.color} rounded-xl shrink-0`}>
                 <s.icon size={18} />
               </div>
-              <div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
-                <p className="text-xl font-black text-slate-800">{s.value}</p>
+              <div className="min-w-0">
+                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{s.label}</p>
+                <p className="text-lg sm:text-xl font-black text-slate-800">{s.value}</p>
               </div>
             </div>
           </div>
@@ -212,7 +212,7 @@ const JobBoard: React.FC = () => {
             onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto whitespace-nowrap scrollbar-none snap-x">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto whitespace-nowrap scrollbar-none snap-x snap-mandatory">
           {([
             { key: 'all' as FilterTab, label: 'All', count: stats.total },
             { key: 'open' as FilterTab, label: 'Open', count: stats.open },
@@ -222,7 +222,7 @@ const JobBoard: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveFilter(tab.key)}
-              className={`flex shrink-0 snap-start px-4 py-2 rounded-xl text-xs font-bold transition-all items-center gap-1.5 ${activeFilter === tab.key
+              className={`flex shrink-0 snap-start px-4 py-2.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all items-center justify-center gap-1.5 btn-touch ${activeFilter === tab.key
                 ? 'bg-white text-slate-800 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
                 }`}
@@ -342,13 +342,12 @@ const JobBoard: React.FC = () => {
 
         {/* Detail Panel */}
         {selectedJob && (
-          <div className="w-full lg:w-[45%] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-4 max-h-[calc(100vh-180px)] overflow-y-auto">
+          <div className="w-full lg:w-[45%] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-4 max-h-[100dvh] lg:max-h-[calc(100vh-180px)] overflow-y-auto z-10 lg:z-auto">
             {/* Detail Header */}
-            <div className="bg-slate-900 text-white p-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-3xl rounded-full" />
+            <div className="bg-slate-50 border-b border-slate-100 p-6 relative">
               <button
                 onClick={() => setSelectedJob(null)}
-                className="absolute top-4 right-4 p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                className="absolute top-4 right-4 p-1.5 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
               >
                 <X size={16} />
               </button>
@@ -356,8 +355,8 @@ const JobBoard: React.FC = () => {
                 <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase mb-3 ${getStatusColor(selectedJob.status)}`}>
                   {selectedJob.status}
                 </span>
-                <h3 className="text-xl font-bold leading-tight mb-1">{selectedJob.title}</h3>
-                <p className="text-sm text-slate-400">{selectedJob.company} • {selectedJob.location}</p>
+                <h3 className="text-xl font-bold text-slate-800 leading-tight mb-1">{selectedJob.title}</h3>
+                <p className="text-sm text-slate-500 font-medium">{selectedJob.company} • {selectedJob.location}</p>
               </div>
             </div>
 
@@ -499,13 +498,13 @@ const JobBoard: React.FC = () => {
               <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <button
                   onClick={() => { setEditingJob(selectedJob); setShowForm(true); }}
-                  className="flex-1 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <Edit3 size={14} /> Edit
+                  <Edit3 size={14} /> Edit Job
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(selectedJob.id)}
-                  className="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2 border border-red-100"
+                  className="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 hover:border-red-300 transition-colors flex items-center justify-center gap-2 shadow-sm"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -712,7 +711,7 @@ const JobFormModal: React.FC<JobFormModalProps> = ({ job, employers, onClose, on
               {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-600 mb-1.5 block">Location *</label>
                 <input
@@ -737,7 +736,7 @@ const JobFormModal: React.FC<JobFormModalProps> = ({ job, employers, onClose, on
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-600 mb-1.5 block">Salary Range *</label>
                 <input
@@ -773,7 +772,7 @@ const JobFormModal: React.FC<JobFormModalProps> = ({ job, employers, onClose, on
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-600 mb-1.5 block">Employer</label>
                 <select

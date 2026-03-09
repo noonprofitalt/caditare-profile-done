@@ -145,7 +145,7 @@ export class ProfileCompletionService {
      * @returns ProfileCompletionStatus enum value
      */
     static getProfileCompletionStatus(percentage: number): ProfileCompletionStatus {
-        if (percentage >= 100) {
+        if (percentage >= 75) {
             return ProfileCompletionStatus.COMPLETE;
         } else if (percentage > 30) {
             return ProfileCompletionStatus.PARTIAL;

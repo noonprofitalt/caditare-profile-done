@@ -83,6 +83,46 @@ export class FinanceService {
         return result;
     }
 
+    static async updateTransaction(id: string, updates: Partial<FinanceTransaction>): Promise<boolean> {
+        const dbUpdates: any = {};
+        if (updates.type) dbUpdates.type = updates.type;
+        if (updates.category) dbUpdates.category = updates.category;
+        if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+        if (updates.description) dbUpdates.description = updates.description;
+        if (updates.candidateId) dbUpdates.candidate_id = updates.candidateId === 'system' ? null : updates.candidateId;
+        if (updates.employerId) dbUpdates.employer_id = updates.employerId === 'system' ? null : updates.employerId;
+
+        const { error } = await supabase
+            .from('finance_transactions')
+            .update(dbUpdates)
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error updating transaction:', error);
+            return false;
+        }
+
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('FINANCE_TRANSACTION_UPDATED', { transactionId: id, updates: dbUpdates }, auditUserId);
+        return true;
+    }
+
+    static async deleteTransaction(id: string): Promise<boolean> {
+        const { error } = await supabase
+            .from('finance_transactions')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting transaction:', error);
+            return false;
+        }
+
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('FINANCE_TRANSACTION_DELETED', { transactionId: id }, auditUserId);
+        return true;
+    }
+
     // --- INVOICES ---
 
     static async getInvoices(): Promise<Invoice[]> {
@@ -164,6 +204,44 @@ export class FinanceService {
         }, auditUserId);
 
         return result;
+    }
+
+    static async updateInvoice(id: string, updates: Partial<Invoice>): Promise<boolean> {
+        const dbUpdates: any = {};
+        if (updates.status) dbUpdates.status = updates.status;
+        if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+        if (updates.dueDate) dbUpdates.due_date = updates.dueDate;
+        if (updates.billingAddress) dbUpdates.billing_address = updates.billingAddress;
+
+        const { error } = await supabase
+            .from('invoices')
+            .update(dbUpdates)
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error updating invoice:', error);
+            return false;
+        }
+
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('INVOICE_UPDATED', { invoiceId: id, updates: dbUpdates }, auditUserId);
+        return true;
+    }
+
+    static async deleteInvoice(id: string): Promise<boolean> {
+        const { error } = await supabase
+            .from('invoices')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting invoice:', error);
+            return false;
+        }
+
+        const auditUserId = await AuditService.getCurrentUserId();
+        AuditService.log('INVOICE_DELETED', { invoiceId: id }, auditUserId);
+        return true;
     }
 
     // --- CALCULATIONS (Stateless) ---

@@ -86,9 +86,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
     return (
         <div className="bg-white border-b border-slate-200 sticky top-16 lg:top-[64px] z-10">
-            <div className="px-6 py-4 space-y-4">
+            <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
                 {/* Search Bar */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <div className="flex-1 relative group">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                             <Search size={16} className="text-slate-400 group-focus-within:text-slate-700 transition-colors" />
@@ -99,7 +99,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                             placeholder="Find REG NO, Name or Phone..."
                             value={searchQuery}
                             onChange={(e) => onSearchChange(e.target.value)}
-                            className="w-full pl-10 pr-14 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-slate-300 focus:border-slate-300 text-sm text-slate-800 transition-colors outline-none placeholder:text-slate-400"
+                            className="w-full pl-10 pr-14 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-slate-300 focus:border-slate-300 text-sm text-slate-800 transition-colors outline-none placeholder:text-slate-400 btn-touch"
                         />
                         <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
                             <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-400 bg-white border border-slate-100 rounded">
@@ -110,21 +110,22 @@ const FilterBar: React.FC<FilterBarProps> = ({
                     {hasActiveFilters && (
                         <button
                             onClick={onClearFilters}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+                            className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-xs sm:text-sm font-medium shrink-0 btn-touch"
                         >
                             <X size={16} />
-                            Clear Filters
+                            <span className="hidden sm:inline">Clear Filters</span>
+                            <span className="sm:hidden">Clear</span>
                         </button>
                     )}
                 </div>
 
                 {/* Status Tabs */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-2 scrollbar-none">
                     {statusTabs.map((tab) => (
                         <button
                             key={tab.value}
                             onClick={() => onStatusChange(tab.value)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all whitespace-nowrap text-sm ${getTabColor(tab.color, activeStatus === tab.value)
+                            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg border transition-all whitespace-nowrap text-xs sm:text-sm shrink-0 btn-touch ${getTabColor(tab.color, activeStatus === tab.value)
                                 }`}
                         >
                             <span>{tab.label}</span>
@@ -139,13 +140,13 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 </div>
 
                 {/* Stage Filter */}
-                <div className="flex items-center gap-2 overflow-x-auto">
+                <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
                     <span className="text-sm font-medium text-slate-600 whitespace-nowrap">Stage:</span>
                     {stageTabs.map((tab) => (
                         <button
                             key={tab.value}
                             onClick={() => onStageChange(tab.value)}
-                            className={`px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap text-xs ${activeStage === tab.value
+                            className={`px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap text-xs shrink-0 btn-touch ${activeStage === tab.value
                                 ? 'bg-blue-50 text-blue-700 border-blue-300 font-semibold'
                                 : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                                 }`}
@@ -156,7 +157,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 </div>
 
                 {/* Country Filter */}
-                <div className="flex items-center gap-2 overflow-x-auto pt-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pt-1 scrollbar-none">
                     <span className="text-sm font-medium text-slate-600 whitespace-nowrap">Countries:</span>
                     {Object.values(Country).map((country) => {
                         const isActive = activeCountries.includes(country);
@@ -170,7 +171,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                                         onCountryChange([...activeCountries, country]);
                                     }
                                 }}
-                                className={`px-3 py-1.5 rounded-md border transition-all whitespace-nowrap text-xs font-medium ${isActive
+                                className={`px-3 py-1.5 rounded-md border transition-all whitespace-nowrap text-xs font-medium shrink-0 btn-touch ${isActive
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-sm'
                                     : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                                     }`}

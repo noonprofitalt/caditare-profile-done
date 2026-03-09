@@ -25,8 +25,7 @@ const CandidateList: React.FC = () => {
   const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-
-  const hasMoreItems = paginatedCandidates.length < totalCount;
+  const [hasMoreItems, setHasMoreItems] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -84,6 +83,8 @@ const CandidateList: React.FC = () => {
 
       setPaginatedCandidates(prev => isRefresh ? newBatch : [...prev, ...newBatch]);
       setTotalCount(count);
+      // Ensure we can fetch more if the current batch is full, regardless of count API bug
+      setHasMoreItems(newBatch.length === PAGE_SIZE);
     } catch (err) {
       console.error("Failed to load candidates page", err);
     } finally {
@@ -116,7 +117,7 @@ const CandidateList: React.FC = () => {
 
 
   const loadMoreItems = () => {
-    if (isFetchingMore || isLoading || paginatedCandidates.length >= totalCount) return;
+    if (isFetchingMore || isLoading || !hasMoreItems) return;
     const nextPage = page + 1;
     setPage(nextPage);
     loadData(nextPage, false);
@@ -138,8 +139,8 @@ const CandidateList: React.FC = () => {
   const candidateCounts = useMemo(() => ({
     all: contextCandidates.length,
     quick: contextCandidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK).length,
-    partial: contextCandidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL).length,
-    complete: contextCandidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length
+    partial: contextCandidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL && (c.profileCompletionPercentage || 0) < 75).length,
+    complete: contextCandidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || (c.profileCompletionPercentage || 0) >= 75).length
   }), [contextCandidates]);
 
   const handleStatusChange = (status: ProfileCompletionStatus | 'ALL') => {
@@ -222,9 +223,22 @@ const CandidateList: React.FC = () => {
     setIsIntegrityScanActive(!isIntegrityScanActive);
   };
 
-  // Virtualized Row Component - Responsive Card
   const CandidateRow = ({ index, style, candidates, selectedIds, onSelect, adminCheck }: any) => {
     const candidate = candidates[index];
+
+    if (!candidate) {
+      return (
+        <div style={style} className="px-4 md:px-6">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm mb-3 p-4 flex items-center justify-center">
+            <div className="flex items-center gap-2 text-slate-400">
+              <Loader2 size={16} className="animate-spin" />
+              <span className="text-sm font-medium">Loading candidates...</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const isSelected = selectedIds.includes(candidate.id);
 
     return (
@@ -247,7 +261,7 @@ const CandidateList: React.FC = () => {
                 className="w-12 h-12 rounded-xl border border-slate-200 shadow-sm"
                 alt=""
               />
-              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE ? 'bg-emerald-500' : 'bg-amber-500'
+              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || candidate.profileCompletionPercentage >= 75 ? 'bg-emerald-500' : 'bg-amber-500'
                 }`} />
             </div>
             <div className="truncate flex-1">
@@ -261,6 +275,14 @@ const CandidateList: React.FC = () => {
                       {country}
                     </span>
                   ))
+                ) : candidate.targetCountry ? (
+                  <span className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
+                    {candidate.targetCountry}
+                  </span>
+                ) : candidate.country ? (
+                  <span className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
+                    {candidate.country}
+                  </span>
                 ) : (
                   <span className="text-xs bg-slate-50 text-slate-500 font-medium px-2 py-0.5 rounded border border-slate-200">
                     No Destination
@@ -282,8 +304,10 @@ const CandidateList: React.FC = () => {
 
             <div className="md:w-1/4">
               <span className={`badge ${candidate.stage === WorkflowStage.DEPARTED ? 'badge-green' :
-                candidate.stage === WorkflowStage.VISA_RECEIVED ? 'badge-blue' :
-                  'badge-amber'
+                [WorkflowStage.VISA_RECEIVED, WorkflowStage.TICKET_ISSUED, WorkflowStage.SLBFE_REGISTRATION].includes(candidate.stage) ? 'badge-blue' :
+                  [WorkflowStage.REGISTERED, WorkflowStage.VERIFIED].includes(candidate.stage) ? 'badge-slate' :
+                    [WorkflowStage.APPLIED, WorkflowStage.OFFER_RECEIVED, WorkflowStage.WP_RECEIVED, WorkflowStage.EMBASSY_APPLIED].includes(candidate.stage) ? 'badge-purple' :
+                      'badge-amber'
                 }`}>
                 {candidate.stage}
               </span>
@@ -312,7 +336,7 @@ const CandidateList: React.FC = () => {
             <h1 className="text-2xl font-semibold text-slate-900">Candidates</h1>
             <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
               <Users size={12} className="text-blue-500" />
-              <span>{totalCount} Total Candidates</span>
+              <span>{Math.max(totalCount, candidateCounts.all)} Total Candidates</span>
             </div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
@@ -360,7 +384,7 @@ const CandidateList: React.FC = () => {
 
       {/* Bulk Actions Bar (Admin Only) */}
       {isAdmin && selectedCandidateIds.length > 0 && (
-        <div className="fixed bottom-[88px] md:bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 z-50 transition-premium scale-in">
+        <div className="fixed bottom-[calc(var(--bottom-nav-height)+0.5rem)] md:bottom-6 left-3 right-3 sm:left-4 sm:right-4 md:left-1/2 md:-translate-x-1/2 z-50 transition-premium scale-in">
           <div className="bg-slate-900/95 backdrop-blur-xl text-white border border-slate-800 shadow-2xl rounded-2xl px-4 py-3 flex items-center justify-between md:justify-start md:gap-4 max-w-lg mx-auto md:max-w-none">
             <div className="flex items-center gap-2 pr-4 md:border-r border-slate-800">
               <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-lg shadow-blue-500/20 animate-pulse">
@@ -392,12 +416,14 @@ const CandidateList: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <div className="px-6 py-4">
+      <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
         {/* Results Header */}
         <div className="flex items-center justify-between mb-3 px-2">
           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             <Users size={12} />
-            <span>Showing {paginatedCandidates.length} of {totalCount} Candidates</span>
+            <span>Showing {paginatedCandidates.length} of {
+              hasActiveFilters ? Math.max(totalCount, paginatedCandidates.length) + (hasMoreItems ? '+' : '') : Math.max(totalCount, candidateCounts.all, paginatedCandidates.length)
+            } Candidates</span>
           </div>
         </div>
 
@@ -437,7 +463,7 @@ const CandidateList: React.FC = () => {
 
         {/* Virtualized Registry */}
         {!isLoading && paginatedCandidates.length > 0 && (
-          <div className="glass-card overflow-hidden bg-white/50" style={{ height: listHeight }}>
+          <div className="glass-card overflow-hidden bg-white/50 touch-pan-y" style={{ height: listHeight }}>
             <div className="hidden md:flex items-center px-6 py-3 border-b border-slate-200 bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10 backdrop-blur-sm">
               <div className="w-1/3">Candidate</div>
               <div className="w-1/4">Contact</div>
@@ -466,7 +492,7 @@ const CandidateList: React.FC = () => {
           </div>
         )}
         {/* Mobile FAB */}
-        <div className="lg:hidden fixed bottom-24 right-6 z-40">
+        <div className="lg:hidden fixed bottom-[calc(var(--bottom-nav-height)+0.5rem)] right-4 sm:right-6 z-40">
           <Link
             to="/candidates/quick-add"
             className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-slate-800 transition-colors"

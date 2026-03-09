@@ -13,12 +13,12 @@ vi.mock('../services/emailService', () => ({
 
 // Mock authentication middleware
 vi.doMock('../../middleware/auth', () => ({
-    authMiddleware: (req, res, next) => {
+    authMiddleware: (req: any, res: any, next: any) => {
         req.user = { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', name: 'Test User', email: 'test@example.com', role: 'user' };
         next();
     },
-    requireRole: () => (req, res, next) => next(),
-    optionalAuth: (req, res, next) => {
+    requireRole: () => (req: any, res: any, next: any) => next(),
+    optionalAuth: (req: any, res: any, next: any) => {
         req.user = { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', name: 'Test User', email: 'test@example.com', role: 'user' };
         next();
     }
@@ -26,12 +26,12 @@ vi.doMock('../../middleware/auth', () => ({
 
 // Mock rate limiting middleware
 vi.doMock('../../middleware/rateLimiting', () => ({
-    apiLimiter: (req, res, next) => next(),
-    authLimiter: (req, res, next) => next(),
-    messageLimiter: (req, res, next) => next(),
-    uploadLimiter: (req, res, next) => next(),
-    channelCreationLimiter: (req, res, next) => next(),
-    searchLimiter: (req, res, next) => next(),
+    apiLimiter: (req: any, res: any, next: any) => next(),
+    authLimiter: (req: any, res: any, next: any) => next(),
+    messageLimiter: (req: any, res: any, next: any) => next(),
+    uploadLimiter: (req: any, res: any, next: any) => next(),
+    channelCreationLimiter: (req: any, res: any, next: any) => next(),
+    searchLimiter: (req: any, res: any, next: any) => next(),
 }));
 
 describe('Messages API', () => {
@@ -65,7 +65,6 @@ describe('Messages API', () => {
             ];
 
             (query as any)
-                .mockResolvedValueOnce({ rows: [{ user_id: VALID_UUID }] }) // Access check
                 .mockResolvedValueOnce({ rows: mockMessages }); // Messages query
 
             const response = await request(app).get(`/api/${VALID_UUID}/messages`);
@@ -81,7 +80,6 @@ describe('Messages API', () => {
             const mockResult = { id: VALID_UUID, text: 'Test message', sender_id: VALID_UUID, created_at: new Date() };
 
             (query as any)
-                .mockResolvedValueOnce({ rows: [{ user_id: VALID_UUID }] }) // Access check
                 .mockResolvedValueOnce({ rows: [mockResult] }); // Insert query
 
             const response = await request(app)

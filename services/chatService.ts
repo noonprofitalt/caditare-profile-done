@@ -15,7 +15,7 @@ interface IChatService {
     updateChannel: (channelId: string, updates: Partial<ChatChannel>) => Promise<ChatChannel | undefined>;
     deleteChannel: (channelId: string) => Promise<boolean>;
     getDmChannelId: (userId1: string, userId2?: string) => string;
-    getChannelDisplay: (channelId: string, users: ChatUser[]) => { name: string; avatar?: string; isUser: boolean; status?: string };
+    getChannelDisplay: (channelId: string, users: ChatUser[], currentUserId?: string) => { name: string; avatar?: string; isUser: boolean; status?: string };
     getNotifications: () => Promise<ChatNotification[]>;
     markNotificationRead: (id: string) => Promise<void>;
     markAllNotificationsRead: () => Promise<void>;
@@ -313,10 +313,10 @@ export const ChatService: IChatService = {
         return `dm-${ids[0]}-${ids[1]}`;
     },
 
-    getChannelDisplay: (channelId: string, users: ChatUser[]) => {
+    getChannelDisplay: (channelId: string, users: ChatUser[], currentUserId?: string) => {
         if (channelId.startsWith('dm-')) {
             const userIds = channelId.replace('dm-', '').split('-');
-            const otherUserId = userIds.find(id => id !== 'current-user'); // Logic needs actual current user ID
+            const otherUserId = userIds.find(id => id !== currentUserId) || userIds[0];
             const user = users.find(u => u.id === otherUserId);
             return {
                 name: user?.name || 'Direct Message',

@@ -85,7 +85,7 @@ const GlobalSearch: React.FC = () => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-4 sm:pt-[15vh] px-0 sm:px-4">
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
@@ -93,36 +93,36 @@ const GlobalSearch: React.FC = () => {
             />
 
             {/* Palette */}
-            <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative w-full h-full sm:h-auto max-w-2xl bg-white sm:rounded-2xl shadow-2xl border-0 sm:border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
                 {/* Search Bar */}
-                <div className="relative border-b border-slate-100 p-4">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <div className="relative border-b border-slate-100 p-3 sm:p-4 shrink-0">
+                    <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                     <input
                         ref={inputRef}
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Search candidates by name, NIC, or phone... (↑↓ to navigate)"
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-slate-900 placeholder-slate-400 focus:ring-0 text-lg font-medium"
+                        placeholder="Search by name, NIC, or phone..."
+                        className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 bg-slate-50 border-none rounded-xl text-slate-900 placeholder-slate-400 focus:ring-0 text-base sm:text-lg font-medium"
                     />
-                    <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <div className="absolute right-5 sm:right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         {isLoading ? (
                             <Loader2 className="animate-spin text-blue-500" size={18} />
                         ) : (
-                            <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500 uppercase">
+                            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500 uppercase">
                                 <Command size={10} />
                                 <span>K</span>
                             </div>
                         )}
-                        <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600">
+                        <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 btn-touch p-1">
                             <X size={18} />
                         </button>
                     </div>
                 </div>
 
                 {/* Results Section */}
-                <div className="max-h-[60vh] overflow-y-auto p-2">
+                <div className="flex-1 max-h-[60vh] sm:max-h-[60vh] overflow-y-auto p-2 touch-pan-y">
                     {!query.trim() ? (
                         <div className="py-12 text-center text-slate-400">
                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -184,7 +184,7 @@ const GlobalSearch: React.FC = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between px-6">
+                <div className="p-3 bg-slate-50 border-t border-slate-100 hidden sm:flex items-center justify-between px-6 shrink-0">
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
                             <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-bold">↵</span>

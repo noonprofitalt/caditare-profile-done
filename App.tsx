@@ -14,6 +14,7 @@ import RoleRoute from './components/RoleRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { logger } from './services/loggerService';
 import { OfflineSyncService } from './services/offlineSyncService';
+import { BackupService } from './services/backupService';
 import * as Sentry from '@sentry/react';
 
 // Initialize Sentry explicitly for production error tracking
@@ -88,6 +89,14 @@ const App: React.FC = () => {
   React.useEffect(() => {
     // Initialize Offline Queueing behavior application-wide
     OfflineSyncService.init();
+
+    // Start background auto-backup daemon
+    BackupService.checkAndRunAutoBackup(); // Initial check on load
+    const backupInterval = setInterval(() => {
+      BackupService.checkAndRunAutoBackup();
+    }, 15 * 60 * 1000); // Check every 15 minutes
+
+    return () => clearInterval(backupInterval);
   }, []);
 
   return (
@@ -104,7 +113,7 @@ const App: React.FC = () => {
                     path="/*"
                     element={
                       <ProtectedRoute>
-                        <div className="flex min-h-screen bg-slate-50 relative overflow-hidden">
+                        <div className="flex min-h-dvh min-h-screen bg-slate-50 relative overflow-hidden">
                           {/* Overlay for mobile sidebar */}
                           {isSidebarOpen && (
                             <div
@@ -115,13 +124,11 @@ const App: React.FC = () => {
 
                           <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-                          <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:ml-64">
+                          <div className="flex-1 flex flex-col min-w-0 w-full transition-all duration-300 lg:ml-[var(--sidebar-width)]">
                             <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
-                            <div className="lg:ml-0">
-                              <Breadcrumbs />
-                            </div>
-                            <main className="flex-1 overflow-y-auto pb-safe md:pb-0">
-                              <div className="pb-24 md:pb-0 min-h-full">
+                            <Breadcrumbs />
+                            <main className="flex-1 overflow-y-auto overflow-x-hidden touch-pan-y">
+                              <div className="pb-[calc(var(--bottom-nav-height)+1rem)] lg:pb-0 min-h-full">
                                 <Suspense fallback={<PageLoader />}>
                                   <Routes>
                                     <Route path="/" element={<Dashboard />} />

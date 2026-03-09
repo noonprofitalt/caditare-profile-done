@@ -78,6 +78,18 @@ export interface PaymentRecord {
   notes?: string;
 }
 
+// Interview Tracking Data
+export interface InterviewRecord {
+  id: string;
+  date: string;
+  time: string;
+  interviewer?: string;
+  method: 'In-Person' | 'Online' | 'Phone';
+  linkOrLocation?: string;
+  notes?: string;
+  status: 'Scheduled' | 'Completed' | 'Cancelled' | 'No-Show' | 'Passed' | 'Failed';
+}
+
 // Sub-status specific data tracking
 export interface StageData {
   medicalStatus?: MedicalStatus;
@@ -91,6 +103,8 @@ export interface StageData {
   paymentStatus?: 'Pending' | 'Partial' | 'Completed';
   paymentNotes?: string;
   paymentHistory?: PaymentRecord[];
+
+  interviews?: InterviewRecord[];
 
   // Phase 4-6 Tracking Data
   wpReferenceNumber?: string;
@@ -167,6 +181,11 @@ export enum DocumentType {
   EDU_AL = 'A/L Certificate',
   EDU_LEARNING = 'Learning Certificates',
   EDU_PROFESSIONAL = 'Professional Certificates',
+  CDF = 'CDF',
+  ADDITIONAL_DOCUMENTS = 'Additional Documents',
+  ID_CARD = 'ID',
+  DRIVING_LICENSE = 'Driving licence',
+  DRIVING_LICENSE_INTERNATIONAL = 'Int. Driving License',
 
   // Later Process
   MEDICAL_REPORT = 'Medical Report',

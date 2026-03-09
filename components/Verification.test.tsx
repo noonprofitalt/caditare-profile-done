@@ -7,6 +7,8 @@ import CandidateDetail from './CandidateDetail';
 import { CandidateService } from '../services/candidateService';
 import { Candidate, WorkflowStage, StageStatus } from '../types';
 import { CandidateProvider } from '../context/CandidateContext';
+import { AuthContext } from '../context/AuthContext';
+import { ToastProvider } from '../context/ToastContext';
 
 // Mock CandidateService
 vi.mock('../services/candidateService', () => ({
@@ -55,6 +57,11 @@ const mockCandidate = {
     stageStatus: StageStatus.PENDING,
     personalInfo: {
         fullName: 'Rajesh Kumar',
+        height: { feet: 5, inches: 8 },
+        weight: 70,
+    },
+    professionalProfile: {
+        school: 'St. Peters',
     },
     documents: [], // NO PASSPORT
     workflowLogs: [],
@@ -73,13 +80,17 @@ describe('Candidate Features Verification', () => {
         vi.mocked(CandidateService.getCandidate).mockResolvedValue(mockCandidate);
 
         render(
-            <CandidateProvider>
-                <MemoryRouter initialEntries={['/candidates/123']}>
-                    <Routes>
-                        <Route path="/candidates/:id" element={<CandidateDetail />} />
-                    </Routes>
-                </MemoryRouter>
-            </CandidateProvider>
+            <ToastProvider>
+                <AuthContext.Provider value={{ user: { id: 'test', name: 'Rajesh', email: 'test@suhara.erp', role: 'System Admin' as any, status: 'Active', avatar: '' }, isAuthenticated: true, isLoading: false, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() }}>
+                    <CandidateProvider>
+                        <MemoryRouter initialEntries={['/candidates/123']}>
+                            <Routes>
+                                <Route path="/candidates/:id" element={<CandidateDetail />} />
+                            </Routes>
+                        </MemoryRouter>
+                    </CandidateProvider>
+                </AuthContext.Provider>
+            </ToastProvider>
         );
 
         // Wait for data load
@@ -90,23 +101,27 @@ describe('Candidate Features Verification', () => {
         const profileTab = screen.getByText('Profile');
         fireEvent.click(profileTab);
 
-        // Check for new 5-section layout headers (assuming they are rendered in CandidateDetail)
-        // Adjust text if needed based on actual implementation
-        expect(screen.getByText(/Personal Details/i)).toBeInTheDocument();
-        // expect(screen.getByText(/Passport Details/i)).toBeInTheDocument(); // specific sections
+        // Check for section headers
+        expect(screen.getByText(/Profile Information/i)).toBeInTheDocument();
+        expect(screen.getByText(/Administrative Details/i)).toBeInTheDocument();
+        expect(screen.getByText(/Personal & Physical Attributes/i)).toBeInTheDocument();
     });
 
     test('CandidateDetail: Should allow editing School, Height, Weight in Edit Mode', async () => {
         vi.mocked(CandidateService.getCandidate).mockResolvedValue(mockCandidate);
 
         render(
-            <CandidateProvider>
-                <MemoryRouter initialEntries={['/candidates/123']}>
-                    <Routes>
-                        <Route path="/candidates/:id" element={<CandidateDetail />} />
-                    </Routes>
-                </MemoryRouter>
-            </CandidateProvider>
+            <ToastProvider>
+                <AuthContext.Provider value={{ user: { id: 'test', name: 'Rajesh', email: 'test@suhara.erp', role: 'System Admin' as any, status: 'Active', avatar: '' }, isAuthenticated: true, isLoading: false, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() }}>
+                    <CandidateProvider>
+                        <MemoryRouter initialEntries={['/candidates/123']}>
+                            <Routes>
+                                <Route path="/candidates/:id" element={<CandidateDetail />} />
+                            </Routes>
+                        </MemoryRouter>
+                    </CandidateProvider>
+                </AuthContext.Provider>
+            </ToastProvider>
         );
 
         expect(await screen.findByRole('heading', { name: /Rajesh Kumar/i })).toBeInTheDocument();
@@ -115,7 +130,8 @@ describe('Candidate Features Verification', () => {
         fireEvent.click(screen.getByText('Profile'));
 
         // Enter Edit Mode
-        fireEvent.click(screen.getByText(/Edit Profile/i));
+        const editButtons = screen.getAllByText(/Edit Profile/i);
+        fireEvent.click(editButtons[0]);
 
         // Find inputs (using labels)
         const schoolInput = screen.getByLabelText(/School/i);
@@ -156,13 +172,17 @@ describe('Candidate Features Verification', () => {
         const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => { });
 
         render(
-            <CandidateProvider>
-                <MemoryRouter initialEntries={['/candidates/123']}>
-                    <Routes>
-                        <Route path="/candidates/:id" element={<CandidateDetail />} />
-                    </Routes>
-                </MemoryRouter>
-            </CandidateProvider>
+            <ToastProvider>
+                <AuthContext.Provider value={{ user: { id: 'test', name: 'Rajesh', email: 'test@suhara.erp', role: 'System Admin' as any, status: 'Active', avatar: '' }, isAuthenticated: true, isLoading: false, login: vi.fn(), logout: vi.fn(), updateUser: vi.fn() }}>
+                    <CandidateProvider>
+                        <MemoryRouter initialEntries={['/candidates/123']}>
+                            <Routes>
+                                <Route path="/candidates/:id" element={<CandidateDetail />} />
+                            </Routes>
+                        </MemoryRouter>
+                    </CandidateProvider>
+                </AuthContext.Provider>
+            </ToastProvider>
         );
 
         // Wait for data load

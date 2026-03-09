@@ -61,6 +61,7 @@ import RecentActivityWidget from './widgets/RecentActivityWidget';
 import SLBFEStatusWidget from './widgets/SLBFEStatusWidget';
 import ActivityLogWidget from './widgets/ActivityLogWidget';
 import FinancialLedgerWidget from './widgets/FinancialLedgerWidget';
+import InterviewWidget from './widgets/InterviewWidget';
 
 import MultiPhoneInput from './ui/MultiPhoneInput';
 import MultiEducationSelector from './ui/MultiEducationSelector';
@@ -78,6 +79,7 @@ import { ProfileCompletionService } from '../services/profileCompletionService';
 import WorkflowEngine, { WORKFLOW_STAGES } from '../services/workflowEngine';
 import { DataSyncService } from '../services/dataSyncService';
 import { AuditService } from '../services/auditService';
+import { generateMRZ } from '../utils/mrzGenerator';
 
 
 const CandidateDetail: React.FC = () => {
@@ -144,6 +146,9 @@ const CandidateDetail: React.FC = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Partial<Candidate>>({});
 
+  // Custom payment type input state (replaces window.prompt)
+  const [newCustomPaymentType, setNewCustomPaymentType] = useState('');
+
   // Matched Jobs & Employers State
   const [matchedJobs, setMatchedJobs] = useState<Job[]>([]);
   const [employersMap, setEmployersMap] = useState<Record<string, Employer>>({});
@@ -181,16 +186,28 @@ const CandidateDetail: React.FC = () => {
     if (!candidate || !editedProfile) return;
 
     try {
+      // Clean passports array to prevent empty/duplicate entries
+      const cleanedPassports = (editedProfile.passports || []).filter(
+        p => p && (p.passportNumber?.trim() || p.issuedDate?.trim() || p.expiryDate?.trim())
+      );
+
       // Use DataSyncService to ensure bidirectional parity
       const updatedCandidate = DataSyncService.fullSync({
         ...candidate,
         ...editedProfile,
+        passports: cleanedPassports.length > 0 ? cleanedPassports : [],
         // Special handling for slbfeData specific to this component's logic
         slbfeData: {
           biometricStatus: 'Pending',
-          medicalStatus: 'Pending',
+          agreementStatus: 'Pending',
           ...(candidate.slbfeData || {}),
-          ...(editedProfile.slbfeData || {})
+          ...(editedProfile.slbfeData || {}),
+          // Deep-merge familyConsent to avoid losing nested fields
+          familyConsent: {
+            isGiven: false,
+            ...(candidate.slbfeData?.familyConsent || {}),
+            ...((editedProfile.slbfeData as any)?.familyConsent || {})
+          }
         } as any,
         // Ensure complex arrays are preserved if missing in editedProfile
         advancePayments: (editedProfile as any).advancePayments ?? [],
@@ -217,8 +234,10 @@ const CandidateDetail: React.FC = () => {
         actor: user?.name || 'Internal Staff',
         userId: user?.id
       });
+      toast.success('Profile saved successfully');
     } catch (e) {
       console.error('Error saving profile:', e);
+      toast.error('Failed to save profile. Please try again.');
     }
   };
 
@@ -251,6 +270,15 @@ const CandidateDetail: React.FC = () => {
       updatedCandidate.pccData = pccData;
     }
 
+    // Fix: Keep passports array in sync if it exists or create it
+    if (updatedCandidate.passportData) {
+      if (updatedCandidate.passports && updatedCandidate.passports.length > 0) {
+        updatedCandidate.passports[0] = updatedCandidate.passportData;
+      } else {
+        updatedCandidate.passports = [updatedCandidate.passportData];
+      }
+    }
+
     // Recalculate profile completion
     updatedCandidate = ProfileCompletionService.updateCompletionData(updatedCandidate);
 
@@ -271,25 +299,16 @@ const CandidateDetail: React.FC = () => {
     }
   };
 
-  // Handle document update
-  const handleDocumentUpdate = async (updatedDocs: CandidateDocument[]) => {
+  // Handle interview schedule update
+  const handleInterviewUpdate = async (data: { interviews: import('../types').InterviewRecord[] }) => {
     if (!candidate) return;
-
-    const newEvent: TimelineEvent = {
-      id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      type: 'DOCUMENT',
-      title: 'Documents Updated',
-      description: 'Candidate documents have been modified',
-      actor: user?.name || 'Internal Staff',
-      userId: user?.id,
-      stage: candidate.stage
-    };
 
     const updatedCandidate: Candidate = {
       ...candidate,
-      documents: updatedDocs,
-      timelineEvents: [newEvent, ...(candidate.timelineEvents || [])]
+      stageData: {
+        ...candidate.stageData,
+        interviews: data.interviews
+      }
     };
 
     updateCandidateInState(updatedCandidate);
@@ -297,8 +316,57 @@ const CandidateDetail: React.FC = () => {
 
     try {
       await CandidateService.updateCandidate(updatedCandidate);
+      await CandidateService.addTimelineEvent(candidate.id, {
+        type: 'SYSTEM',
+        title: 'Interview Schedule Updated',
+        description: `Interview schedules updated (${data.interviews.length} total)`,
+        actor: user?.name || 'Internal Staff',
+        userId: user?.id
+      });
+    } catch (err) {
+      console.error('Failed to update interview data', err);
+    }
+  };
+
+  // Handle document update safely against rapid clicks by fetching fresh data
+  const handleDocumentUpdate = async (updatedDocs: CandidateDocument[]) => {
+    if (!candidate) return;
+
+    try {
+      // 1. Fetch fresh candidate data so rapid clicks do not overwrite each other's changes
+      const freshCandidate = await CandidateService.getCandidate(candidate.id);
+      const safeCandidate = freshCandidate || candidate;
+
+      const newEvent: TimelineEvent = {
+        id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        type: 'DOCUMENT',
+        title: 'Documents Updated',
+        description: 'Candidate documents have been modified',
+        actor: user?.name || 'Internal Staff',
+        userId: user?.id,
+        stage: safeCandidate.stage
+      };
+
+      const updatedCandidate: Candidate = {
+        ...safeCandidate,
+        documents: updatedDocs,
+        timelineEvents: [newEvent, ...(safeCandidate.timelineEvents || [])]
+      };
+
+      // 2. Optimistic local update
+      updateCandidateInState(updatedCandidate);
+      setCandidate(updatedCandidate);
+
+      // 3. Persist back to database
+      await CandidateService.updateCandidate(updatedCandidate);
     } catch (err) {
       console.error('Failed to update documents', err);
+      // Fallback in case of network issue
+      const fallbackCandidate = { ...candidate, documents: updatedDocs };
+      updateCandidateInState(fallbackCandidate);
+      setCandidate(fallbackCandidate);
+      await CandidateService.updateCandidate(fallbackCandidate);
     }
   };
 
@@ -370,7 +438,7 @@ const CandidateDetail: React.FC = () => {
       });
 
     } else {
-      alert(`Cannot advance stage: ${transitionResult.error}`);
+      toast.warning(`Cannot advance stage: ${transitionResult.error}`);
     }
   };
 
@@ -479,7 +547,7 @@ const CandidateDetail: React.FC = () => {
 
     const policy = WorkflowEngine.canPerformAction(candidate, 'DELETE');
     if (!policy.allowed) {
-      alert(`Policy Block: ${policy.reason}`);
+      toast.warning(`Policy Block: ${policy.reason}`);
       return;
     }
 
@@ -520,8 +588,10 @@ const CandidateDetail: React.FC = () => {
         actor: user?.name || 'Internal Staff',
         userId: user?.id
       });
+      toast.success('Activity log saved successfully');
     } catch (err) {
       console.error('Failed to update activity log', err);
+      toast.error('Failed to update activity log');
     }
   };
 
@@ -563,9 +633,10 @@ const CandidateDetail: React.FC = () => {
         actor: user?.name || 'Internal Staff',
         userId: user?.id
       });
+      toast.success('Report successfully generated!');
     } catch (error) {
       console.error('Failed to generate PDF:', error);
-      alert('Failed to generate report. Please try again.');
+      toast.error('Failed to generate report. Please try again.');
     } finally {
       setIsExportingReport(false);
     }
@@ -728,6 +799,72 @@ const CandidateDetail: React.FC = () => {
                         {(candidate as any).companyName && <div><span className="font-bold uppercase">Company: </span><span className="font-medium text-slate-700">{(candidate as any).companyName}</span></div>}
                         {candidate.dhOfficer && <div><span className="font-bold uppercase">D/H Officer: </span><span className="font-medium text-slate-700">{candidate.dhOfficer}</span></div>}
                       </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Application Intent & Desired Role - ADDED FOR EDITABILITY */}
+                <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
+                      <Globe size={14} className="text-blue-500" />
+                      Target Country
+                    </label>
+                    {isEditingProfile ? (
+                      <input
+                        type="text"
+                        value={editedProfile.targetCountry || (editedProfile as any).country || ''}
+                        onChange={(e) => setEditedProfile({ ...editedProfile, targetCountry: e.target.value, country: e.target.value } as any)}
+                        placeholder="e.g. Romania, UAE"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                      />
+                    ) : (
+                      <div className="p-2.5 bg-white rounded-lg text-sm font-bold text-slate-900 border border-slate-200/50 shadow-sm">
+                        {candidate.targetCountry || (candidate as any).country || '-'}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
+                      <Briefcase size={14} className="text-blue-500" />
+                      Desired Position
+                    </label>
+                    {isEditingProfile ? (
+                      <input
+                        type="text"
+                        value={editedProfile.position || (editedProfile as any).role || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const currentRoles = [...((editedProfile.professionalProfile?.jobRoles as any[]) || [])];
+                          let updatedRoles = currentRoles;
+
+                          if (currentRoles.length > 0) {
+                            if (typeof currentRoles[0] === 'string') {
+                              updatedRoles[0] = { title: val, experienceYears: 0, skillLevel: 'Beginner' };
+                            } else {
+                              updatedRoles[0] = { ...currentRoles[0], title: val };
+                            }
+                          } else {
+                            updatedRoles = [{ title: val, experienceYears: 0, skillLevel: 'Beginner' }];
+                          }
+
+                          setEditedProfile({
+                            ...editedProfile,
+                            position: val,
+                            role: val,
+                            professionalProfile: {
+                              ...(editedProfile.professionalProfile || { experienceYears: 0, skills: [], education: [] }),
+                              jobRoles: updatedRoles
+                            }
+                          } as any);
+                        }}
+                        placeholder="e.g. General Worker"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white"
+                      />
+                    ) : (
+                      <div className="p-2.5 bg-white rounded-lg text-sm font-bold text-slate-900 border border-slate-200/50 shadow-sm">
+                        {candidate.position || (candidate as any).role || '-'}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -924,8 +1061,8 @@ const CandidateDetail: React.FC = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {(candidate.passports && candidate.passports.length > 0) ? (
-                        candidate.passports.map((passport, idx) => (
+                      {(candidate.passports && candidate.passports.filter(p => p && (p.passportNumber?.trim() || p.issuedDate?.trim() || p.expiryDate?.trim())).length > 0) ? (
+                        candidate.passports.filter(p => p && (p.passportNumber?.trim() || p.issuedDate?.trim() || p.expiryDate?.trim())).map((passport, idx) => (
                           <div key={idx} className="bg-gradient-to-br from-amber-50/30 to-slate-50/80 rounded-xl border border-amber-200/60 overflow-hidden shadow-sm">
                             {/* Passport Header */}
                             <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-5 py-2.5 flex items-center justify-between">
@@ -1040,10 +1177,15 @@ const CandidateDetail: React.FC = () => {
                             </div>
 
                             {/* MRZ Zone */}
-                            <div className="bg-slate-100 px-5 py-3 border-t border-slate-200 font-mono text-[11px] tracking-[0.15em] text-slate-500 leading-relaxed overflow-x-auto">
-                              <div>PB{passport.country === 'Sri Lanka' ? 'LKA' : ''}{(candidate?.personalInfo?.surname || candidate?.personalInfo?.firstName || '').replace(/\s/g, '')}&lt;&lt;{(candidate?.personalInfo?.otherNames || candidate?.personalInfo?.middleName || '').replace(/\s/g, '&lt;')}&lt;&lt;&lt;&lt;</div>
-                              <div>{passport.passportNumber || '?????????'}LKA{(candidate?.personalInfo?.dob || '').replace(/-/g, '').slice(2)}{candidate?.personalInfo?.gender || '?'}{(passport.expiryDate || '').replace(/-/g, '').slice(2)}{(candidate?.personalInfo?.nic || '').replace(/[^0-9V]/gi, '')}&lt;&lt;&lt;&lt;</div>
-                            </div>
+                            {(function () {
+                              const [mrzLine1, mrzLine2] = generateMRZ(candidate, passport);
+                              return (
+                                <div className="bg-slate-100 px-5 py-3 border-t border-slate-200 font-mono text-[11px] tracking-[0.15em] text-slate-500 leading-relaxed overflow-x-auto whitespace-pre">
+                                  <div>{mrzLine1}</div>
+                                  <div>{mrzLine2}</div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         ))
                       ) : (
@@ -1929,6 +2071,8 @@ const CandidateDetail: React.FC = () => {
                         </div>
                       </div>
 
+                      {/* NOTE: SLBFE registration, training, and consent fields are managed in the dedicated SLBFE Bureau Data section below */}
+
                       {/* Additional Video Links Editable */}
                       <div className="pt-4 border-t border-slate-200">
                         <div className="flex justify-between items-center mb-3">
@@ -2127,6 +2271,7 @@ const CandidateDetail: React.FC = () => {
                             <div className="text-sm font-medium text-slate-900 mt-1">{candidate.stageData?.travelInsuranceCoverageEndDate || '-'}</div>
                           </div>
                         </div>
+                        {/* SLBFE data is displayed in the dedicated SLBFE Bureau Data section below */}
                       </div>
 
                       {/* Flight & Departure Read Only */}
@@ -2149,6 +2294,223 @@ const CandidateDetail: React.FC = () => {
                           </div>
                         </div>
                       </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* SECTION 1.555: SLBFE BUREAU DATA */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-6 h-1 bg-purple-500 rounded-full"></span>
+                    SLBFE Bureau Data
+                  </h3>
+
+                  {isEditingProfile ? (
+                    <div className="bg-purple-50/50 p-6 rounded-xl border border-purple-200 border-dashed space-y-5">
+                      {/* Registration */}
+                      <div>
+                        <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-3">Registration</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">SLBFE Registration No</label>
+                            <input type="text" value={(editedProfile as any).slbfeData?.registrationNumber ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), registrationNumber: e.target.value } } as any)} placeholder="e.g. SLBFE-2025-1234" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 font-mono" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Registration Date</label>
+                            <input type="date" value={(editedProfile as any).slbfeData?.registrationDate ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), registrationDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Agreement Status</label>
+                            <select value={(editedProfile as any).slbfeData?.agreementStatus ?? 'Pending'} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), agreementStatus: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500">
+                              <option value="Pending">Pending</option>
+                              <option value="Submitted">Submitted</option>
+                              <option value="Approved">Approved</option>
+                              <option value="Rejected">Rejected</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Training */}
+                      <div className="pt-3 border-t border-purple-200">
+                        <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-3">Pre-Departure Training</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Training Date</label>
+                            <input type="date" value={(editedProfile as any).slbfeData?.trainingDate ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), trainingDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Training Institute</label>
+                            <input type="text" value={(editedProfile as any).slbfeData?.trainingInstitute ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), trainingInstitute: e.target.value } } as any)} placeholder="Institute name" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Certificate No</label>
+                            <input type="text" value={(editedProfile as any).slbfeData?.trainingCertificateNo ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), trainingCertificateNo: e.target.value } } as any)} placeholder="Certificate number" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 font-mono" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Insurance */}
+                      <div className="pt-3 border-t border-purple-200">
+                        <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-3">Insurance</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Insurance Provider</label>
+                            <input type="text" value={(editedProfile as any).slbfeData?.insuranceProvider ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), insuranceProvider: e.target.value } } as any)} placeholder="Provider name" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Policy Number</label>
+                            <input type="text" value={(editedProfile as any).slbfeData?.insurancePolicyNumber ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), insurancePolicyNumber: e.target.value } } as any)} placeholder="Policy number" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 font-mono" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Expiry Date</label>
+                            <input type="date" value={(editedProfile as any).slbfeData?.insuranceExpiryDate ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), insuranceExpiryDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Premium (LKR)</label>
+                            <input type="number" value={(editedProfile as any).slbfeData?.insurancePremium ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), insurancePremium: e.target.value ? parseFloat(e.target.value) : undefined } } as any)} placeholder="0" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Biometrics & Consent */}
+                      <div className="pt-3 border-t border-purple-200">
+                        <h5 className="text-[10px] font-bold text-purple-600 uppercase tracking-widest mb-3">Biometrics & Family Consent</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Biometric Status</label>
+                            <select value={(editedProfile as any).slbfeData?.biometricStatus ?? 'Pending'} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), biometricStatus: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500">
+                              <option value="Pending">Pending</option>
+                              <option value="Scheduled">Scheduled</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Failed">Failed</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Family Consent Given</label>
+                            <select value={(editedProfile as any).slbfeData?.familyConsent?.isGiven === true ? 'Yes' : 'No'} onChange={(e) => { const isGiven = e.target.value === 'Yes'; setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), familyConsent: { ...((candidate.slbfeData?.familyConsent) || {}), ...(((editedProfile as any).slbfeData?.familyConsent) || {}), isGiven } } } as any); }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500">
+                              <option value="No">No</option>
+                              <option value="Yes">Yes</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Consent Verified By</label>
+                            <input type="text" value={(editedProfile as any).slbfeData?.familyConsent?.verifiedBy ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), familyConsent: { ...((candidate.slbfeData?.familyConsent) || {}), ...(((editedProfile as any).slbfeData?.familyConsent) || {}), verifiedBy: e.target.value } } } as any)} placeholder="GN/DS Officer name" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Signatory Name</label>
+                            <input type="text" value={(editedProfile as any).slbfeData?.familyConsent?.signatoryName ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), familyConsent: { ...((candidate.slbfeData?.familyConsent) || {}), ...(((editedProfile as any).slbfeData?.familyConsent) || {}), signatoryName: e.target.value } } } as any)} placeholder="Spouse/Parent name" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Signatory Relation</label>
+                            <input type="text" value={(editedProfile as any).slbfeData?.familyConsent?.signatoryRelation ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), familyConsent: { ...((candidate.slbfeData?.familyConsent) || {}), ...(((editedProfile as any).slbfeData?.familyConsent) || {}), signatoryRelation: e.target.value } } } as any)} placeholder="e.g. Spouse, Father" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Deployment Approval Date</label>
+                            <input type="date" value={(editedProfile as any).slbfeData?.deploymentApprovalDate ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, slbfeData: { ...(candidate.slbfeData || {}), ...((editedProfile as any).slbfeData || {}), deploymentApprovalDate: e.target.value } } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-purple-50/30 p-5 rounded-xl border border-purple-100 space-y-4">
+                      {/* Registration Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">SLBFE Registration No</label>
+                          <div className="text-sm font-bold text-slate-900 mt-1 font-mono">{candidate.slbfeData?.registrationNumber || <span className="text-slate-400 font-normal italic">Not set</span>}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Registration Date</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate.slbfeData?.registrationDate || <span className="text-slate-400 italic">-</span>}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Agreement Status</label>
+                          <div className="mt-1">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${candidate.slbfeData?.agreementStatus === 'Approved' ? 'bg-green-100 text-green-700' : candidate.slbfeData?.agreementStatus === 'Rejected' ? 'bg-red-100 text-red-700' : candidate.slbfeData?.agreementStatus === 'Submitted' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                              {candidate.slbfeData?.agreementStatus || 'Pending'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Training Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-purple-100">
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Training Date</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate.slbfeData?.trainingDate || <span className="text-slate-400 italic">-</span>}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Training Institute</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate.slbfeData?.trainingInstitute || <span className="text-slate-400 italic">-</span>}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Certificate No</label>
+                          <div className="text-sm font-bold text-slate-900 mt-1 font-mono">{candidate.slbfeData?.trainingCertificateNo || <span className="text-slate-400 font-normal italic">-</span>}</div>
+                        </div>
+                      </div>
+
+                      {/* Insurance Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-3 border-t border-purple-100">
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Insurance Provider</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate.slbfeData?.insuranceProvider || <span className="text-slate-400 italic">-</span>}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Policy Number</label>
+                          <div className="text-sm font-bold text-slate-900 mt-1 font-mono">{candidate.slbfeData?.insurancePolicyNumber || <span className="text-slate-400 font-normal italic">-</span>}</div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Expiry Date</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">
+                            {candidate.slbfeData?.insuranceExpiryDate ? (
+                              <span className={new Date(candidate.slbfeData.insuranceExpiryDate) < new Date() ? 'text-red-600 font-bold' : 'text-slate-900'}>
+                                {candidate.slbfeData.insuranceExpiryDate}
+                                {new Date(candidate.slbfeData.insuranceExpiryDate) < new Date() && ' (Expired)'}
+                              </span>
+                            ) : <span className="text-slate-400 italic">-</span>}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Premium</label>
+                          <div className="text-sm font-bold text-green-700 mt-1">{candidate.slbfeData?.insurancePremium ? `LKR ${candidate.slbfeData.insurancePremium.toLocaleString()}` : <span className="text-slate-400 font-normal italic">-</span>}</div>
+                        </div>
+                      </div>
+
+                      {/* Biometrics & Consent Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-purple-100">
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Biometric Status</label>
+                          <div className="mt-1">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${candidate.slbfeData?.biometricStatus === 'Completed' ? 'bg-green-100 text-green-700' : candidate.slbfeData?.biometricStatus === 'Failed' ? 'bg-red-100 text-red-700' : candidate.slbfeData?.biometricStatus === 'Scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                              {candidate.slbfeData?.biometricStatus || 'Pending'}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Family Consent</label>
+                          <div className="text-sm font-medium mt-1">{candidate.slbfeData?.familyConsent?.isGiven ? <span className="text-green-700 font-bold">✅ Given</span> : <span className="text-slate-400 italic">Not given</span>}</div>
+                          {candidate.slbfeData?.familyConsent?.verifiedBy && (
+                            <div className="text-[11px] text-slate-500 mt-0.5">Verified by {candidate.slbfeData.familyConsent.verifiedBy}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 uppercase">Deployment Approval</label>
+                          <div className="text-sm font-medium text-slate-900 mt-1">{candidate.slbfeData?.deploymentApprovalDate || <span className="text-slate-400 italic">-</span>}</div>
+                        </div>
+                      </div>
+
+                      {/* Consent Details (if present) */}
+                      {(candidate.slbfeData?.familyConsent?.signatoryName || candidate.slbfeData?.familyConsent?.signatoryRelation) && (
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-purple-100">
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 uppercase">Signatory</label>
+                            <div className="text-sm font-medium text-slate-900 mt-1">{candidate.slbfeData?.familyConsent?.signatoryName || '-'} ({candidate.slbfeData?.familyConsent?.signatoryRelation || '-'})</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </section>
@@ -2257,180 +2619,20 @@ const CandidateDetail: React.FC = () => {
                   )}
                 </section>
 
-                {/* SECTION 1.57: ADVANCE PAYMENT TRACKING */}
-                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-green-500 rounded-full"></span>
-                    Advance Payment Tracking
-                  </h3>
-
-                  {isEditingProfile ? (
-                    <div className="bg-green-50/50 p-6 rounded-xl border border-green-200 border-dashed">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b-2 border-green-200">
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Payment Type</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice No</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Amount (Rs)</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(() => {
-                              const payments = (editedProfile as any).advancePayments ?? [];
-                              const defaultTypes = ['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'];
-                              const customTypes = payments.filter((p: any) => !defaultTypes.includes(p.type)).map((p: any) => p.type);
-                              return Array.from(new Set([...defaultTypes, ...customTypes]));
-                            })().map((type: any, idx: number) => {
-                              const payments = (editedProfile as any).advancePayments ?? [];
-                              const payment = payments.find((p: any) => p.type === type) || { type, id: `adv-${idx}` };
-                              return (
-                                <tr key={type} className="border-b border-green-100 hover:bg-green-50/50">
-                                  <td className="py-2 px-2 font-bold text-slate-500">{idx + 1}</td>
-                                  <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
-                                  <td className="py-2 px-2">
-                                    <input type="date" value={payment.informedDate || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments ?? [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, informedDate: e.target.value, informed: !!e.target.value };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                  <td className="py-2 px-2">
-                                    <input type="date" value={payment.signDate || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments ?? [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, signDate: e.target.value };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                  <td className="py-2 px-2">
-                                    <input type="text" value={payment.invoiceNo || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments ?? [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, invoiceNo: e.target.value };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} placeholder="Inv#" className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                  <td className="py-2 px-2">
-                                    <input type="number" value={payment.amount || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments ?? [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, amount: e.target.value ? parseFloat(e.target.value) : 0 };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} placeholder="0" className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                  </td>
-                                  <td className="py-2 px-2 flex gap-1 items-center">
-                                    <input type="text" value={payment.remarks || ''} onChange={(e) => {
-                                      const all = [...((editedProfile as any).advancePayments ?? [])];
-                                      const existIdx = all.findIndex((p: any) => p.type === type);
-                                      const updated = { ...payment, remarks: e.target.value };
-                                      if (existIdx >= 0) all[existIdx] = updated; else all.push(updated);
-                                      setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                    }} placeholder="Notes..." className="w-full px-1.5 py-1 border border-slate-300 rounded text-xs" />
-                                    {(!['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'].includes(type)) && (
-                                      <button
-                                        className="text-red-400 hover:text-red-600 p-1"
-                                        onClick={() => {
-                                          const all = [...((editedProfile as any).advancePayments ?? [])].filter((p: any) => p.type !== type);
-                                          setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                                        }}
-                                      >
-                                        <Trash2 size={12} />
-                                      </button>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          className="flex items-center gap-1.5 text-xs font-bold text-green-700 hover:text-green-800 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-lg transition-colors"
-                          onClick={() => {
-                            const newType = window.prompt("Enter new custom payment type:");
-                            if (newType && newType.trim()) {
-                              const all = [...((editedProfile as any).advancePayments ?? [])];
-                              if (!all.find((p: any) => p.type.toLowerCase() === newType.trim().toLowerCase())) {
-                                all.push({ type: newType.trim(), id: `adv-${Date.now()}` });
-                                setEditedProfile({ ...editedProfile, advancePayments: all } as any);
-                              } else {
-                                alert('This payment type already exists.');
-                              }
-                            }
-                          }}
-                        >
-                          <Plus size={14} /> Add Custom Payment
-                        </button>
-                      </div>
-                      <div className="mt-4 grid grid-cols-2 gap-4 pt-3 border-t border-green-200">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate EMB</label>
-                          <input type="number" step="0.01" value={(editedProfile as any).usdRateEmb ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, usdRateEmb: e.target.value ? parseFloat(e.target.value) : 0 } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">USD Rate F/A</label>
-                          <input type="number" step="0.01" value={(editedProfile as any).usdRateFA ?? ''} onChange={(e) => setEditedProfile({ ...editedProfile, usdRateFA: e.target.value ? parseFloat(e.target.value) : 0 } as any)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-green-50/30 p-5 rounded-xl border border-green-100">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b-2 border-green-200">
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">#</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Type</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Informed</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Sign Date</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Invoice</th>
-                              <th className="text-right py-2 px-2 font-bold text-slate-600 uppercase">Amount</th>
-                              <th className="text-left py-2 px-2 font-bold text-slate-600 uppercase">Remarks</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(() => {
-                              const payments = candidate.advancePayments || [];
-                              const defaultTypes = ['Register Fee', 'Offer', 'Work Permit', 'Embassy USD', 'Balance Pay', 'Ticket', 'Deposit', 'Other'];
-                              const customTypes = payments.filter((p: any) => !defaultTypes.includes(p.type)).map((p: any) => p.type);
-                              return Array.from(new Set([...defaultTypes, ...customTypes]));
-                            })().map((type: any, idx: number) => {
-                              const payment = (candidate.advancePayments || []).find((p) => p.type === type);
-                              const hasData = payment && (payment.amount || payment.invoiceNo || payment.informedDate);
-                              return (
-                                <tr key={type} className={`border-b border-green-100 ${hasData ? 'bg-green-50/50' : ''}`}>
-                                  <td className="py-2 px-2 font-bold text-slate-400">{idx + 1}</td>
-                                  <td className="py-2 px-2 font-bold text-slate-700">{type}</td>
-                                  <td className="py-2 px-2 text-slate-600">{payment?.informedDate || '-'}</td>
-                                  <td className="py-2 px-2 text-slate-600">{payment?.signDate || '-'}</td>
-                                  <td className="py-2 px-2 font-mono text-slate-600">{payment?.invoiceNo || '-'}</td>
-                                  <td className="py-2 px-2 text-right font-bold text-green-700">{payment?.amount ? `Rs. ${payment.amount.toLocaleString()}` : '-'}</td>
-                                  <td className="py-2 px-2 text-slate-500 italic">{payment?.remarks || '-'}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                      {(candidate.usdRateEmb || candidate.usdRateFA) && (
-                        <div className="mt-3 pt-3 border-t border-green-100 flex gap-6 text-xs">
-                          <div><span className="font-bold text-slate-500 uppercase">USD Rate EMB:</span> <span className="font-bold text-slate-800">{candidate.usdRateEmb || '-'}</span></div>
-                          <div><span className="font-bold text-slate-500 uppercase">USD Rate F/A:</span> <span className="font-bold text-slate-800">{candidate.usdRateFA || '-'}</span></div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                {/* SECTION 1.57: FINANCIAL LEDGER & ADVANCE PAYMENTS */}
+                <section className="mt-8 pt-8 border-t border-slate-100 mb-6 w-full overflow-hidden">
+                  <FinancialLedgerWidget
+                    candidate={(isEditingProfile ? editedProfile : candidate) as any}
+                    isEditing={isEditingProfile}
+                    onUpdate={(payments, usdRateEmb, usdRateFA) => {
+                      setEditedProfile({
+                        ...editedProfile,
+                        advancePayments: payments,
+                        ...(usdRateEmb !== undefined ? { usdRateEmb } : {}),
+                        ...(usdRateFA !== undefined ? { usdRateFA } : {})
+                      } as any);
+                    }}
+                  />
                 </section>
 
                 {/* SECTION 1.575: DATE/REMARK LOG (handwritten notes section on paper forms) */}
@@ -2518,87 +2720,79 @@ const CandidateDetail: React.FC = () => {
                   </div>
                 </section>
 
-                {/* SECTION 1.57b: ADVANCE PAYMENTS / FINANCIAL LEDGER */}
-                <section className="mt-8 pt-8 border-t border-slate-100 mb-6 w-full overflow-hidden">
-                  <FinancialLedgerWidget
-                    candidate={(isEditingProfile ? editedProfile : candidate) as any}
-                    isEditing={isEditingProfile}
-                    onUpdate={(payments) => {
-                      setEditedProfile({ ...editedProfile, advancePayments: payments } as any);
-                    }}
-                  />
-                </section>
+                {/* SECTION 1.58: CERTIFICATE CHECKLIST */}
+                {(() => {
+                  const checklistItems = [
+                    { num: 1, label: 'PP Size Photo (6)', docType: 'Passport Size Photos (6)' },
+                    { num: 2, label: 'Full Photo', docType: 'Full Photo (1)' },
+                    { num: 3, label: 'Edu: Certificates (O/L, A/L)', docType: 'O/L Certificate', altDocType: 'A/L Certificate' },
+                    { num: 4, label: 'Course Certificates', docType: 'Course Certificates' },
+                    { num: 5, label: 'NVQ/Trade Test Certificates', docType: 'NVQ/Trade Test Certificates' },
+                    { num: 6, label: 'CDF', docType: 'CDF' },
+                    { num: 7, label: 'ID', docType: 'ID' },
+                    { num: 8, label: 'Driving Licence', docType: 'Driving licence' },
+                    { num: 9, label: 'Police Clearance', docType: 'Police Clearance' },
+                    { num: 10, label: 'Offer Letter', docType: 'Offer Letter' },
+                    { num: 11, label: 'Work Permit (WP)', docType: 'Work Permit (WP)' },
+                    { num: 12, label: 'Experience Letters', docType: 'Experience Letters' },
+                    { num: 13, label: 'Medical Report Date', docType: 'Medical Report' },
+                    { num: 14, label: 'Application CV', docType: 'Application CV' }
+                  ];
 
-                {/* SECTION 1.58: CERTIFICATE CHECKLIST (matches paper form 14-item list) */}
-                <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span className="w-6 h-1 bg-purple-500 rounded-full"></span>
-                    Certificates Checklist
-                  </h3>
-                  <div className="bg-purple-50/30 p-5 rounded-xl border border-purple-100">
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-0">
-                      {/* Left column: Items 1-7 */}
-                      <div>
-                        {[
-                          { num: 1, label: 'PP Size Photo (6)', docType: 'Passport Size Photos (6)' },
-                          { num: 2, label: 'Full Photo', docType: 'Full Photo (1)' },
-                          { num: 3, label: 'Edu: Certificates (O/L, A/L)', docType: 'GCE O/L Results' },
-                          { num: 4, label: 'Course Certificates', docType: 'Course Certificates' },
-                          { num: 5, label: 'NVQ/Trade Test Certificates', docType: 'NVQ/Trade Test Certificates' },
-                          { num: 6, label: 'Self Introduction Video', docType: 'Self Introduction Video' },
-                          { num: 7, label: 'Working Video', docType: 'Working Video' },
-                        ].map(item => {
-                          const hasDoc = candidate.documents?.some(d => d.type === item.docType && d.status !== 'Rejected');
-                          return (
-                            <div key={item.num} className={`flex items-center gap-3 py-2.5 border-b border-purple-100/50 ${hasDoc ? 'opacity-100' : 'opacity-60'}`}>
-                              <span className="text-[11px] font-bold text-slate-400 w-5 text-right">{item.num}</span>
-                              <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${hasDoc ? 'bg-green-500 text-white' : 'border-2 border-slate-300 bg-white'}`}>
-                                {hasDoc && <span className="text-xs">✓</span>}
-                              </div>
-                              <span className={`text-xs font-semibold ${hasDoc ? 'text-slate-800' : 'text-slate-500'}`}>{item.label}</span>
+                  const checklistStatus = checklistItems.map(item => {
+                    let docStatus = 'none';
+                    let uploadDate = '';
+                    if (item.docType && candidate.documents) {
+                      const docs = candidate.documents.filter(d => d.type === item.docType || (item.altDocType && d.type === item.altDocType));
+                      if (docs.length > 0) {
+                        const sorted = [...docs].sort((a, b) => new Date(b.uploadedAt || 0).getTime() - new Date(a.uploadedAt || 0).getTime());
+                        if (sorted[0]?.uploadedAt) uploadDate = new Date(sorted[0].uploadedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        if (docs.some(d => d.status === 'Approved')) docStatus = 'Approved';
+                        else if (docs.some(d => d.status === 'Pending Review')) docStatus = 'Pending Review';
+                        else if (docs.some(d => d.status === 'Correction Required')) docStatus = 'Correction Required';
+                        else if (docs.some(d => d.status === 'Rejected')) docStatus = 'Rejected';
+                      }
+                    }
+                    return { ...item, docStatus, uploadDate };
+                  });
+
+                  const collectedCount = checklistStatus.filter(i => i.docStatus !== 'none').length;
+
+                  return (
+                    <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span className="w-6 h-1 bg-purple-500 rounded-full"></span>
+                        Certificates Checklist
+                        <span className="ml-auto text-[11px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">{collectedCount}/14</span>
+                      </h3>
+                      <div className="rounded-lg border border-slate-200 overflow-hidden">
+                        <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-slate-100">
+                          {[checklistStatus.slice(0, 7), checklistStatus.slice(7, 14)].map((col, colIdx) => (
+                            <div key={colIdx} className="divide-y divide-slate-100">
+                              {col.map(item => {
+                                const has = item.docStatus !== 'none';
+                                let statusText = '—';
+                                let statusClass = 'text-slate-300';
+                                if (item.docStatus === 'Approved') { statusText = '✓ Verified'; statusClass = 'text-emerald-600'; }
+                                else if (item.docStatus === 'Pending Review') { statusText = 'Reviewing'; statusClass = 'text-amber-600'; }
+                                else if (item.docStatus === 'Correction Required' || item.docStatus === 'Rejected') { statusText = 'Issue'; statusClass = 'text-red-500'; }
+
+                                return (
+                                  <div key={item.num} className={`flex items-center gap-2.5 px-4 py-2 text-xs ${has ? 'bg-white' : 'bg-slate-50/50'}`}>
+                                    <span className="text-[10px] font-mono text-slate-400 w-4 text-right shrink-0">{item.num}</span>
+                                    <span className={`flex-1 truncate ${has ? 'text-slate-800 font-medium' : 'text-slate-400'}`}>{item.label}</span>
+                                    {item.uploadDate && <span className="text-[10px] text-slate-400 shrink-0">{item.uploadDate}</span>}
+                                    <span className={`text-[10px] font-semibold shrink-0 min-w-[60px] text-right ${statusClass}`}>{statusText}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
-                      {/* Right column: Items 8-14 */}
-                      <div>
-                        {[
-                          { num: 8, label: 'Police Report (A) Local', docType: 'Police Report (Local)' },
-                          { num: 9, label: 'Police Report (B) HQ/FM', docType: 'Police Report (HQ/FM)' },
-                          { num: 10, label: 'Birth Certificate', docType: 'Birth Certificate' },
-                          { num: 11, label: 'Experience Letters', docType: 'Experience Letters' },
-                          { num: 12, label: 'Medical Report Date', docType: 'Medical Report' },
-                          { num: 13, label: 'Re-Check', docType: null },
-                          { num: 14, label: 'Family Background Report', docType: 'Family Background Report' },
-                        ].map(item => {
-                          const hasDoc = item.docType ? candidate.documents?.some(d => d.type === item.docType && d.status !== 'Rejected') : false;
-                          return (
-                            <div key={item.num} className={`flex items-center gap-3 py-2.5 border-b border-purple-100/50 ${hasDoc ? 'opacity-100' : 'opacity-60'}`}>
-                              <span className="text-[11px] font-bold text-slate-400 w-5 text-right">{item.num}</span>
-                              <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${hasDoc ? 'bg-green-500 text-white' : 'border-2 border-slate-300 bg-white'}`}>
-                                {hasDoc && <span className="text-xs">✓</span>}
-                              </div>
-                              <span className={`text-xs font-semibold ${hasDoc ? 'text-slate-800' : 'text-slate-500'}`}>{item.label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-purple-200 flex items-center gap-4 text-xs text-slate-500">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3.5 h-3.5 rounded bg-green-500 flex items-center justify-center text-white text-[8px]">✓</div>
-                        <span className="font-semibold">Submitted</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3.5 h-3.5 rounded border-2 border-slate-300"></div>
-                        <span className="font-semibold">Pending</span>
-                      </div>
-                      <div className="ml-auto font-bold text-purple-600">
-                        {candidate.documents?.filter(d => d.status !== 'Rejected').length || 0} / 14 Collected
-                      </div>
-                    </div>
-                  </div>
-                </section>
+                    </section>
+                  );
+                })()}
 
                 {/* SECTION 1.59: WORKFLOW MILESTONES (bottom tracking row on paper form) */}
                 <section className="mt-8 pt-8 border-t border-slate-100 mb-6">
@@ -2813,15 +3007,19 @@ const CandidateDetail: React.FC = () => {
               )
             }
 
-          </div >
+          </div>
 
           {/* Sidebar (30%) */}
-          < div className="space-y-4" >
+          <div className="space-y-4">
             <QuickActionsWidget
               candidate={candidate}
               onDelete={handleDelete}
               onGenerateReport={handleGenerateReport}
               isGeneratingReport={isExportingReport}
+            />
+            <InterviewWidget
+              candidate={candidate}
+              onUpdate={handleInterviewUpdate}
             />
             <ComplianceWidget
               candidate={candidate}
@@ -2885,10 +3083,10 @@ const CandidateDetail: React.FC = () => {
                 document.getElementById('main-content-tabs')?.scrollIntoView({ behavior: 'smooth' });
               }}
             />
-          </div >
-        </div >
-      </div >
-    </div >
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -14,15 +14,17 @@ const app: Express = express();
 const httpServer = createServer(app);
 
 // Security Middleware
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
 app.use(helmet());
 
 // Performance Middleware
 app.use(compression());
 
-// Rate Limiting - Frictionless Mode Enabled
+// Rate Limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100000, // FRICTIONLESS: Increased from 100 to 100,000 to prevent blocking
+    max: 100, // Limit each IP to 100 requests per 15 mins
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' }
@@ -77,17 +79,23 @@ import channelRoutes from './routes/channels';
 import messageRoutes from './routes/messages';
 import attachmentRoutes from './routes/attachments';
 import notificationRoutes from './routes/notifications';
+import securityRoutes from './routes/security';
 import { authMiddleware } from './middleware/auth';
 import { setupChatSocket } from './socket/chatSocket';
+import { securityConstraints } from './middleware/securityConstraints';
 
 // Apply auth middleware to all API routes
 app.use('/api', authMiddleware);
+
+// Apply security constraints (Time/IP) after auth, so req.user is available
+app.use('/api', securityConstraints);
 
 // Register routes
 app.use('/api/channels', channelRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/attachments', attachmentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/security', securityRoutes);
 
 // Setup Socket.IO chat handlers
 setupChatSocket(io);

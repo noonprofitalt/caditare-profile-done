@@ -4,7 +4,7 @@ import { DemandOrder, DemandOrderStatus } from '../../types';
 import { DemandOrderService } from '../../services/demandOrderService';
 import {
     Package, Plus, Calendar, MapPin, Users, Clock,
-    ChevronRight, AlertTriangle, CheckCircle2, TrendingUp, Briefcase, ExternalLink, Loader
+    ChevronRight, AlertTriangle, CheckCircle2, TrendingUp, Briefcase, ExternalLink, Loader, Edit2, Trash2
 } from 'lucide-react';
 
 import { supabase } from '../../services/supabase';
@@ -12,6 +12,8 @@ import { supabase } from '../../services/supabase';
 interface DemandOrderListProps {
     employerId: string;
     onSelectOrder: (order: DemandOrder) => void;
+    onEditOrder: (order: DemandOrder) => void;
+    onDeleteOrder: (id: string, name: string) => void;
     selectedOrderId?: string;
     onCreateNew: () => void;
 }
@@ -19,6 +21,8 @@ interface DemandOrderListProps {
 const DemandOrderList: React.FC<DemandOrderListProps> = ({
     employerId,
     onSelectOrder,
+    onEditOrder,
+    onDeleteOrder,
     selectedOrderId,
     onCreateNew,
 }) => {
@@ -197,6 +201,20 @@ const DemandOrderList: React.FC<DemandOrderListProps> = ({
                                         <span className={`text-[9px] font-bold px-2 py-1 rounded-lg border ${statusConfig.color}`}>
                                             {order.status}
                                         </span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onEditOrder(order); }}
+                                            className="p-1.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                                            title="Edit Order"
+                                        >
+                                            <Edit2 size={12} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onDeleteOrder(order.id, order.title); }}
+                                            className="p-1.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100 hover:bg-red-50 hover:text-red-500 transition-all"
+                                            title="Delete Order"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
                                         <ChevronRight size={16} className={`text-slate-300 group-hover:text-blue-500 transition-colors ${isSelected ? 'text-blue-500' : ''}`} />
                                     </div>
                                 </div>

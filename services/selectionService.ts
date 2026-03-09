@@ -6,7 +6,10 @@ export class SelectionService {
     static async getAll(): Promise<CandidateSelection[]> {
         const { data, error } = await supabase
             .from('candidate_selections')
-            .select('*');
+            .select(`
+                *,
+                candidate:candidates!candidate_id (name)
+            `);
 
         if (error) {
             console.error('Error fetching selections:', error);
@@ -19,7 +22,10 @@ export class SelectionService {
     static async getById(id: string): Promise<CandidateSelection | undefined> {
         const { data, error } = await supabase
             .from('candidate_selections')
-            .select('*')
+            .select(`
+                *,
+                candidate:candidates!candidate_id (name)
+            `)
             .eq('id', id)
             .single();
 
@@ -51,7 +57,10 @@ export class SelectionService {
     static async getByCandidateId(candidateId: string): Promise<CandidateSelection[]> {
         const { data, error } = await supabase
             .from('candidate_selections')
-            .select('*')
+            .select(`
+                *,
+                candidate:candidates!candidate_id (name)
+            `)
             .eq('candidate_id', candidateId);
 
         if (error) {
@@ -182,7 +191,10 @@ export class SelectionService {
                 updated_at: new Date().toISOString()
             })
             .eq('id', selectionId)
-            .select()
+            .select(`
+                *,
+                candidate:candidates!candidate_id (name)
+            `)
             .single();
 
         if (error) {
@@ -289,8 +301,7 @@ export class SelectionService {
     }
 
     private static mapSelectionToRow(selection: CandidateSelection): any {
-        return {
-            id: selection.id,
+        const row: any = {
             demand_order_id: selection.demandOrderId,
             candidate_id: selection.candidateId,
             stage: selection.stage,
@@ -305,5 +316,12 @@ export class SelectionService {
             updated_at: new Date().toISOString()
             // created_at is not updated
         };
+
+        // Only include ID if it is a valid UUID (not a temporary frontend generated one)
+        if (selection.id && !selection.id.startsWith('sel-')) {
+            row.id = selection.id;
+        }
+
+        return row;
     }
 }

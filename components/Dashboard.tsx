@@ -96,8 +96,12 @@ const Dashboard: React.FC = () => {
 
    // Profile Completion Stats
    const quickProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.QUICK).length;
-   const partialProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL).length;
-   const completeProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE).length;
+   const partialProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.PARTIAL && (c.profileCompletionPercentage || 0) < 75).length;
+   const completeProfiles = candidates.filter(c => c.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || (c.profileCompletionPercentage || 0) >= 75).length;
+
+   const verificationPercent = activeCandidates > 0 ? Math.round((completeProfiles / activeCandidates) * 100) : 0;
+   const deployedCount = candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length;
+   const deployedPercent = activeCandidates > 0 ? Math.round((deployedCount / activeCandidates) * 100) : 0;
 
    // Tab-specific filtered data
    const priorityTasks = tasks; // all tasks sorted by priority
@@ -200,9 +204,9 @@ const Dashboard: React.FC = () => {
    );
 
    return (
-      <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 pb-24 lg:pb-8">
+      <div className="container-responsive py-4 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
          {/* 1. Header Row: High-Level Status (KPIs) */}
-         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 border-slate-200">
+         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
             {isLoading ? (
                Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="bg-white border border-slate-200 rounded-lg p-5 flex items-center justify-between h-[116px]">
@@ -223,13 +227,13 @@ const Dashboard: React.FC = () => {
                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-colors"></div>
                      <div className="flex items-center justify-between relative z-10">
                         <div className="flex-1 min-w-0 pr-2">
-                           <p className="text-slate-400 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 truncate">Total Candidates</p>
+                           <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1 truncate">Total Candidates</p>
                            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 truncate">{activeCandidates}</h3>
                            <p className="text-xs text-emerald-400 font-bold flex items-center gap-1 uppercase tracking-tight truncate">
                               <Activity size={10} className="shrink-0" /> Online
                            </p>
                         </div>
-                        <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/10 text-blue-400 group-hover:scale-110 transition-premium shrink-0">
+                        <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/10 text-blue-400 group-hover:scale-110 transition-transform shrink-0">
                            <Briefcase size={24} />
                         </div>
                      </div>
@@ -239,14 +243,14 @@ const Dashboard: React.FC = () => {
                      onClick={() => navigate('/pipeline')}
                      className="bg-red-600 group relative overflow-hidden p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                      <div className="flex items-center justify-between relative z-10">
                         <div className="flex-1 min-w-0 pr-2">
-                           <p className="text-red-100 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 truncate">Pending Actions</p>
+                           <p className="text-red-100 text-xs font-semibold uppercase tracking-wider mb-1 truncate">Pending Actions</p>
                            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 truncate">{criticalIssues}</h3>
                            <p className="text-xs text-red-100 font-bold uppercase tracking-tight truncate">Critical</p>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:rotate-12 transition-premium shrink-0">
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:rotate-12 transition-transform shrink-0">
                            <Zap size={24} />
                         </div>
                      </div>
@@ -257,14 +261,14 @@ const Dashboard: React.FC = () => {
                         onClick={() => navigate('/finance')}
                         className="bg-blue-600 group relative overflow-hidden p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="flex items-center justify-between relative z-10">
                            <div className="flex-1 min-w-0 pr-2">
-                              <p className="text-blue-100 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 truncate">Projected Revenue</p>
-                              <h3 className="text-2xl sm:text-2xl lg:text-3xl xl:text-2xl 2xl:text-3xl font-bold text-white mb-1 truncate" title={`$${projectedRevenue.toLocaleString()}`}>${projectedRevenue.toLocaleString()}</h3>
+                              <p className="text-blue-100 text-xs font-semibold uppercase tracking-wider mb-1 truncate">Projected Revenue</p>
+                              <h3 className="text-2xl sm:text-2xl lg:text-3xl xl:text-2xl 2xl:text-3xl font-bold text-white mb-1 truncate" title={`$${projectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>${projectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                               <p className="text-xs text-blue-100 font-bold uppercase tracking-tight truncate">Projected Revenue</p>
                            </div>
-                           <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:translate-y-[-4px] transition-premium shrink-0">
+                           <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-emerald-300 group-hover:-translate-y-1 transition-transform shrink-0">
                               <TrendingUp size={24} />
                            </div>
                         </div>
@@ -275,14 +279,14 @@ const Dashboard: React.FC = () => {
                      onClick={() => navigate('/candidates?stage=Departed')}
                      className="bg-emerald-600 group relative overflow-hidden p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                      <div className="flex items-center justify-between relative z-10">
                         <div className="flex-1 min-w-0 pr-2">
-                           <p className="text-emerald-100 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 truncate">Deployed</p>
+                           <p className="text-emerald-100 text-xs font-semibold uppercase tracking-wider mb-1 truncate">Deployed</p>
                            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 truncate">{candidates.filter(c => c.stage === WorkflowStage.DEPARTED).length}</h3>
                            <p className="text-xs text-emerald-100 font-bold uppercase tracking-tight truncate">Ready for bill</p>
                         </div>
-                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium shrink-0">
+                        <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-transform shrink-0">
                            <Calendar size={24} />
                         </div>
                      </div>
@@ -294,14 +298,14 @@ const Dashboard: React.FC = () => {
                            onClick={() => navigate('/jobs')}
                            className="bg-purple-600 group relative overflow-hidden p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                         >
-                           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                            <div className="flex items-center justify-between relative z-10">
                               <div className="flex-1 min-w-0 pr-2">
-                                 <p className="text-purple-100 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 truncate">Open Jobs</p>
+                                 <p className="text-purple-100 text-xs font-semibold uppercase tracking-wider mb-1 truncate">Open Jobs</p>
                                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 truncate">{openJobsCount}</h3>
                                  <p className="text-xs text-purple-100 font-bold uppercase tracking-tight truncate">Hiring Now</p>
                               </div>
-                              <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-premium shrink-0">
+                              <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-yellow-300 group-hover:scale-110 transition-transform shrink-0">
                                  <Briefcase size={24} />
                               </div>
                            </div>
@@ -311,14 +315,14 @@ const Dashboard: React.FC = () => {
                            onClick={() => navigate('/partners')}
                            className="bg-indigo-600 group relative overflow-hidden p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                         >
-                           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-premium"></div>
+                           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                            <div className="flex items-center justify-between relative z-10">
                               <div className="flex-1 min-w-0 pr-2">
-                                 <p className="text-indigo-100 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 truncate">Active Demands</p>
+                                 <p className="text-indigo-100 text-xs font-semibold uppercase tracking-wider mb-1 truncate">Active Demands</p>
                                  <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 truncate">{activeDemands}</h3>
                                  <p className="text-xs text-indigo-100 font-bold uppercase tracking-tight truncate">Orders Open</p>
                               </div>
-                              <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-cyan-300 group-hover:rotate-12 transition-premium shrink-0">
+                              <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl border border-white/20 text-cyan-300 group-hover:rotate-12 transition-transform shrink-0">
                                  <Package size={24} />
                               </div>
                            </div>
@@ -330,8 +334,8 @@ const Dashboard: React.FC = () => {
          </div>
 
          {/* Database Health Overview */}
-         <div className="bg-white border border-slate-200 rounded-lg p-6 md:p-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+         <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
                <div>
                   <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3 uppercase tracking-tight">
                      <Activity className="text-blue-600" size={24} />
@@ -347,7 +351,7 @@ const Dashboard: React.FC = () => {
                </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                <div className="flex items-center justify-center p-4 bg-slate-50/50 rounded-xl border border-slate-100">
                   <div className="relative w-32 h-32 animate-float">
                      <svg className="transform -rotate-90 w-32 h-32">
@@ -392,7 +396,7 @@ const Dashboard: React.FC = () => {
             </div>
          </div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             <div className="lg:col-span-2 space-y-6">
                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
@@ -405,30 +409,30 @@ const Dashboard: React.FC = () => {
                   <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                      <button
                         onClick={() => setActiveTaskTab('priority')}
-                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'priority'
-                           ? 'bg-slate-900 text-white shadow-sm'
+                        className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'priority'
+                           ? 'bg-blue-50 text-blue-700 border border-blue-100 shadow-sm'
                            : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                            }`}
                      >
-                        Priority {priorityTasks.length > 0 && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[8px]">{priorityTasks.length}</span>}
+                        Priority {priorityTasks.length > 0 && <span className={`ml-1 px-1.5 py-0.5 rounded text-[8px] ${activeTaskTab === 'priority' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>{priorityTasks.length}</span>}
                      </button>
                      <button
                         onClick={() => setActiveTaskTab('alerts')}
-                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'alerts'
-                           ? 'bg-amber-500 text-white shadow-sm'
+                        className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'alerts'
+                           ? 'bg-amber-50 text-amber-700 border border-amber-100 shadow-sm'
                            : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                            }`}
                      >
-                        Alerts {alertItems.length > 0 && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[8px]">{alertItems.length}</span>}
+                        Alerts {alertItems.length > 0 && <span className={`ml-1 px-1.5 py-0.5 rounded text-[8px] ${activeTaskTab === 'alerts' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{alertItems.length}</span>}
                      </button>
                      <button
                         onClick={() => setActiveTaskTab('compliance')}
-                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'compliance'
-                           ? 'bg-red-500 text-white shadow-sm'
+                        className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-widest shrink-0 transition-all ${activeTaskTab === 'compliance'
+                           ? 'bg-red-50 text-red-700 border border-red-100 shadow-sm'
                            : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                            }`}
                      >
-                        Compliance {complianceTasks.length > 0 && <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[8px]">{complianceTasks.length}</span>}
+                        Compliance {complianceTasks.length > 0 && <span className={`ml-1 px-1.5 py-0.5 rounded text-[8px] ${activeTaskTab === 'compliance' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-500'}`}>{complianceTasks.length}</span>}
                      </button>
                   </div>
                </div>
@@ -497,33 +501,32 @@ const Dashboard: React.FC = () => {
                   </div>
                </div>
 
-               <div className="bg-slate-900 rounded-xl shadow-md p-6 text-white relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full -mr-16 -mt-16 blur-2xl transition-colors"></div>
-                  <h3 className="font-black mb-8 opacity-90 text-xs uppercase tracking-widest flex items-center gap-3">
-                     <Activity size={16} className="text-blue-400" /> Performance
+               <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative overflow-hidden group">
+                  <h3 className="font-black mb-6 text-slate-900 text-xs uppercase tracking-widest flex items-center gap-3">
+                     <Activity size={16} className="text-blue-500" /> Performance
                   </h3>
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                      <div>
-                        <div className="flex justify-between text-xs mb-3 font-black uppercase tracking-widest">
-                           <span className="text-slate-400">Verification</span>
-                           <span className="text-blue-400">8/12 - 66%</span>
+                        <div className="flex justify-between text-xs mb-2 font-bold uppercase tracking-widest">
+                           <span className="text-slate-500">Fully Validated Hub</span>
+                           <span className="text-emerald-600">{completeProfiles}/{activeCandidates} - {verificationPercent}%</span>
                         </div>
-                        <div className="w-full bg-slate-800 rounded-full h-2.5 border border-white/5 p-0.5">
-                           <div className="bg-gradient-to-r from-blue-600 to-emerald-400 h-full rounded-full shadow-[0_0_12px_rgba(52,211,153,0.4)]" style={{ width: '66%' }}></div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                           <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${verificationPercent}%` }}></div>
                         </div>
                      </div>
                      <div>
-                        <div className="flex justify-between text-xs mb-3 font-black uppercase tracking-widest">
-                           <span className="text-slate-400">Visa Processing</span>
-                           <span className="text-amber-400">3/5 - 60%</span>
+                        <div className="flex justify-between text-xs mb-2 font-bold uppercase tracking-widest">
+                           <span className="text-slate-500">Total Deployments</span>
+                           <span className="text-amber-500">{deployedCount}/{activeCandidates} - {deployedPercent}%</span>
                         </div>
-                        <div className="w-full bg-slate-800 rounded-full h-2.5 border border-white/5 p-0.5">
-                           <div className="bg-gradient-to-r from-amber-500 to-orange-400 h-full rounded-full shadow-[0_0_12px_rgba(251,191,36,0.3)]" style={{ width: '60%' }}></div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                           <div className="bg-amber-500 h-full rounded-full transition-all" style={{ width: `${deployedPercent}%` }}></div>
                         </div>
                      </div>
                   </div>
-                  <div className="mt-10 pt-6 border-t border-white/5">
-                     <button className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-premium">
+                  <div className="mt-8 pt-5 border-t border-slate-100">
+                     <button className="w-full py-2 bg-white border border-slate-200 rounded-lg text-slate-700 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm">
                         Advanced Metrics Overview
                      </button>
                   </div>
@@ -532,12 +535,12 @@ const Dashboard: React.FC = () => {
          </div>
 
          {/* 4. QUICK ACTIONS PALETTE */}
-         <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 flex flex-col items-end gap-3 z-40">
+         <div className="fixed bottom-[calc(var(--bottom-nav-height)+1rem)] lg:bottom-8 right-4 md:right-8 flex flex-col items-end gap-3 z-40">
             <div className="group relative">
-               <button className="flex items-center gap-0 md:gap-3 bg-slate-900 border border-slate-700 text-white pl-2 md:pl-5 pr-2 py-2 md:py-2.5 rounded-xl md:rounded-xl shadow-md hover:bg-slate-800 transition-colors">
-                  <span className="hidden md:block font-black text-xs uppercase tracking-widest pl-2">Actions</span>
-                  <div className="w-10 h-10 md:w-9 md:h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                     <Zap size={18} className="text-white fill-white" />
+               <button className="flex items-center gap-0 md:gap-3 bg-slate-900 border border-slate-700 text-white pl-2 md:pl-5 pr-2 py-2 md:py-2.5 rounded-xl shadow-md hover:bg-slate-800 transition-colors">
+                  <span className="hidden md:block font-bold text-xs uppercase tracking-widest pl-2">Actions</span>
+                  <div className="w-10 h-10 md:w-9 md:h-9 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10 text-blue-400 shadow-lg shadow-blue-500/20">
+                     <Zap size={18} />
                   </div>
                </button>
 
@@ -566,7 +569,7 @@ const Dashboard: React.FC = () => {
                </div>
             </div>
          </div>
-      </div>
+      </div >
    );
 };
 
