@@ -35,8 +35,7 @@ jobs:
     - name: Verify Production Build
       run: npm run build
       env:
-        # Pass mock values for build process
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://mock.supabase.co' }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'mock-anon-key' }}
         VITE_APP_ENV: production
-        VITE_SUPABASE_URL: mock-url
-        VITE_SUPABASE_ANON_KEY: mock-key
         NODE_ENV: production
