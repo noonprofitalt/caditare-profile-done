@@ -57,7 +57,7 @@ const IntelligenceEngine: React.FC = () => {
       <div className="space-y-6">
 
          {/* Top Level KPI Cards */}
-         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-white shadow-lg">
                <div className="flex justify-between items-start mb-4">
                   <div>
@@ -114,7 +114,7 @@ const IntelligenceEngine: React.FC = () => {
          </div>
 
          {/* Safety & Integrity Summary */}
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="md:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                <div className="flex items-center justify-between mb-6">
                   <h4 className="font-bold text-slate-800 flex items-center gap-2">
@@ -207,14 +207,14 @@ const IntelligenceEngine: React.FC = () => {
    );
 
    const renderWorkflowAnalytics = () => (
-      <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
-         <h3 className="text-xl font-bold text-slate-800 mb-2">Detailed Workflow Analytics</h3>
-         <p className="text-slate-500 mb-8">Process mining data regarding stage duration and efficiency.</p>
+      <div className="bg-white p-4 sm:p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm">
+         <h3 className="text-xl font-bold text-slate-800 mb-1 sm:mb-2">Detailed Workflow Analytics</h3>
+         <p className="text-sm sm:text-base text-slate-500 mb-6 sm:mb-8">Process mining data regarding stage duration and efficiency.</p>
 
-         <div className="flex gap-4 mb-8">
+         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
             <button
                onClick={() => askAI("Analyze our workflow efficiency. Which stage has the highest attrition or delay, and how can we optimize it based on SLA compliance?")}
-               className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
+               className="w-full sm:w-auto justify-center px-4 py-2 sm:py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
             >
                <Bot size={16} className="text-blue-500" />
                AI Process Mining Audit
@@ -240,57 +240,59 @@ const IntelligenceEngine: React.FC = () => {
             </ResponsiveContainer>
          </div>
 
-         <div className="mt-8 overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[600px]">
-               <thead>
-                  <tr className="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
-                     <th className="py-3">Stage Name</th>
-                     <th className="py-3">Current Load</th>
-                     <th className="py-3">Avg Processing Time</th>
-                     <th className="py-3">SLA Compliance</th>
-                     <th className="py-3">Status</th>
-                  </tr>
-               </thead>
-               <tbody>
-                  {snapshot.bottlenecks.map(b => (
-                     <tr key={b.stage} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-3 font-medium text-slate-700">{b.stage}</td>
-                        <td className="py-3 text-slate-600">{b.count}</td>
-                        <td className="py-3 font-mono">{b.avgDays} days</td>
-                        <td className="py-3">
-                           <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
-                              <div
-                                 className={`h-full ${b.avgDays > b.slaLimit ? 'bg-red-500' : 'bg-green-500'}`}
-                                 style={{ width: `${Math.min((b.avgDays / b.slaLimit) * 100, 100)}%` }}
-                              ></div>
-                           </div>
-                        </td>
-                        <td className="py-3">
-                           <span className={`text-xs font-bold px-2 py-1 rounded-full ${b.status === 'Critical' ? 'bg-red-100 text-red-700' :
-                              b.status === 'Warning' ? 'bg-orange-100 text-orange-700' :
-                                 'bg-green-100 text-green-700'
-                              }`}>
-                              {b.status}
-                           </span>
-                        </td>
+         <div className="-mx-4 sm:mx-0 overflow-x-auto border-t sm:border-none border-slate-100 mt-6 sm:mt-8">
+            <div className="px-4 sm:px-0 min-w-[600px]">
+               <table className="w-full text-left border-collapse">
+                  <thead>
+                     <tr className="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
+                        <th className="py-3">Stage Name</th>
+                        <th className="py-3">Current Load</th>
+                        <th className="py-3">Avg Processing Time</th>
+                        <th className="py-3">SLA Compliance</th>
+                        <th className="py-3">Status</th>
                      </tr>
-                  ))}
-               </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                     {snapshot.bottlenecks.map(b => (
+                        <tr key={b.stage} className="border-b border-slate-100 hover:bg-slate-50">
+                           <td className="py-3 font-medium text-slate-700">{b.stage}</td>
+                           <td className="py-3 text-slate-600">{b.count}</td>
+                           <td className="py-3 font-mono">{b.avgDays} days</td>
+                           <td className="py-3">
+                              <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                 <div
+                                    className={`h-full ${b.avgDays > b.slaLimit ? 'bg-red-500' : 'bg-green-500'}`}
+                                    style={{ width: `${Math.min((b.avgDays / b.slaLimit) * 100, 100)}%` }}
+                                 ></div>
+                              </div>
+                           </td>
+                           <td className="py-3">
+                              <span className={`text-xs font-bold px-2 py-1 rounded-full ${b.status === 'Critical' ? 'bg-red-100 text-red-700' :
+                                 b.status === 'Warning' ? 'bg-orange-100 text-orange-700' :
+                                    'bg-green-100 text-green-700'
+                                 }`}>
+                                 {b.status}
+                              </span>
+                           </td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+            </div>
          </div>
       </div>
    );
 
    const renderStaffMetrics = () => (
       <div className="space-y-6">
-         <div className="flex justify-between items-end">
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
             <div>
-               <h3 className="text-xl font-bold text-slate-800 mb-2">Staff Productivity Performance</h3>
-               <p className="text-slate-500">Cross-departmental activity analysis and throughput metrics.</p>
+               <h3 className="text-xl font-bold text-slate-800 mb-1 sm:mb-2">Staff Productivity Performance</h3>
+               <p className="text-sm sm:text-base text-slate-500">Cross-departmental activity analysis and throughput metrics.</p>
             </div>
             <button
                onClick={() => askAI("Analyze our staff performance metrics. Who are the top performers, and where do we need additional training or resource allocation based on current action volumes?")}
-               className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
+               className="w-full sm:w-auto justify-center px-4 py-2 sm:py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
             >
                <Bot size={16} className="text-blue-500" />
                AI Performance Audit
@@ -301,31 +303,31 @@ const IntelligenceEngine: React.FC = () => {
    );
 
    return (
-      <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8">
+      <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8">
          {/* Header */}
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                <div className="flex items-center gap-2 text-blue-600 mb-1">
-                  <TrendingUp size={20} />
-                  <span className="text-xs font-bold uppercase tracking-wider">Operational Analytics Suite</span>
+                  <TrendingUp size={20} className="shrink-0" />
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Operational Analytics Suite</span>
                </div>
-               <h2 className="text-3xl font-bold text-slate-900">System Analytics Engine</h2>
-               <p className="text-slate-500">Global performance reporting, financial outlook, and process mapping.</p>
+               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">System Analytics Engine</h2>
+               <p className="text-sm sm:text-base text-slate-500 mt-1">Global performance reporting, financial outlook, and process mapping.</p>
             </div>
-            <div className="flex items-center gap-3">
-               <span className="text-xs text-slate-400 font-mono">Last updated: {new Date(snapshot.timestamp).toLocaleTimeString()}</span>
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full md:w-auto">
+               <span className="text-[10px] sm:text-xs text-slate-400 font-mono hidden sm:inline-block">Last updated: {new Date(snapshot.timestamp).toLocaleTimeString()}</span>
                <button
                   onClick={refreshData}
                   disabled={isLoading}
-                  className="p-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                  className="p-2 sm:p-2.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 flex-none"
                >
-                  <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+                  <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
                </button>
                <button
                   onClick={handleExportReport}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-lg"
+                  className="flex flex-1 sm:flex-none justify-center items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-lg text-sm transition-colors whitespace-nowrap"
                >
-                  <Download size={18} /> Export Full Report
+                  <Download size={18} /> Export <span className="hidden sm:inline">Full Report</span>
                </button>
             </div>
          </div>
@@ -357,20 +359,20 @@ const IntelligenceEngine: React.FC = () => {
             {activeTab === 'staff' && renderStaffMetrics()}
             {activeTab === 'financial' && (
                <div className="space-y-6">
-                  <div className="flex justify-between items-end mb-2">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-2">
                      <div>
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">Financial Performance</h3>
-                        <p className="text-slate-500">Revenue tracking, conversion value, and collection metrics.</p>
+                        <h3 className="text-xl font-bold text-slate-800 mb-1 sm:mb-2">Financial Performance</h3>
+                        <p className="text-sm sm:text-base text-slate-500">Revenue tracking, conversion value, and collection metrics.</p>
                      </div>
                      <button
                         onClick={() => askAI("Analyze our financial health. Are we meeting our collection targets? What is the projected revenue discrepancy and how can we optimize current invoice clearing?")}
-                        className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
+                        className="w-full sm:w-auto justify-center px-4 py-2 sm:py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
                      >
                         <Bot size={16} className="text-blue-500" />
                         AI Revenue Strategy
                      </button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex justify-between items-start mb-2">
                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Collected</p>

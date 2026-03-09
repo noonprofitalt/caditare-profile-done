@@ -56,23 +56,23 @@ const StaffDetail: React.FC<{ s: StaffPerformanceMetric; onBack: () => void }> =
     ];
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
-                <button onClick={onBack} className="p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm">
+        <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4 border-b border-slate-100 pb-4">
+                <button onClick={onBack} className="p-2 sm:p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm shrink-0 mt-1 sm:mt-0">
                     <ArrowLeft size={18} />
                 </button>
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{s.name}</h2>
-                    <div className="flex items-center gap-3 mt-1">
+                <div className="min-w-0">
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight truncate">{s.name}</h2>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${getRoleStyle(s.role)}`}>
                             {s.role}
                         </span>
-                        <span className="text-sm text-slate-500">{s.email}</span>
+                        <span className="text-xs sm:text-sm text-slate-500 truncate">{s.email}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 {[
                     { label: 'WORKLOAD SCORE', value: totalWork, icon: Layers },
                     { label: 'TOTAL SESSIONS', value: s.totalSessions, icon: LogIn },
@@ -84,7 +84,7 @@ const StaffDetail: React.FC<{ s: StaffPerformanceMetric; onBack: () => void }> =
                             <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">{k.label}</p>
                             <k.icon size={16} className="text-slate-400" />
                         </div>
-                        <p className="text-3xl font-black text-slate-800 tracking-tight">{k.value}</p>
+                        <p className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight truncate">{k.value}</p>
                     </div>
                 ))}
             </div>
@@ -121,7 +121,7 @@ const StaffDetail: React.FC<{ s: StaffPerformanceMetric; onBack: () => void }> =
                         <Clock className="text-indigo-500" size={16} /> Recent Sessions
                     </h3>
                     {s.sessions.length > 0 ? (
-                        <div className="space-y-2 flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
+                        <div className="space-y-2 flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 min-h-[250px] sm:min-h-0">
                             {[...s.sessions].reverse().slice(0, 15).map((sess, i) => (
                                 <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50">
                                     <div className="flex items-center gap-3">
@@ -176,86 +176,88 @@ const StaffPerformanceDashboard: React.FC<Props> = ({ staffMetrics }) => {
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="px-6 py-4 font-semibold text-slate-600">Employee</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600">Role</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600 text-right">Candidates</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600 text-right">Documents</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600 text-right">Updates</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600 text-right">Total Workload</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600 text-right">Uptime</th>
-                            <th className="px-6 py-4 font-semibold text-slate-600 text-right">Last Active</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {sortedMetrics.map((s) => {
-                            const totalWork = s.workBreakdown.candidatesCreated + s.workBreakdown.candidatesUpdated +
-                                s.workBreakdown.documentsUploaded + s.workBreakdown.chatMessagesSent +
-                                s.workBreakdown.usersManaged + s.workBreakdown.bulkExports + s.workBreakdown.otherActions;
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 -mx-4 sm:mx-0">
+                <div className="min-w-[800px] px-4 sm:px-0">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                                <th className="px-6 py-4 font-semibold text-slate-600">Employee</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600">Role</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-right">Candidates</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-right">Documents</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-right">Updates</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-right">Total Workload</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-right">Uptime</th>
+                                <th className="px-6 py-4 font-semibold text-slate-600 text-right">Last Active</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {sortedMetrics.map((s) => {
+                                const totalWork = s.workBreakdown.candidatesCreated + s.workBreakdown.candidatesUpdated +
+                                    s.workBreakdown.documentsUploaded + s.workBreakdown.chatMessagesSent +
+                                    s.workBreakdown.usersManaged + s.workBreakdown.bulkExports + s.workBreakdown.otherActions;
 
-                            return (
-                                <tr
-                                    key={s.userId}
-                                    onClick={() => setSelected(s)}
-                                    className="hover:bg-slate-50 transition-colors cursor-pointer group"
-                                >
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs shadow-inner border border-slate-200">
-                                                {s.name.charAt(0).toUpperCase()}
+                                return (
+                                    <tr
+                                        key={s.userId}
+                                        onClick={() => setSelected(s)}
+                                        className="hover:bg-slate-50 transition-colors cursor-pointer group"
+                                    >
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs shadow-inner border border-slate-200">
+                                                    {s.name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{s.name}</p>
+                                                    <p className="text-[11px] text-slate-500 mt-0.5">{s.email}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-semibold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{s.name}</p>
-                                                <p className="text-[11px] text-slate-500 mt-0.5">{s.email}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider uppercase ${getRoleStyle(s.role)}`}>
-                                            {s.role}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <span className={`font-semibold ${s.workBreakdown.candidatesCreated > 0 ? 'text-slate-800' : 'text-slate-300'}`}>
-                                            {s.workBreakdown.candidatesCreated.toLocaleString()}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <span className={`font-semibold ${s.workBreakdown.documentsUploaded > 0 ? 'text-slate-800' : 'text-slate-300'}`}>
-                                            {s.workBreakdown.documentsUploaded.toLocaleString()}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <span className={`font-semibold ${s.workBreakdown.candidatesUpdated > 0 ? 'text-slate-800' : 'text-slate-300'}`}>
-                                            {s.workBreakdown.candidatesUpdated.toLocaleString()}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="inline-flex items-center">
-                                            <span className="font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shadow-sm">
-                                                {totalWork.toLocaleString()}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider uppercase ${getRoleStyle(s.role)}`}>
+                                                {s.role}
                                             </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex flex-col items-end">
-                                            <span className="font-semibold text-slate-700 leading-tight">{fmtDuration(s.totalUptimeMinutes)}</span>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{s.totalSessions} sn</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <span className={`text-[11px] font-bold uppercase tracking-wider ${timeAgo(s.lastActive) === 'Just now' || timeAgo(s.lastActive).includes('m ago') ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                            {timeAgo(s.lastActive)}
-                                        </span>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`font-semibold ${s.workBreakdown.candidatesCreated > 0 ? 'text-slate-800' : 'text-slate-300'}`}>
+                                                {s.workBreakdown.candidatesCreated.toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`font-semibold ${s.workBreakdown.documentsUploaded > 0 ? 'text-slate-800' : 'text-slate-300'}`}>
+                                                {s.workBreakdown.documentsUploaded.toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`font-semibold ${s.workBreakdown.candidatesUpdated > 0 ? 'text-slate-800' : 'text-slate-300'}`}>
+                                                {s.workBreakdown.candidatesUpdated.toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="inline-flex items-center">
+                                                <span className="font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shadow-sm">
+                                                    {totalWork.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex flex-col items-end">
+                                                <span className="font-semibold text-slate-700 leading-tight">{fmtDuration(s.totalUptimeMinutes)}</span>
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{s.totalSessions} sn</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`text-[11px] font-bold uppercase tracking-wider ${timeAgo(s.lastActive) === 'Just now' || timeAgo(s.lastActive).includes('m ago') ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                {timeAgo(s.lastActive)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
                 {sortedMetrics.length === 0 && (
                     <div className="py-16 text-center">
                         <Activity className="mx-auto h-8 w-8 text-slate-300 mb-3" />

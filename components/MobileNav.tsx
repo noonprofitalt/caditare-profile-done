@@ -23,7 +23,7 @@ const MobileNav: React.FC = () => {
     }, [location.pathname]);
 
     const navItemClass = ({ isActive }: { isActive: boolean }) =>
-        `mobile-nav-item flex-1 relative ${isActive ? 'active scale-105' : 'hover:bg-slate-50/50 rounded-xl'}`;
+        `flex flex-col items-center justify-center flex-1 h-full relative py-1 transition-all duration-200 ${isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50/50 rounded-xl'}`;
 
     return (
         <>
@@ -94,50 +94,50 @@ const MobileNav: React.FC = () => {
 
             {/* Bottom Navigation Bar */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] z-30 safe-bottom">
-                <div className="flex items-center justify-around h-[var(--bottom-nav-height)] px-1 sm:px-4 max-w-lg mx-auto">
+                <div className="flex items-center justify-around h-[var(--bottom-nav-height)] px-2 sm:px-4 max-w-lg mx-auto">
                     <NavLink to="/" className={navItemClass}>
                         {({ isActive }) => (
                             <>
-                                {isActive && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-blue-600 rounded-full" />}
-                                <LayoutDashboard size={21} className="mb-0.5" />
-                                <span className="text-[9px] uppercase tracking-tighter font-black">Home</span>
+                                {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-blue-600 rounded-b-lg shadow-sm" />}
+                                <LayoutDashboard size={24} className="mb-1" strokeWidth={isActive ? 2.5 : 2} />
+                                <span className={`text-[10px] uppercase font-bold tracking-widest ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>Home</span>
                             </>
                         )}
                     </NavLink>
                     <NavLink to="/pipeline" className={navItemClass}>
                         {({ isActive }) => (
                             <>
-                                {isActive && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-blue-600 rounded-full" />}
-                                <KanbanSquare size={21} className="mb-0.5" />
-                                <span className="text-[9px] uppercase tracking-tighter font-black">Pipeline</span>
+                                {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-blue-600 rounded-b-lg shadow-sm" />}
+                                <KanbanSquare size={24} className="mb-1" strokeWidth={isActive ? 2.5 : 2} />
+                                <span className={`text-[10px] uppercase font-bold tracking-widest ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>Pipeline</span>
                             </>
                         )}
                     </NavLink>
                     <NavLink to="/candidates" className={navItemClass}>
                         {({ isActive }) => (
                             <>
-                                {isActive && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-blue-600 rounded-full" />}
-                                <Users size={21} className="mb-0.5" />
-                                <span className="text-[9px] uppercase tracking-tighter font-black">People</span>
+                                {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-blue-600 rounded-b-lg shadow-sm" />}
+                                <Users size={24} className="mb-1" strokeWidth={isActive ? 2.5 : 2} />
+                                <span className={`text-[10px] uppercase font-bold tracking-widest ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>Candidates</span>
                             </>
                         )}
                     </NavLink>
                     <NavLink to="/team-chat" className={navItemClass}>
                         {({ isActive }) => (
                             <>
-                                {isActive && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-blue-600 rounded-full" />}
-                                <MessageSquare size={21} className="mb-0.5" />
-                                <span className="text-[9px] uppercase tracking-tighter font-black">Chat</span>
+                                {isActive && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-blue-600 rounded-b-lg shadow-sm" />}
+                                <MessageSquare size={24} className="mb-1" strokeWidth={isActive ? 2.5 : 2} />
+                                <span className={`text-[10px] uppercase font-bold tracking-widest ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>Chat</span>
                             </>
                         )}
                     </NavLink>
                     <button
                         onClick={() => setShowMore(!showMore)}
-                        className={`mobile-nav-item flex-1 relative ${showMore ? 'text-blue-600 font-bold' : ''}`}
+                        className={`flex flex-col items-center justify-center flex-1 h-full py-1 relative transition-all duration-200 ${showMore ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50/50 rounded-xl'}`}
                     >
-                        {showMore && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-blue-600 rounded-full" />}
-                        <MoreHorizontal size={21} className="mb-0.5" />
-                        <span className="text-[9px] uppercase tracking-tighter font-black">More</span>
+                        {showMore && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-blue-600 rounded-b-lg shadow-sm" />}
+                        <MoreHorizontal size={24} className="mb-1" strokeWidth={showMore ? 2.5 : 2} />
+                        <span className={`text-[10px] uppercase font-bold tracking-widest ${showMore ? 'text-blue-600' : 'text-slate-500'}`}>More</span>
                     </button>
                 </div>
             </nav>
