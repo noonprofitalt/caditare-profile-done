@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User, UserRole } from '../../types';
 import { X, Save, User as UserIcon, Mail } from 'lucide-react';
 import { supabase } from '../../services/supabase';
+import { UserService } from '../../services/userService';
 
 interface UserDialogProps {
     isOpen: boolean;
@@ -52,40 +53,35 @@ const UserDialog: React.FC<UserDialogProps> = ({ isOpen, onClose, user, onSave }
 
         try {
             if (user) {
-                // Update existing user profile
-                const { error: updateError } = await supabase
-                    .from('profiles')
-                    .update({
-                        full_name: formData.name,
-                        role: formData.role,
-                        status: formData.status
-                    })
-                    .eq('id', user.id);
-
-                if (updateError) throw updateError;
-            } else {
-                // Create new user via Edge Function
-                const { data, error: createError } = await supabase.functions.invoke('create-user', {
-                    body: {
-                        email: formData.email,
-                        password: formData.password || 'TemporaryPass123!', // Default fallback if empty
-                        name: formData.name,
-                        role: formData.role,
-                        status: formData.status
-                    }
-                });
-
-                if (createError) {
-                    let errMsg = createError.message || 'Failed to create user via Edge Function';
-                    if (createError.context && typeof createError.context.json === 'function') {
-                        try {
-                            const errBody = await createError.context.json();
-                            if (errBody && errBody.error) errMsg = errBody.error;
-                        } catch (e) { /* ignore parse error */ }
-                    }
-                    throw new Error(errMsg);
+                // Safety check: Don't allow changing role of master admins via UI if needed
+                // But generally Admin can manage others. 
+                // However, we should prevent accidental downgrade of auth@suhara.com
+                if (['auth@suhara.com'].includes(user.email) && formData.role !== 'Admin') {
+                    throw new Error("Cannot downgrade role of master admin account.");
                 }
-                if (data?.error) throw new Error(data.error);
+
+                await UserService.updateUser(user.id, {
+                    name: formData.name,
+                    role: formData.role,
+                    status: formData.status
+                });
+            } else {
+                if (!formData.password) {
+                    throw new Error("Initial Password is required for new users.");
+                }
+
+                if (formData.password.length < 8) {
+                    throw new Error("Password must be at least 8 characters long.");
+                }
+
+                // Create new user via UserService (handles edge function + audit logs)
+                await UserService.createUser({
+                    email: formData.email,
+                    password: formData.password,
+                    name: formData.name,
+                    role: formData.role,
+                    status: formData.status
+                });
             }
 
             onSave();

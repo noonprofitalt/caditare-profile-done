@@ -33,8 +33,9 @@ export class ReportingService {
 
     // Revenue Estimation (Sum of payment history + estimates)
     const revenue = candidates.reduce((sum, c) => {
-      const paid = c.stageData?.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
-      return sum + paid;
+      const advanceTotal = (c.advancePayments || []).reduce((aSum, ap) => aSum + (ap.amount || 0), 0);
+      const paymentHistoryTotal = c.stageData?.paymentHistory?.reduce((pSum, rec) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
+      return sum + advanceTotal + paymentHistoryTotal;
     }, 0);
 
     // Average processing time for completed candidates (Registration to Arrival)
@@ -334,7 +335,8 @@ export class ReportingService {
 
     // Fetch real employer data for commission rates
     const employers = await PartnerService.getEmployers();
-    const DEFAULT_COMMISSION = 450;
+    const DEFAULT_COMMISSION_LKR = 135000;
+    const USD_TO_LKR = 300;
 
     const HIGH_PROBABILITY_STAGES = [
       WorkflowStage.VISA_RECEIVED,
@@ -342,39 +344,72 @@ export class ReportingService {
       WorkflowStage.TICKET_ISSUED
     ];
 
+    // Enhanced tracking
+    const paymentTypeMap: Record<string, { total: number; count: number }> = {};
+    const allPaymentEvents: Array<{ candidateName: string; type: string; amount: number; date: string }> = [];
+    const candidateCollections: Array<{ name: string; stage: string; total: number }> = [];
+    let candidatesWithPayments = 0;
+
     candidates.forEach(c => {
-      // --- COLLECTED: Sum of actual advance payments recorded on each candidate ---
-      const advanceTotal = (c.advancePayments || []).reduce((sum, ap) => sum + (ap.amount || 0), 0);
+      const employer = employers.find(e => e.id === c.employerId);
+      const commissionLKR = employer?.commissionPerHire
+        ? employer.commissionPerHire * USD_TO_LKR
+        : DEFAULT_COMMISSION_LKR;
+
+      // --- COLLECTED: Sum of actual advance payments (LKR) ---
+      const advancePayments = c.advancePayments || [];
+      const advanceTotal = advancePayments.reduce((sum, ap) => sum + (ap.amount || 0), 0);
       const paymentHistoryTotal = c.stageData?.paymentHistory?.reduce(
         (pSum: number, rec: any) => pSum + parseFloat(rec.amount || '0'), 0
       ) || 0;
-      collected += advanceTotal + paymentHistoryTotal;
+      const candidateTotal = advanceTotal + paymentHistoryTotal;
+      collected += candidateTotal;
 
-      // --- PENDING: Candidates with partial/pending payment status ---
+      if (candidateTotal > 0) {
+        candidatesWithPayments++;
+        candidateCollections.push({
+          name: c.name || 'Unknown',
+          stage: c.stage,
+          total: candidateTotal
+        });
+      }
+
+      // Track per payment type
+      advancePayments.forEach(ap => {
+        if (ap.amount && ap.amount > 0) {
+          const pType = ap.type || 'Other';
+          if (!paymentTypeMap[pType]) paymentTypeMap[pType] = { total: 0, count: 0 };
+          paymentTypeMap[pType].total += ap.amount;
+          paymentTypeMap[pType].count++;
+
+          // Track as recent event
+          allPaymentEvents.push({
+            candidateName: c.name || 'Unknown',
+            type: pType,
+            amount: ap.amount,
+            date: ap.signDate || ap.informedDate || c.audit?.updatedAt || new Date().toISOString()
+          });
+        }
+      });
+
+      // --- PENDING ---
       if (c.stageData?.paymentStatus === 'Pending' || c.stageData?.paymentStatus === 'Partial') {
-        // Calculate how much is still owed based on commission minus what's paid
-        const employer = employers.find(e => e.id === c.employerId || e.id === c.jobId);
-        const totalOwed = employer?.commissionPerHire || DEFAULT_COMMISSION;
-        const stillOwed = Math.max(0, totalOwed - (advanceTotal + paymentHistoryTotal));
+        const stillOwed = Math.max(0, commissionLKR - candidateTotal);
         pending += stillOwed;
       }
 
-      // --- PROJECTED: Only high-probability late-stage candidates ---
+      // --- PROJECTED ---
       if (HIGH_PROBABILITY_STAGES.includes(c.stage)) {
-        const employer = employers.find(e => e.id === c.employerId || e.id === c.jobId);
-        const commission = employer?.commissionPerHire || DEFAULT_COMMISSION;
-        projected += commission;
+        projected += commissionLKR;
       }
 
-      // --- PIPELINE: All active (non-departed) candidates × their real commission ---
+      // --- PIPELINE ---
       if (c.stage && c.stage !== WorkflowStage.DEPARTED) {
-        const employer = employers.find(e => e.id === c.employerId || e.id === c.jobId);
-        const commission = employer?.commissionPerHire || DEFAULT_COMMISSION;
-        totalPipeline += commission;
+        totalPipeline += commissionLKR;
       }
     });
 
-    // Also add pending from real invoices
+    // Add pending from real invoices
     const { data: invoices } = await supabase
       .from('invoices')
       .select('amount, status')
@@ -384,12 +419,33 @@ export class ReportingService {
       pending += invoices.reduce((sum: number, inv: any) => sum + parseFloat(inv.amount || '0'), 0);
     }
 
+    // Build payment type breakdown sorted by total
+    const paymentTypeBreakdown = Object.entries(paymentTypeMap)
+      .map(([type, data]) => ({ type, total: data.total, count: data.count }))
+      .sort((a, b) => b.total - a.total);
+
+    // Recent payments (last 10 by date)
+    const recentPayments = allPaymentEvents
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 10);
+
+    // Top collectors (top 5 candidates by total paid)
+    const topCollectors = candidateCollections
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
     return {
       totalCollected: collected,
       pendingCollection: pending,
       projectedRevenue: projected,
       pipelineValue: totalPipeline,
-      revenueByStage: this.calculateRevenueByStage(candidates)
+      revenueByStage: this.calculateRevenueByStage(candidates),
+      candidatesWithPayments,
+      totalCandidates: candidates.length,
+      avgCollectionPerCandidate: candidatesWithPayments > 0 ? Math.round(collected / candidatesWithPayments) : 0,
+      paymentTypeBreakdown,
+      recentPayments,
+      topCollectors
     };
   }
 
@@ -398,8 +454,12 @@ export class ReportingService {
     WORKFLOW_STAGES.forEach(s => revenueMap[s] = 0);
 
     candidates.forEach(c => {
-      const paid = c.stageData?.paymentHistory?.reduce((pSum: number, rec: any) => pSum + parseFloat(rec.amount || '0'), 0) || 0;
-      revenueMap[c.stage] += paid;
+      // Include both advance payments and payment history for accurate revenue tracking
+      const advanceTotal = (c.advancePayments || []).reduce((sum, ap) => sum + (ap.amount || 0), 0);
+      const paymentHistoryTotal = c.stageData?.paymentHistory?.reduce(
+        (pSum: number, rec: any) => pSum + parseFloat(rec.amount || '0'), 0
+      ) || 0;
+      revenueMap[c.stage] += advanceTotal + paymentHistoryTotal;
     });
 
     return Object.entries(revenueMap).map(([name, value]) => ({

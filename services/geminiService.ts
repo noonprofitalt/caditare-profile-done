@@ -12,11 +12,25 @@ export class GeminiService {
     private static cache: Map<string, CacheEntry<unknown>> = new Map();
 
     private static getApiKey(): string | null {
-        return localStorage.getItem(API_KEY_STORAGE_KEY);
+        return localStorage.getItem(API_KEY_STORAGE_KEY) || import.meta.env.VITE_GEMINI_API_KEY || null;
     }
 
     static getModelPref(): string {
-        return localStorage.getItem(MODEL_STORAGE_KEY) || 'gemini-1.5-flash';
+        const stored = localStorage.getItem(MODEL_STORAGE_KEY);
+        // Using -latest suffixes to ensure compatibility with v1beta
+        if (stored === 'gemini-3-flash' || stored === 'gemini-2.0-flash' || stored === 'gemini-2.5-flash') {
+            this.saveModelPref('gemini-2.0-flash'); // Standard stable id
+            return 'gemini-2.0-flash';
+        }
+        if (stored === 'gemini-3.1-pro' || stored === 'gemini-1.5-pro') {
+            this.saveModelPref('gemini-1.5-pro-latest');
+            return 'gemini-1.5-pro-latest';
+        }
+        if (stored === 'gemini-1.5-flash') {
+            this.saveModelPref('gemini-1.5-flash-latest');
+            return 'gemini-1.5-flash-latest';
+        }
+        return stored || 'gemini-2.0-flash';
     }
 
     private static async getModel() {

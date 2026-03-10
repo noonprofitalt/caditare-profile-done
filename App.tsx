@@ -144,12 +144,12 @@ const App: React.FC = () => {
                                       </RoleRoute>
                                     } />
                                     <Route path="/partners/:id?" element={
-                                      <RoleRoute allowedRoles={['Admin']}>
+                                      <RoleRoute allowedRoles={['Admin', 'HR']}>
                                         <PartnerManager />
                                       </RoleRoute>
                                     } />
                                     <Route path="/finance" element={
-                                      <RoleRoute allowedRoles={['Admin']}>
+                                      <RoleRoute allowedRoles={['Admin', 'Finance', 'HR']}>
                                         <FinanceLedger />
                                       </RoleRoute>
                                     } />

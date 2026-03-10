@@ -4,7 +4,14 @@ import { OfflineSyncService } from './offlineSyncService';
 import { AuditService } from './auditService';
 
 export class JobService {
-    static async getJobs(): Promise<Job[]> {
+    private static _jobsCache: Job[] | null = null;
+    private static _jobsCacheTime: number = 0;
+
+    static async getJobs(forceRefresh: boolean = false): Promise<Job[]> {
+        if (!forceRefresh && this._jobsCache && Date.now() - this._jobsCacheTime < 60000) {
+            return this._jobsCache;
+        }
+
         const { data, error } = await supabase
             .from('jobs')
             .select('*')
@@ -15,7 +22,9 @@ export class JobService {
             return [];
         }
 
-        return data.map((j: any) => this.mapDatabaseToJob(j));
+        this._jobsCache = data.map((j: any) => this.mapDatabaseToJob(j));
+        this._jobsCacheTime = Date.now();
+        return this._jobsCache;
     }
 
     static async searchJobs(
@@ -138,6 +147,8 @@ export class JobService {
             employerId: result.employerId
         }, auditUserId);
 
+        this._jobsCache = null; // Invalidate cache
+
         return result;
     }
 
@@ -187,6 +198,8 @@ export class JobService {
             status: result.status
         }, auditUserId);
 
+        this._jobsCache = null; // Invalidate cache
+
         return result;
     }
 
@@ -214,6 +227,8 @@ export class JobService {
         AuditService.log('JOB_DELETED', {
             jobId: id
         }, auditUserId);
+
+        this._jobsCache = null; // Invalidate cache
 
         return true;
     }

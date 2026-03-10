@@ -15,6 +15,128 @@ import { useAuth } from '../context/AuthContext';
 
 const PAGE_SIZE = 50;
 
+const areEqual = (prevProps: any, nextProps: any) => {
+  const index = prevProps.rowIndex ?? prevProps.index;
+  const nextIndex = nextProps.rowIndex ?? nextProps.index;
+
+  const prevCand = prevProps.candidates?.[index];
+  const nextCand = nextProps.candidates?.[nextIndex];
+
+  if (prevCand?.id !== nextCand?.id || prevCand?.stage !== nextCand?.stage || prevCand?.profileCompletionStatus !== nextCand?.profileCompletionStatus) {
+    return false;
+  }
+
+  const wasSelected = prevProps.selectedIds?.includes(prevCand?.id);
+  const isSelected = nextProps.selectedIds?.includes(nextCand?.id);
+
+  return wasSelected === isSelected && prevProps.style === nextProps.style;
+};
+
+const CandidateRow = React.memo(({ index, style, candidates, selectedIds, onSelect, adminCheck }: any) => {
+  const candidate = candidates[index];
+
+  if (!candidate) {
+    return (
+      <div style={style} className="px-4 md:px-6">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm mb-3 p-4 flex items-center justify-center">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Loader2 size={16} className="animate-spin" />
+            <span className="text-sm font-medium">Loading candidates...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isSelected = selectedIds.includes(candidate.id);
+
+  return (
+    <div style={style} className="px-4 md:px-6">
+      <div className={`bg-white border border-slate-200 rounded-lg shadow-sm mb-3 p-4 hover:border-blue-300 transition-colors flex flex-col md:flex-row md:items-center gap-4 ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
+        }`}>
+        {/* Mobile Header: Checkbox + Avatar + Basic Info */}
+        <div className="flex items-center gap-3 md:w-1/3 min-w-0">
+          {adminCheck && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onSelect(candidate.id)}
+              className="w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 transition-premium cursor-pointer shrink-0"
+            />
+          )}
+          <div className="relative flex-shrink-0">
+            <img
+              src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}`}
+              className="w-12 h-12 rounded-xl border border-slate-200 shadow-sm"
+              alt=""
+            />
+            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || candidate.profileCompletionPercentage >= 75 ? 'bg-emerald-500' : 'bg-amber-500'
+              }`} />
+          </div>
+          <div className="truncate flex-1">
+            <Link to={`/candidates/${candidate.id}`} className="font-semibold text-slate-900 hover:text-blue-600 truncate block text-base">
+              {candidate.regNo || candidate.candidateCode || 'NO REG'}
+            </Link>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              {(candidate.preferredCountries && candidate.preferredCountries.length > 0) ? (
+                candidate.preferredCountries.map((country: string) => (
+                  <span key={country} className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
+                    {country}
+                  </span>
+                ))
+              ) : candidate.targetCountry ? (
+                <span className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
+                  {candidate.targetCountry}
+                </span>
+              ) : candidate.country ? (
+                <span className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
+                  {candidate.country}
+                </span>
+              ) : (
+                <span className="text-xs bg-slate-50 text-slate-500 font-medium px-2 py-0.5 rounded border border-slate-200">
+                  No Destination
+                </span>
+              )}
+              <span className="text-[10px] text-slate-400 font-bold uppercase truncate ml-1">
+                • {candidate.role || 'Personnel'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop/Mobile Detail Wrapper */}
+        <div className="flex items-center justify-between md:contents">
+          <div className="md:w-1/4 text-xs font-bold text-slate-500 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 md:hidden" />
+            {candidate.phone || 'No Contact'}
+          </div>
+
+          <div className="md:w-1/4">
+            <span className={`badge ${candidate.stage === WorkflowStage.DEPARTED ? 'badge-green' :
+              [WorkflowStage.VISA_RECEIVED, WorkflowStage.TICKET_ISSUED, WorkflowStage.SLBFE_REGISTRATION].includes(candidate.stage) ? 'badge-blue' :
+                [WorkflowStage.REGISTERED, WorkflowStage.VERIFIED].includes(candidate.stage) ? 'badge-slate' :
+                  [WorkflowStage.APPLIED, WorkflowStage.OFFER_RECEIVED, WorkflowStage.WP_RECEIVED, WorkflowStage.EMBASSY_APPLIED].includes(candidate.stage) ? 'badge-purple' :
+                    'badge-amber'
+              }`}>
+              {candidate.stage}
+            </span>
+          </div>
+
+          <div className="flex justify-end md:flex-1">
+            <Link
+              to={`/candidates/${candidate.id}`}
+              className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-blue-600 hover:text-white rounded-xl text-slate-400 transition-premium shadow-sm"
+            >
+              <ArrowRight size={20} />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}, areEqual);
+
+
 const CandidateList: React.FC = () => {
   const { candidates: contextCandidates } = useCandidates(); // Keeps the top-level stats alive
   const { user } = useAuth();
@@ -223,109 +345,7 @@ const CandidateList: React.FC = () => {
     setIsIntegrityScanActive(!isIntegrityScanActive);
   };
 
-  const CandidateRow = ({ index, style, candidates, selectedIds, onSelect, adminCheck }: any) => {
-    const candidate = candidates[index];
 
-    if (!candidate) {
-      return (
-        <div style={style} className="px-4 md:px-6">
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm mb-3 p-4 flex items-center justify-center">
-            <div className="flex items-center gap-2 text-slate-400">
-              <Loader2 size={16} className="animate-spin" />
-              <span className="text-sm font-medium">Loading candidates...</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    const isSelected = selectedIds.includes(candidate.id);
-
-    return (
-      <div style={style} className="px-4 md:px-6">
-        <div className={`bg-white border border-slate-200 rounded-lg shadow-sm mb-3 p-4 hover:border-blue-300 transition-colors flex flex-col md:flex-row md:items-center gap-4 ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
-          }`}>
-          {/* Mobile Header: Checkbox + Avatar + Basic Info */}
-          <div className="flex items-center gap-3 md:w-1/3 min-w-0">
-            {adminCheck && (
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => onSelect(candidate.id)}
-                className="w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 transition-premium cursor-pointer shrink-0"
-              />
-            )}
-            <div className="relative flex-shrink-0">
-              <img
-                src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}`}
-                className="w-12 h-12 rounded-xl border border-slate-200 shadow-sm"
-                alt=""
-              />
-              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${candidate.profileCompletionStatus === ProfileCompletionStatus.COMPLETE || candidate.profileCompletionPercentage >= 75 ? 'bg-emerald-500' : 'bg-amber-500'
-                }`} />
-            </div>
-            <div className="truncate flex-1">
-              <Link to={`/candidates/${candidate.id}`} className="font-semibold text-slate-900 hover:text-blue-600 truncate block text-base">
-                {candidate.regNo || candidate.candidateCode || 'NO REG'}
-              </Link>
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                {(candidate.preferredCountries && candidate.preferredCountries.length > 0) ? (
-                  candidate.preferredCountries.map((country: string) => (
-                    <span key={country} className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
-                      {country}
-                    </span>
-                  ))
-                ) : candidate.targetCountry ? (
-                  <span className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
-                    {candidate.targetCountry}
-                  </span>
-                ) : candidate.country ? (
-                  <span className="text-xs bg-slate-100 text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200">
-                    {candidate.country}
-                  </span>
-                ) : (
-                  <span className="text-xs bg-slate-50 text-slate-500 font-medium px-2 py-0.5 rounded border border-slate-200">
-                    No Destination
-                  </span>
-                )}
-                <span className="text-[10px] text-slate-400 font-bold uppercase truncate ml-1">
-                  • {candidate.role || 'Personnel'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop/Mobile Detail Wrapper */}
-          <div className="flex items-center justify-between md:contents">
-            <div className="md:w-1/4 text-xs font-bold text-slate-500 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 md:hidden" />
-              {candidate.phone || 'No Contact'}
-            </div>
-
-            <div className="md:w-1/4">
-              <span className={`badge ${candidate.stage === WorkflowStage.DEPARTED ? 'badge-green' :
-                [WorkflowStage.VISA_RECEIVED, WorkflowStage.TICKET_ISSUED, WorkflowStage.SLBFE_REGISTRATION].includes(candidate.stage) ? 'badge-blue' :
-                  [WorkflowStage.REGISTERED, WorkflowStage.VERIFIED].includes(candidate.stage) ? 'badge-slate' :
-                    [WorkflowStage.APPLIED, WorkflowStage.OFFER_RECEIVED, WorkflowStage.WP_RECEIVED, WorkflowStage.EMBASSY_APPLIED].includes(candidate.stage) ? 'badge-purple' :
-                      'badge-amber'
-                }`}>
-                {candidate.stage}
-              </span>
-            </div>
-
-            <div className="flex justify-end md:flex-1">
-              <Link
-                to={`/candidates/${candidate.id}`}
-                className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-blue-600 hover:text-white rounded-xl text-slate-400 transition-premium shadow-sm"
-              >
-                <ArrowRight size={20} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
 
   return (
@@ -472,15 +492,15 @@ const CandidateList: React.FC = () => {
             </div>
 
             <List
-              style={{ height: listHeight - 40, width: '100%' }}
+              defaultHeight={listHeight - 40}
               rowCount={paginatedCandidates.length + (hasMoreItems ? 1 : 0)}
               rowHeight={window.innerWidth < 768 ? 160 : 72}
+              rowComponent={CandidateRow as any}
               onRowsRendered={({ stopIndex }: { stopIndex: number }) => {
                 if (stopIndex >= paginatedCandidates.length - 5) {
                   loadMoreItems();
                 }
               }}
-              rowComponent={CandidateRow}
               rowProps={{
                 candidates: paginatedCandidates,
                 selectedIds: selectedCandidateIds,

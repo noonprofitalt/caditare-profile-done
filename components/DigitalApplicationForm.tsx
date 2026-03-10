@@ -156,7 +156,7 @@ const DigitalApplicationForm: React.FC = () => {
 
     // NEW: PCC Tracking State
     const [pccIssuedDate, setPccIssuedDate] = useState('');
-    const [pccLastInspectionDate, setPccLastInspectionDate] = useState('');
+    const [pccExpiryDate, setPccExpiryDate] = useState('');
 
     // NEW: Additional Contact Numbers State
     const [additionalContacts, setAdditionalContacts] = useState<string[]>([]);
@@ -165,27 +165,29 @@ const DigitalApplicationForm: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [lastSaved, setLastSaved] = useState<string | null>(null);
 
-    // AUTO-SAVE DRAFT (Every 10 seconds)
+    // AUTO-SAVE DRAFT (every 3 seconds via interval — never misses a save)
     useEffect(() => {
-        // Only draft for NEW candidates to prevent overwriting existing ones during upgrades
         if (isUpgradeMode) return;
 
-        const timer = setTimeout(() => {
+        const save = () => {
             const draft = {
                 formData, educationRows, employmentRows, childrenRows,
                 jobRoles, selectedEducation, preferredCountries,
                 medicalStatus, medicalScheduledDate, medicalCompletedDate,
                 medicalBloodGroup, medicalAllergies, medicalNotes,
-                passports, pccIssuedDate, pccLastInspectionDate,
+                passports, pccIssuedDate, pccExpiryDate,
                 additionalContacts, currentStep,
                 timestamp: Date.now()
             };
             localStorage.setItem(`candidate_draft_${user?.id || 'guest'}`, JSON.stringify(draft));
             setLastSaved(new Date().toLocaleTimeString());
-        }, 10000);
+        };
 
-        return () => clearTimeout(timer);
-    }, [formData, educationRows, employmentRows, childrenRows, jobRoles, selectedEducation, preferredCountries, medicalStatus, passports, pccIssuedDate, additionalContacts, currentStep]);
+        const interval = setInterval(save, 3000);
+        return () => clearInterval(interval);
+    }, [isUpgradeMode, formData, educationRows, employmentRows, childrenRows, jobRoles, selectedEducation, preferredCountries,
+        medicalStatus, medicalScheduledDate, medicalCompletedDate, medicalBloodGroup, medicalAllergies, medicalNotes,
+        passports, pccIssuedDate, pccExpiryDate, additionalContacts, currentStep, user]);
 
     // RESTORE DRAFT ON MOUNT
     useEffect(() => {
@@ -213,7 +215,7 @@ const DigitalApplicationForm: React.FC = () => {
                         setMedicalNotes(draft.medicalNotes);
                         setPassports(draft.passports);
                         setPccIssuedDate(draft.pccIssuedDate);
-                        setPccLastInspectionDate(draft.pccLastInspectionDate);
+                        setPccExpiryDate(draft.pccExpiryDate);
                         setAdditionalContacts(draft.additionalContacts);
                         setCurrentStep(draft.currentStep);
                         NotificationService.addNotification({
@@ -289,7 +291,7 @@ const DigitalApplicationForm: React.FC = () => {
                     // Pre-fill PCC data
                     if (candidate.pccData) {
                         setPccIssuedDate(candidate.pccData.issuedDate || '');
-                        setPccLastInspectionDate(candidate.pccData.lastInspectionDate || '');
+                        setPccExpiryDate(candidate.pccData.expiryDate || '');
                     }
 
                     // Pre-fill dynamic rows
@@ -423,12 +425,18 @@ const DigitalApplicationForm: React.FC = () => {
         const constructedLocation = formData.city ? `${formData.city}, ${formData.address}` : formData.address || '';
 
         // Construct PCC Data
-        const pccData = pccIssuedDate ? {
-            issuedDate: pccIssuedDate,
-            lastInspectionDate: pccLastInspectionDate,
-            status: PCCStatus.VALID, // Placeholder, will rely on backend/service to recalculate status
-            ageDays: 0 // Placeholder
-        } : undefined;
+        const pccData = pccIssuedDate ? ComplianceService.evaluatePCC(pccIssuedDate, pccExpiryDate || undefined) : undefined;
+
+        // Evaluate passports strictly prior to saving to prevent invalid defaults from leaking
+        const evaluatedPassports = passports.map(ppt => ({
+            ...ppt,
+            ...ComplianceService.evaluatePassport(
+                ppt.expiryDate || '',
+                ppt.passportNumber || '',
+                ppt.country || '',
+                ppt.issuedDate || ''
+            )
+        }));
 
         const candidateData = DataSyncService.fullSync({
             ...formData,
@@ -448,8 +456,8 @@ const DigitalApplicationForm: React.FC = () => {
             jobRoles: jobRoles,
             additionalContactNumbers: additionalContacts,
             secondaryPhone: additionalContacts.length > 0 ? additionalContacts[0] : '',
-            passports,
-            passportData: passports.length > 0 ? passports[0] : undefined,
+            passports: evaluatedPassports,
+            passportData: evaluatedPassports.length > 0 ? evaluatedPassports[0] : undefined,
             pccData,
             stageData: {
                 ...formData.stageData,
@@ -520,63 +528,67 @@ const DigitalApplicationForm: React.FC = () => {
             <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
                 {/* HEADER */}
                 <div className="bg-white border-b border-slate-200 px-6 py-4">
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-xl font-semibold text-slate-900">Suhara Foreign Employment Agency</h1>
-                            <div className="flex items-center gap-3 mt-1">
-                                <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium border border-blue-100">Digital Intake Phase II</span>
-                                <p className="text-slate-500 text-sm">Case Master: {user?.name || 'Administrative staff'}</p>
-                            </div>
+                            <h1 className="text-base font-semibold text-slate-800">Suhara Foreign Employment Agency</h1>
+                            <p className="text-xs text-slate-500 mt-0.5">Digital Intake Phase II&nbsp;&middot;&nbsp;Case Master: {user?.name || 'Administrative staff'}</p>
                         </div>
                         <div className="flex items-center gap-3">
                             {lastSaved && (
-                                <div className="hidden md:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
-                                    <Save size={12} className="text-emerald-400" />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-100">Draft Saved {lastSaved}</span>
-                                </div>
+                                <span className="hidden md:flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
+                                    <Save size={11} />
+                                    Draft saved {lastSaved}
+                                </span>
                             )}
                             <button
+                                type="button"
                                 onClick={() => navigate('/candidates')}
-                                className="p-3 hover:bg-white/10 rounded-xl transition-all hover:rotate-90"
+                                className="text-slate-400 hover:text-slate-700 transition-colors"
+                                title="Close"
                             >
-                                <X size={24} />
+                                <X size={20} />
                             </button>
                         </div>
                     </div>
 
-                    {/* STEP INDICATOR */}
-                    <div className="grid grid-cols-3 gap-4 relative z-10">
+                    {/* SIMPLE STEP INDICATOR */}
+                    <div className="flex items-center gap-0 border-t border-slate-100 pt-4 mt-2">
                         {[
-                            { step: 1, label: 'Identity & Contact', icon: <UserPlus size={18} /> },
-                            { step: 2, label: 'Professional & Family', icon: <Briefcase size={18} /> },
-                            { step: 3, label: 'Compliance & Finalize', icon: <ShieldCheck size={18} /> }
-                        ].map((s) => (
-                            <div
-                                key={s.step}
-                                onClick={() => setCurrentStep(s.step)}
-                                className={`flex items-center gap-4 p-4 rounded-2xl transition-all cursor-pointer border-2 ${currentStep === s.step
-                                    ? 'bg-white text-blue-900 border-blue-400 shadow-xl scale-[1.02]'
-                                    : currentStep > s.step
-                                        ? 'bg-blue-600/50 text-white border-blue-400/30'
-                                        : 'bg-white/5 border-white/10 text-blue-200 opacity-60'
-                                    }`}
-                            >
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${currentStep === s.step ? 'bg-blue-900 text-white' : 'bg-white/10'
-                                    }`}>
-                                    {currentStep > s.step ? <CheckCircle size={20} className="text-emerald-300 fill-emerald-300/20" /> : s.icon}
-                                </div>
-                                <div className="hidden md:block">
-                                    <p className="text-xs font-medium text-slate-500 opacity-60">Step 0{s.step}</p>
-                                    <p className="text-sm font-semibold">{s.label}</p>
-                                </div>
-                            </div>
+                            { step: 1, label: 'Identity & Contact' },
+                            { step: 2, label: 'Professional & Family' },
+                            { step: 3, label: 'Compliance & Finalize' }
+                        ].map((s, i) => (
+                            <React.Fragment key={s.step}>
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentStep(s.step)}
+                                    className="flex items-center gap-2 group shrink-0"
+                                >
+                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${currentStep === s.step
+                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                        : currentStep > s.step
+                                            ? 'bg-green-500 border-green-500 text-white'
+                                            : 'bg-white border-slate-300 text-slate-400'
+                                        }`}>
+                                        {currentStep > s.step ? '\u2713' : s.step}
+                                    </span>
+                                    <span className={`text-sm hidden md:inline transition-colors ${currentStep === s.step ? 'text-blue-700 font-semibold' :
+                                        currentStep > s.step ? 'text-green-600 font-medium' :
+                                            'text-slate-400'
+                                        }`}>{s.label}</span>
+                                </button>
+                                {i < 2 && (
+                                    <div className={`flex-1 h-px mx-3 transition-colors ${currentStep > s.step ? 'bg-green-400' : 'bg-slate-200'
+                                        }`} />
+                                )}
+                            </React.Fragment>
                         ))}
                     </div>
-                </div>
+                </div>{/* end header */}
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-12 bg-slate-50/30">
+                <form onSubmit={handleSubmit} className="p-6 space-y-10 bg-white">
                     {/* UNIVERSAL HEADER FIELDS (Visible across all steps) */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1 ml-1">Reg No</label>
                             <input
@@ -711,7 +723,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                             <label className="block text-sm font-medium text-slate-700 mb-1">Issued Date</label>
                                                             <input
                                                                 type="date"
-                                                                value={passport.issuedDate ? new Date(passport.issuedDate).toISOString().split('T')[0] : ''}
+                                                                value={passport.issuedDate || ''}
                                                                 onChange={(e) => {
                                                                     const updated = [...passports];
                                                                     updated[idx].issuedDate = e.target.value;
@@ -725,7 +737,7 @@ const DigitalApplicationForm: React.FC = () => {
                                                             <label className="block text-sm font-medium text-slate-700 mb-1">Expiry Date</label>
                                                             <input
                                                                 type="date"
-                                                                value={passport.expiryDate ? new Date(passport.expiryDate).toISOString().split('T')[0] : ''}
+                                                                value={passport.expiryDate || ''}
                                                                 onChange={(e) => {
                                                                     const updated = [...passports];
                                                                     updated[idx].expiryDate = e.target.value;
@@ -1087,12 +1099,12 @@ const DigitalApplicationForm: React.FC = () => {
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 mb-1">
-                                                Last Inspection Date
+                                                Expiry Date (Auto-Calculated)
                                             </label>
                                             <input
                                                 type="date"
-                                                value={pccLastInspectionDate}
-                                                onChange={(e) => setPccLastInspectionDate(e.target.value)}
+                                                value={pccExpiryDate || (pccIssuedDate ? ComplianceService.evaluatePCC(pccIssuedDate).expiryDate : '')}
+                                                onChange={(e) => setPccExpiryDate(e.target.value)}
                                                 readOnly={!canEditCompliance}
                                                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${!canEditCompliance ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : ''}`}
                                             />
@@ -1103,7 +1115,7 @@ const DigitalApplicationForm: React.FC = () => {
                                     {pccIssuedDate && (
                                         <div className="mt-4 p-3 bg-white rounded-lg border border-purple-100">
                                             {(() => {
-                                                const pcc = ComplianceService.evaluatePCC(pccIssuedDate, pccLastInspectionDate);
+                                                const pcc = ComplianceService.evaluatePCC(pccIssuedDate, pccExpiryDate);
                                                 return (
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-sm font-medium text-slate-700">PCC Status:</span>
@@ -1735,14 +1747,14 @@ const DigitalApplicationForm: React.FC = () => {
                     )}
 
                     {/* STEP NAVIGATION */}
-                    <div className="flex items-center justify-between pt-12 border-t border-slate-200">
+                    <div className="flex items-center justify-between pt-8 border-t border-slate-200">
                         <button
                             type="button"
                             onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate('/candidates')}
-                            className="flex items-center gap-2 px-8 py-4 border-2  text-slate-700 font-black rounded-2xl hover:bg-slate-50 transition-all active:scale-95"
+                            className="flex items-center gap-2 px-6 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-md hover:bg-slate-50 transition-colors"
                         >
-                            <ArrowLeft size={20} />
-                            {currentStep === 1 ? 'Cancel Entry' : 'Back to Step 0' + (currentStep - 1)}
+                            <ArrowLeft size={18} />
+                            {currentStep === 1 ? 'Cancel' : `Back to Step ${currentStep - 1}`}
                         </button>
 
                         <div className="flex items-center gap-4">

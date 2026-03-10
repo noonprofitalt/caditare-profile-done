@@ -771,6 +771,13 @@ export interface SystemSnapshot {
     projectedRevenue: number;   // Expected in 30 days
     pipelineValue: number;      // Total potential if all close
     revenueByStage: Array<{ name: string; value: number }>;
+    // Enhanced data
+    candidatesWithPayments: number;
+    totalCandidates: number;
+    avgCollectionPerCandidate: number;
+    paymentTypeBreakdown: Array<{ type: string; total: number; count: number }>;
+    recentPayments: Array<{ candidateName: string; type: string; amount: number; date: string }>;
+    topCollectors: Array<{ name: string; stage: string; total: number }>;
   };
   aiSummary?: string;            // AI-generated executive health check
 }
@@ -1147,7 +1154,7 @@ export type Permission =
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   'Admin': ['candidates.view', 'candidates.edit', 'candidates.delete', 'finance.view', 'finance.edit', 'reports.view', 'users.manage', 'chat.view'],
   'Recruiter': ['candidates.view', 'candidates.edit', 'reports.view', 'chat.view'],
-  'Viewer': ['candidates.view', 'reports.view', 'chat.view'],
+  'Viewer': ['candidates.view', 'candidates.edit', 'reports.view', 'chat.view'],
   'Manager': ['candidates.view', 'candidates.edit', 'reports.view', 'chat.view'],
   'Finance': ['finance.view', 'finance.edit', 'reports.view', 'chat.view'],
   'Compliance': ['candidates.view', 'reports.view', 'chat.view'],

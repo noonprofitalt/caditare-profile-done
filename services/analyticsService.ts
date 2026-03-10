@@ -1,5 +1,5 @@
 import { WorkflowStage, Candidate } from '../types';
-import { getSLAStatus } from './workflowEngine';
+import { WorkflowEngine } from './workflowEngine';
 
 export interface DashboardMetrics {
   totalCandidates: number;
@@ -22,14 +22,14 @@ export const getDashboardMetrics = (candidates: Candidate[] = []): DashboardMetr
     dist[c.stage] = (dist[c.stage] || 0) + 1;
 
     // Delays
-    const sla = getSLAStatus(c);
-    if (sla.overdue) {
+    const sla = WorkflowEngine.calculateSLAStatus(c);
+    if (sla.status === 'OVERDUE') {
       delayed++;
       alerts.push(c);
     }
 
     // Critical Alerts (Mock logic: if delay > 5 days)
-    if (sla.daysInStage > sla.slaLimit + 5) {
+    if (sla.daysElapsed > sla.slaDays + 5) {
       critical++;
     }
   });

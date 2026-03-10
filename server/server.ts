@@ -60,8 +60,11 @@ app.use(expressWinston.logger({
     meta: true, // Output HTTP metadata
     msg: "HTTP {{req.method}} {{req.url}}",
     expressFormat: true,
-    colorize: false, // let winston handles this
-    ignoreRoute: (req, res) => { return req.path === '/api/health'; } // Don't spam healthchecks
+    colorize: false,
+    headerBlacklist: ['authorization', 'cookie', 'set-cookie'], // Redact sensitive headers
+    requestWhitelist: ['url', 'method', 'originalUrl', 'query'], // Don't log full req object
+    bodyBlacklist: ['password', 'confirmPassword', 'token', 'apiKey'], // Redact sensitive body fields
+    ignoreRoute: (req, res) => { return req.path === '/api/health'; }
 }));
 
 // Health check endpoint

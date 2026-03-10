@@ -17,6 +17,7 @@ class MemoryDB {
         chat_channels: [
             { id: '00000000-0000-0000-0000-000000000001', name: 'General', description: 'General company discussions', type: 'public', created_by: '00000000-0000-0000-0000-000000000000', created_at: new Date(), updated_at: new Date(), is_archived: false },
             { id: '00000000-0000-0000-0000-000000000002', name: 'Announcements', description: 'Official company announcements', type: 'public', created_by: '00000000-0000-0000-0000-000000000000', created_at: new Date(), updated_at: new Date(), is_archived: false },
+            { id: 'test-channel', name: 'Test Channel', description: 'Testing channel', type: 'public', created_by: '00000000-0000-0000-0000-000000000000', created_at: new Date(), updated_at: new Date(), is_archived: false },
         ],
         chat_channel_members: [],
         chat_messages: [

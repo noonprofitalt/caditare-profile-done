@@ -15,8 +15,13 @@
   - Financials ✅
   - All other routes ✅
   - All features ✅
+### 3. **Document Manager Concurrency/State Issue Fixed**
+- The "verify twice" and "upload twice" re-upload issue caused by background race conditions has been permanently fixed.
+- Implemented **update abortion queueing (`latestDocUpdateRef`)** in `CandidateDetail.tsx` to stop older, slower update-calls from randomly reverting fast, consecutive verifications.
+- Re-architected `handleZipUpload` in `DocumentManager.tsx` so that ZIP-uploaded extracted files are cleanly merged against any manual verification action the user might be performing concurrently, guaranteeing zero lost work.
+- Included comprehensive stress testing `DocumentManagerStress.test.tsx` verifying these race conditions. All 206 unit/integration tests successfully execute without data loss.
 
-### 3. **Settings Already Available**
+### 4. **Settings Already Available**
 - Settings link is already in the sidebar (bottom section)
 - Click the **Settings** icon (⚙️) to access:
   - User Management tab
@@ -26,20 +31,21 @@
 
 ## 🔐 Updated Login Credentials
 
-**Admin Account:**
-- Email: `admin@suhara.com`
-- Password: `3214`
-- Access: **Full unrestricted access to everything**
+**Master Admin Account:**
+- Name: **Anu Madam**
+- Email: `auth@suhara.com`
+- Password: `[REDACTED]`
+- Access: **Full Master level unrestricted access**
 
 **Test Users:**
 - userA@suhara.com through userN@suhara.com
-- Password: `22` for all
+- Password: `[REDACTED]`
 
 ---
 
 ## 🚀 How to Access User Management
 
-1. Login at http://localhost:3000 with `admin@suhara.com` / `3214`
+1. Login at http://localhost:3000 with `auth@suhara.com` / `[AUTH_PASSWORD]`
 2. Look at the **bottom of the sidebar**
 3. Click **Settings** (⚙️ icon)
 4. You'll see the **User Management** tab

@@ -1,17 +1,34 @@
 import { Router } from 'express';
 import { SecurityConfigService } from '../services/securityConfigService';
 import { SessionService } from '../services/sessionService';
-import { requireRole } from '../middleware/auth';
+import { requireRole, authMiddleware as requireAuth } from '../middleware/auth';
 
 const router = Router();
 
-// Only Admins should be able to access the security configuration
-router.get('/config', requireRole('Admin'), (req, res) => {
+// Any authenticated user should be able to read the config to apply client-side lockdown
+router.get('/config', requireAuth, (req, res) => {
     try {
         const config = SecurityConfigService.getConfig();
         res.json(config);
     } catch (e) {
         res.status(500).json({ error: 'Failed to retrieve configuration' });
+    }
+});
+
+// New endpoint for clients to verify their full connection status
+router.get('/status', requireAuth, (req, res) => {
+    try {
+        const config = SecurityConfigService.getConfig();
+        const incomingIp = req.ip?.replace('::ffff:', '') || 'unknown';
+        const isRevoked = SessionService.isRevoked(req);
+
+        res.json({
+            config,
+            clientIp: incomingIp,
+            sessionRevoked: isRevoked
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to retrieve status' });
     }
 });
 

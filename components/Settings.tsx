@@ -44,9 +44,9 @@ import BackupManager from './BackupManager';
 
 const Settings: React.FC = () => {
    const { user } = useAuth();
-   const [activeTab, setActiveTab] = useState<'agency' | 'security' | 'data' | 'ai' | 'users'>('data'); // Default to safe tab
+   const [activeTab, setActiveTab] = useState<'agency' | 'security' | 'data' | 'ai' | 'users'>('agency'); // Default to Agency Profile
    const [isSaved, setIsSaved] = useState(false);
-   const [apiKey, setApiKey] = useState(() => localStorage.getItem('globalworkforce_gemini_api_key') || '');
+   const [apiKey, setApiKey] = useState(() => localStorage.getItem('globalworkforce_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '');
    const [aiModel, setAiModel] = useState(() => GeminiService.getModelPref());
    const [testConnStatus, setTestConnStatus] = useState<{ testing: boolean; message: string | null; success: boolean | null }>({ testing: false, message: null, success: null });
    const [scanning, setScanning] = useState(false);
@@ -82,6 +82,10 @@ const Settings: React.FC = () => {
    // Load configuration on mount
    useEffect(() => {
       loadConfig();
+
+      const handleAIOpen = () => setActiveTab('ai');
+      window.addEventListener('ai_config_opened', handleAIOpen);
+      return () => window.removeEventListener('ai_config_opened', handleAIOpen);
    }, []);
 
    const handleRevokeSession = async (sessionId: string) => {
@@ -190,6 +194,7 @@ const Settings: React.FC = () => {
          localStorage.setItem('agency_email', email);
          localStorage.setItem('agency_phone', phone);
          localStorage.setItem('agency_address', address);
+         window.dispatchEvent(new CustomEvent('agency_update'));
       }
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
@@ -209,6 +214,17 @@ const Settings: React.FC = () => {
       setTestConnStatus({ testing: true, message: null, success: null });
       const res = await GeminiService.testConnection(apiKey, aiModel);
       setTestConnStatus({ testing: false, message: res.message, success: res.success });
+      if (res.success) {
+         // Auto-save if key changed
+         GeminiService.saveApiKey(apiKey);
+         GeminiService.saveModelPref(aiModel);
+
+         // Redirect back to AI Assistant after 1.5s
+         setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('show_ai_assistant'));
+            window.location.hash = '#/analytics';
+         }, 1500);
+      }
       // Clear status after 5s
       setTimeout(() => setTestConnStatus(s => ({ ...s, message: null })), 5000);
    };
@@ -475,9 +491,9 @@ const Settings: React.FC = () => {
                                        onChange={(e) => setAiModel(e.target.value)}
                                        className="w-full pl-10 pr-4 py-3 sm:py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer btn-touch"
                                     >
-                                       <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fastest)</option>
-                                       <option value="gemini-1.5-pro">Gemini 1.5 Pro (Highest Quality)</option>
-                                       <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                       <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fastest, Recommend)</option>
+                                       <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro (Most Intelligent)</option>
+                                       <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash (Balanced Stable)</option>
                                     </select>
                                  </div>
                               </div>

@@ -4,7 +4,14 @@ import { OfflineSyncService } from './offlineSyncService';
 import { AuditService } from './auditService';
 
 export class PartnerService {
-    static async getEmployers(): Promise<Employer[]> {
+    private static _employersCache: Employer[] | null = null;
+    private static _employersCacheTime: number = 0;
+
+    static async getEmployers(forceRefresh: boolean = false): Promise<Employer[]> {
+        if (!forceRefresh && this._employersCache && Date.now() - this._employersCacheTime < 60000) {
+            return this._employersCache;
+        }
+
         const { data, error } = await supabase
             .from('employers')
             .select('*')
@@ -15,7 +22,9 @@ export class PartnerService {
             return [];
         }
 
-        return data.map((e: any) => this.mapDatabaseToEmployer(e));
+        this._employersCache = data.map((e: any) => this.mapDatabaseToEmployer(e));
+        this._employersCacheTime = Date.now();
+        return this._employersCache;
     }
 
     static async getEmployerById(id: string): Promise<Employer | undefined> {
@@ -82,6 +91,8 @@ export class PartnerService {
         const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('EMPLOYER_CREATED', { employerId: data.id, name: dbEmployer.name }, auditUserId);
 
+        this._employersCache = null; // Invalidate cache
+
         return this.mapDatabaseToEmployer(data);
     }
 
@@ -135,6 +146,8 @@ export class PartnerService {
         const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('EMPLOYER_UPDATED', { employerId: updated.id, status: updated.status }, auditUserId);
 
+        this._employersCache = null; // Invalidate cache
+
         return this.mapDatabaseToEmployer(data);
     }
 
@@ -162,6 +175,8 @@ export class PartnerService {
         // SYSLOG: Track Audit
         const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('EMPLOYER_DELETED', { employerId: id }, auditUserId);
+
+        this._employersCache = null; // Invalidate cache
 
         return true;
     }

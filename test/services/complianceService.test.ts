@@ -78,7 +78,7 @@ describe('ComplianceService', () => {
             recentDate.setDate(recentDate.getDate() - 100);
             const issuedDate = recentDate.toISOString().split('T')[0];
 
-            const result = ComplianceService.evaluatePCC(issuedDate, issuedDate);
+            const result = ComplianceService.evaluatePCC(issuedDate);
 
             expect(result.status).toBe(PCCStatus.VALID);
             expect(result.ageDays).toBeLessThan(150);
@@ -89,7 +89,7 @@ describe('ComplianceService', () => {
             oldDate.setDate(oldDate.getDate() - 160);
             const issuedDate = oldDate.toISOString().split('T')[0];
 
-            const result = ComplianceService.evaluatePCC(issuedDate, issuedDate);
+            const result = ComplianceService.evaluatePCC(issuedDate);
 
             expect(result.status).toBe(PCCStatus.EXPIRING);
             expect(result.ageDays).toBeGreaterThan(150);
@@ -101,20 +101,28 @@ describe('ComplianceService', () => {
             veryOldDate.setDate(veryOldDate.getDate() - 200);
             const issuedDate = veryOldDate.toISOString().split('T')[0];
 
-            const result = ComplianceService.evaluatePCC(issuedDate, issuedDate);
+            const result = ComplianceService.evaluatePCC(issuedDate);
 
             expect(result.status).toBe(PCCStatus.EXPIRED);
             expect(result.ageDays).toBeGreaterThan(180);
         });
 
-        it('should calculate expiry date correctly', () => {
+        it('should calculate expiry date correctly when omitted', () => {
             const issuedDate = '2024-01-01';
-            const result = ComplianceService.evaluatePCC(issuedDate, issuedDate);
+            const result = ComplianceService.evaluatePCC(issuedDate);
 
             const expectedExpiry = new Date('2024-01-01');
             expectedExpiry.setDate(expectedExpiry.getDate() + 180);
 
             expect(result.expiryDate).toBe(expectedExpiry.toISOString().split('T')[0]);
+        });
+
+        it('should return the provided expiry date if explicitly passed', () => {
+            const issuedDate = '2024-01-01';
+            const explicitExpiry = '2025-01-01';
+            const result = ComplianceService.evaluatePCC(issuedDate, explicitExpiry);
+
+            expect(result.expiryDate).toBe(explicitExpiry);
         });
     });
 });

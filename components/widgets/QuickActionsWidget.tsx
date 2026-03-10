@@ -12,14 +12,15 @@ interface QuickActionsWidgetProps {
     isGeneratingReport?: boolean;
 }
 
+import { usePermission } from '../../hooks/usePermission';
+
 const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
     candidate,
     onDelete,
     onGenerateReport,
     isGeneratingReport = false
 }) => {
-    const { user } = useAuth();
-    const isAdmin = user?.role === 'Admin';
+    const { hasPermission } = usePermission();
 
     const actions = [];
 
@@ -201,8 +202,8 @@ const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
                     );
                 })}
 
-                {/* Delete Action (Admins Only) */}
-                {isAdmin && onDelete && (() => {
+                {/* Delete Action (Admins or those with candidate.delete permission) */}
+                {hasPermission('candidates.delete') && onDelete && (() => {
                     const style = getColorStyle('red', deletePolicy.allowed);
                     return (
                         <div className="pt-2"> {/* Tiny separator gap for destructive action */}

@@ -4,6 +4,7 @@ import { CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Calendar, Activity, 
 import { ComplianceEngine } from '../services/compliance/ComplianceEngine';
 import { ComplianceSeverity } from '../services/compliance/ComplianceTypes';
 import { CandidateService } from '../services/candidateService';
+import { ComplianceService } from '../services/complianceService';
 
 interface ComplianceWidgetProps {
     candidate: Candidate;
@@ -38,7 +39,7 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ candidate, onUpdate
         passportIssued: passport?.issuedDate || '',
         passportExpiry: passport?.expiryDate || '',
         pccIssued: pcc?.issuedDate || '',
-        pccLastInspection: pcc?.lastInspectionDate || ''
+        pccExpiry: pcc?.expiryDate || ''
     });
 
     const handleSave = () => {
@@ -52,7 +53,7 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ candidate, onUpdate
                 },
                 pcc: {
                     issuedDate: formData.pccIssued,
-                    lastInspectionDate: formData.pccLastInspection
+                    expiryDate: formData.pccExpiry
                 }
             });
         }
@@ -291,16 +292,25 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ candidate, onUpdate
                                         <span className="opacity-75">Country:</span>
                                         <span>{ppt.country}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="opacity-75">Expiry:</span>
-                                        <span>{ppt.expiryDate}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5">
-                                        <span className="text-xs opacity-75">Validity:</span>
-                                        <span className={`font-bold ${ppt.validityDays < 180 ? 'text-red-600' : 'text-green-700'}`}>
-                                            {ppt.validityDays} days remaining
-                                        </span>
-                                    </div>
+                                    {ppt.expiryDate ? (
+                                        <>
+                                            <div className="flex justify-between">
+                                                <span className="opacity-75">Expiry:</span>
+                                                <span>{ppt.expiryDate}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5">
+                                                <span className="text-xs opacity-75">Validity:</span>
+                                                <span className={`font-bold ${ppt.validityDays < 180 ? 'text-red-600' : 'text-green-700'}`}>
+                                                    {ppt.validityDays} days remaining
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5 text-red-600">
+                                            <span className="text-xs opacity-75">Expiry:</span>
+                                            <span className="font-bold">Missing</span>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="text-center py-2 text-slate-400 text-sm">
@@ -344,11 +354,11 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ candidate, onUpdate
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 mb-1">Last Inspection</label>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1">Expiry Date (Auto)</label>
                                     <input
                                         type="date"
-                                        value={formData.pccLastInspection}
-                                        onChange={e => setFormData({ ...formData, pccLastInspection: e.target.value })}
+                                        value={formData.pccExpiry || (formData.pccIssued ? ComplianceService.evaluatePCC(formData.pccIssued).expiryDate : '') || ''}
+                                        onChange={e => setFormData({ ...formData, pccExpiry: e.target.value })}
                                         className="w-full text-sm border-slate-300 rounded-md transition-all focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
@@ -361,10 +371,10 @@ const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ candidate, onUpdate
                                     <span className="opacity-75">Issued:</span>
                                     <span>{pcc.issuedDate}</span>
                                 </div>
-                                {pcc.lastInspectionDate && (
+                                {pcc.expiryDate && (
                                     <div className="flex justify-between">
-                                        <span className="opacity-75">Last Insp:</span>
-                                        <span className="font-medium text-blue-600">{pcc.lastInspectionDate}</span>
+                                        <span className="opacity-75">Expiry Date:</span>
+                                        <span className="font-medium text-blue-600">{pcc.expiryDate}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center mt-2 pt-2 border-t border-black/5">

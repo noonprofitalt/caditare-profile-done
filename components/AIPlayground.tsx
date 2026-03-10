@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Bot, User, RefreshCw, Zap, ShieldCheck, TrendingUp, AlertCircle, Info } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Zap, ShieldCheck, TrendingUp, AlertCircle, Info, ArrowRight } from 'lucide-react';
 import { GeminiService } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import { SystemSnapshot } from '../types';
@@ -86,10 +86,15 @@ const AIPlayground: React.FC<{ snapshot: SystemSnapshot | null; initialPrompt?: 
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
                     <button
-                        onClick={() => window.location.hash = '#/settings'}
-                        className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors btn-touch"
+                        onClick={() => {
+                            window.location.hash = '#/settings';
+                            // Dispatch custom event to tell Settings to focus AI tab
+                            window.dispatchEvent(new CustomEvent('ai_config_opened'));
+                        }}
+                        className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 btn-touch"
                     >
                         Go to Settings
+                        <ArrowRight size={16} />
                     </button>
                     <a
                         href="https://aistudio.google.com/app/apikey"

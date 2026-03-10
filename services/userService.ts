@@ -29,10 +29,14 @@ export class UserService {
 
     // Create a new user via Edge Function
     static async createUser(user: Partial<User> & { password?: string }): Promise<void> {
+        if (!user.password || user.password.length < 8) {
+            throw new Error("A strong password is required to create a new user.");
+        }
+
         const { error } = await supabase.functions.invoke('create-user', {
             body: {
                 email: user.email,
-                password: user.password || 'temp1234', // Default temp password if not provided
+                password: user.password,
                 name: user.name,
                 role: user.role,
                 status: 'Active'
@@ -76,7 +80,7 @@ export class UserService {
             .update({
                 full_name: updates.name,
                 role: updates.role,
-                // status: updates.status // specific field if we track it in types
+                status: updates.status
             })
             .eq('id', userId);
 

@@ -80,16 +80,16 @@ import WorkflowEngine, { WORKFLOW_STAGES } from '../services/workflowEngine';
 import { DataSyncService } from '../services/dataSyncService';
 import { AuditService } from '../services/auditService';
 import { generateMRZ } from '../utils/mrzGenerator';
+import { usePermission } from '../hooks/usePermission';
 
 
 const CandidateDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // Use global state
   const { candidates, updateCandidateInState, removeCandidateFromState, refreshCandidates } = useCandidates();
   const { user } = useAuth();
+  const { hasPermission } = usePermission();
   const toast = useToast();
-  const isAdmin = user?.role === 'Admin';
 
   // Derive candidate from global state
   const [candidate, setCandidate] = useState<Candidate | null>(null);
@@ -155,7 +155,7 @@ const CandidateDetail: React.FC = () => {
 
   useEffect(() => {
     const loadLinkedData = async () => {
-      if (!candidate || !isAdmin) return;
+      if (!candidate || !hasPermission('candidates.view')) return;
       try {
         const allJobs = await JobService.getJobs();
         const allEmployers = await PartnerService.getEmployers();
@@ -171,7 +171,7 @@ const CandidateDetail: React.FC = () => {
       }
     };
     loadLinkedData();
-  }, [candidate, isAdmin]);
+  }, [candidate, hasPermission]);
 
   const startEditing = () => {
     if (!candidate) return;
@@ -265,7 +265,7 @@ const CandidateDetail: React.FC = () => {
     if (data.pcc.issuedDate) {
       const pccData = ComplianceService.evaluatePCC(
         data.pcc.issuedDate || '',
-        data.pcc.lastInspectionDate || ''
+        data.pcc.expiryDate || ''
       );
       updatedCandidate.pccData = pccData;
     }
@@ -328,14 +328,46 @@ const CandidateDetail: React.FC = () => {
     }
   };
 
+  // Tracking ref to prevent out-of-order execution from overwriting rapid changes
+  const latestDocUpdateRef = React.useRef<number>(0);
+
   // Handle document update safely against rapid clicks by fetching fresh data
   const handleDocumentUpdate = async (updatedDocs: CandidateDocument[]) => {
     if (!candidate) return;
+    const currentCallId = ++latestDocUpdateRef.current;
 
     try {
       // 1. Fetch fresh candidate data so rapid clicks do not overwrite each other's changes
       const freshCandidate = await CandidateService.getCandidate(candidate.id);
+
+      if (latestDocUpdateRef.current !== currentCallId) {
+        // A newer update was dispatched while we were waiting for the fetch
+        // Abort this save to prevent the older (current) state from overwriting the newer state
+        console.warn('Aborting stale document update payload to prevent UI reverting');
+        return;
+      }
+
       const safeCandidate = freshCandidate || candidate;
+
+      // Smart merge to protect background updates from other users or concurrent tabs
+      // Prevents erasing documents uploaded/updated by others during this fetch window
+      const mergedDocs = [...(safeCandidate.documents || [])];
+
+      updatedDocs.forEach(localDoc => {
+        const freshIndex = mergedDocs.findIndex(d => d.type === localDoc.type);
+        const originalDoc = candidate.documents?.find(d => d.type === localDoc.type);
+
+        if (freshIndex === -1) {
+          // New document local action
+          mergedDocs.push(localDoc);
+        } else {
+          // If we actually changed this document locally compared to what we started with, 
+          // our local change wins. Otherwise, keep the fresh background state.
+          if (JSON.stringify(localDoc) !== JSON.stringify(originalDoc)) {
+            mergedDocs[freshIndex] = localDoc;
+          }
+        }
+      });
 
       const newEvent: TimelineEvent = {
         id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -350,7 +382,7 @@ const CandidateDetail: React.FC = () => {
 
       const updatedCandidate: Candidate = {
         ...safeCandidate,
-        documents: updatedDocs,
+        documents: mergedDocs,
         timelineEvents: [newEvent, ...(safeCandidate.timelineEvents || [])]
       };
 
@@ -3034,7 +3066,7 @@ const CandidateDetail: React.FC = () => {
             />
 
             {/* Matched Jobs Widget */}
-            {isAdmin && matchedJobs.length > 0 && (
+            {hasPermission('candidates.view') && matchedJobs.length > 0 && (
               <div className="bg-white rounded-xl border border-slate-200 p-5">
                 <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
                   <Briefcase size={14} className="text-blue-500" />

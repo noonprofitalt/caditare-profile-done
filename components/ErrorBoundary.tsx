@@ -24,6 +24,10 @@ class ErrorBoundary extends Component<Props, State> {
         logger.error('Uncaught error in component tree:', error, { componentStack: errorInfo.componentStack });
     }
 
+    private handleRetry = () => {
+        this.setState({ hasError: false, error: undefined });
+    };
+
     public render() {
         if (this.state.hasError) {
             if (this.props.fallback) return this.props.fallback;
@@ -36,15 +40,28 @@ class ErrorBoundary extends Component<Props, State> {
                         </svg>
                     </div>
                     <h2 className="text-xl font-bold text-slate-900 mb-2">Something went wrong</h2>
+                    {this.state.error && (
+                        <p className="text-sm text-red-500 mb-2 font-mono bg-red-50 px-4 py-2 rounded-lg border border-red-100 max-w-md">
+                            {this.state.error.message}
+                        </p>
+                    )}
                     <p className="text-slate-600 mb-6 max-w-md mx-auto">
                         The application encountered an unexpected error. We have been notified and it will be fixed soon.
                     </p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
-                    >
-                        Refresh Page
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={this.handleRetry}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                        >
+                            Try Again
+                        </button>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="px-6 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors duration-200 font-medium"
+                        >
+                            Refresh Page
+                        </button>
+                    </div>
                 </div>
             );
         }

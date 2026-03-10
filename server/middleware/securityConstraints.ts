@@ -37,27 +37,30 @@ export const securityConstraints = (req: Request, res: Response, next: NextFunct
     const startVal = parseTime(config.workStartTime);
     const endVal = parseTime(config.workEndTime);
 
-    // 2. Block if it's Sunday (0) and Sunday blocking is enabled
+    // 2. IP Restriction: Ensure they are on the office network
+    const officeIp = config.officeIp;
+    const incomingIp = req.ip?.replace('::ffff:', '') || 'unknown';
+
+    // If an Office IP is explicitly configured, enforce it
+    if (officeIp && officeIp.trim() !== '') {
+        // Special developer allowance to prevent bricking localhost
+        if (incomingIp !== '127.0.0.1' && incomingIp !== '::1' && incomingIp !== 'localhost') {
+            if (incomingIp !== officeIp) {
+                res.status(403).json({ error: 'System is only accessible from the authorized office network.' });
+                return;
+            }
+        }
+    }
+
+    // 3. Block if it's Sunday (0) and Sunday blocking is enabled
     if (dayOfWeek === 0 && config.blockSundays) {
         res.status(403).json({ error: 'System is not accessible on Sundays.' });
         return;
     }
 
-    // 3. Block if time is outside of operational hours
+    // 4. Block if time is outside of operational hours
     if (currentTimeVal < startVal || currentTimeVal >= endVal) {
         res.status(403).json({ error: `System is only accessible between ${config.workStartTime} and ${config.workEndTime}.` });
-        return;
-    }
-
-    // 4. IP Restriction: Ensure they are on the office network
-    const officeIp = config.officeIp;
-
-    // Clean up proxy IP formats if necessary (e.g. ::ffff:127.0.0.1)
-    const incomingIp = req.ip?.replace('::ffff:', '') || 'unknown';
-
-    // Strictly enforce office IP for non-admin staff. Localhost is no longer bypassed for testing.
-    if (incomingIp !== officeIp) {
-        res.status(403).json({ error: 'System is only accessible from the authorized office network.' });
         return;
     }
 

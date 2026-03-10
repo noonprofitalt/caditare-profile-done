@@ -44,7 +44,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
     // 3. Verify Token Signature
     try {
-        const secret = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            console.error('FATAL: JWT_SECRET environment variable is not set.');
+            return res.status(500).json({ error: 'Server configuration error.' });
+        }
         const decoded = jwt.verify(token, secret) as any;
 
         req.user = {
@@ -80,7 +84,8 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
 
         if (!SessionService.isTokenBlacklisted(token)) {
             try {
-                const secret = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';
+                const secret = process.env.JWT_SECRET;
+                if (!secret) return next(); // Skip optional auth if not configured
                 const decoded = jwt.verify(token, secret) as any;
                 req.user = {
                     id: decoded.id,

@@ -1,8 +1,53 @@
-
+# Dependencies
 node_modules
+
+# Build output
 dist
 build
+
+# Environment files (contain secrets)
 .env
+.env.local
+.env.production
+.env.*.local
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Logs
 *.log
+*.log.*
+
+# Debug/test output files
+*.txt
+!README.md
+!CONTRIBUTING.md
+!DEVELOPER.md
+!DEPLOYMENT_GUIDE.md
+!CHANGES_SUMMARY.md
+
+# Test coverage & results
 coverage
+test-results
+playwright-report
+
+# IDE configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Netlify build state
+.netlify/
+
+# User uploads (tracked separately)
+uploads/
+
+# Debug screenshots
+*.png
+!public/**/*.png
+
+# Misc
+payload.json
+out.log

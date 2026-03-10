@@ -16,8 +16,15 @@ import { DataSyncService } from './dataSyncService';
 
 export class CandidateService {
 
+    private static _candidatesCache: Candidate[] | null = null;
+    private static _candidatesCacheTime: number = 0;
+
     // Fetch all candidates from Supabase (Used for Dashboard/Pipeline where aggregations are needed)
-    static async getCandidates(): Promise<Candidate[]> {
+    static async getCandidates(forceRefresh: boolean = false): Promise<Candidate[]> {
+        if (!forceRefresh && this._candidatesCache && Date.now() - this._candidatesCacheTime < 60000) {
+            return this._candidatesCache;
+        }
+
         const { data, error } = await supabase
             .from('candidates')
             .select('*')
@@ -28,7 +35,9 @@ export class CandidateService {
             return [];
         }
 
-        return (data || []).map(row => this.mapRowToCandidate(row));
+        this._candidatesCache = (data || []).map(row => this.mapRowToCandidate(row));
+        this._candidatesCacheTime = Date.now();
+        return this._candidatesCache;
     }
 
     // Server-side paginated & filtered search for CandidateList
@@ -177,6 +186,8 @@ export class CandidateService {
         const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('CANDIDATE_CREATED', { candidateId: id, name: candidateData.name, candidateCode }, auditUserId);
 
+        this._candidatesCache = null; // Invalidate cache
+
         return this.mapRowToCandidate(data);
     }
 
@@ -209,7 +220,7 @@ export class CandidateService {
 
         const { error } = await supabase
             .from('candidates')
-            .upsert(row)
+            .update(row)
             .eq('id', candidate.id);
 
         if (error) {
@@ -229,6 +240,8 @@ export class CandidateService {
             stage: candidate.stage,
             completionRate: candidate.profileCompletionPercentage
         }, auditUserId);
+
+        this._candidatesCache = null; // Invalidate cache
     }
 
     static async saveCandidates(candidates: Candidate[]): Promise<void> {
@@ -265,6 +278,8 @@ export class CandidateService {
         // SYSLOG: Track Audit (explicit userId for bulletproof attribution)
         const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('CANDIDATE_DELETED', { candidateId: id }, auditUserId);
+
+        this._candidatesCache = null; // Invalidate cache
     }
 
     // --- Helpers for mapping between JSONB and Typed Object ---

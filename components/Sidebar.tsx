@@ -24,6 +24,17 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { logout, user } = useAuth();
+  const [agencyName, setAgencyName] = React.useState(() => localStorage.getItem('agency_name') || 'Suhara');
+
+  React.useEffect(() => {
+    const updateName = () => {
+      setAgencyName(localStorage.getItem('agency_name') || 'Suhara');
+    };
+    window.addEventListener('agency_update', updateName);
+    return () => window.removeEventListener('agency_update', updateName);
+  }, []);
+
+  const initials = agencyName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
       ? 'bg-blue-600 text-white shadow-md'
@@ -56,10 +67,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
-            <span className="font-black text-white text-lg">SU</span>
+            <span className="font-black text-white text-lg">{initials}</span>
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg font-black tracking-tight uppercase truncate">Suhara ERP CORE</h1>
+            <h1 className="text-lg font-black tracking-tight uppercase truncate">{agencyName} ERP CORE</h1>
             <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Dashboard</p>
           </div>
         </div>

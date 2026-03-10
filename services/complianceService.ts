@@ -13,19 +13,25 @@ export class ComplianceService {
      */
     static evaluatePassport(expiryDateStr: string, passportNumber: string, country: string, issuedDateStr: string): PassportData {
         const now = new Date();
-        const expiry = new Date(expiryDateStr);
-
-        // Calculate validity days from NOW
-        // Difference in time / (1000 * 3600 * 24)
-        const diffTime = expiry.getTime() - now.getTime();
-        const validityDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const expiry = expiryDateStr ? new Date(expiryDateStr) : null;
 
         let status = PassportStatus.VALID;
+        let validityDays = 0;
 
-        if (validityDays < 0) {
+        if (!expiry || isNaN(expiry.getTime())) {
+            // Missing or invalid expiry -> treat as missing/expired
             status = PassportStatus.EXPIRED;
-        } else if (validityDays <= this.PASSPORT_MIN_VALIDITY_DAYS) {
-            status = PassportStatus.EXPIRING;
+            validityDays = 0;
+        } else {
+            // Calculate validity days from NOW
+            const diffTime = expiry.getTime() - now.getTime();
+            validityDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (validityDays < 0) {
+                status = PassportStatus.EXPIRED;
+            } else if (validityDays <= this.PASSPORT_MIN_VALIDITY_DAYS) {
+                status = PassportStatus.EXPIRING;
+            }
         }
 
         return {
@@ -41,30 +47,40 @@ export class ComplianceService {
     /**
      * Calculates the current status of a PCC based on its issued date.
      */
-    static evaluatePCC(issuedDateStr: string, lastInspectionDateStr?: string): PCCData {
+    static evaluatePCC(issuedDateStr: string, expiryDateStr?: string): PCCData {
         const now = new Date();
-        const issued = new Date(issuedDateStr);
-
-        // Calculate age in days
-        const diffTime = now.getTime() - issued.getTime();
-        const ageDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const issued = issuedDateStr ? new Date(issuedDateStr) : null;
 
         let status = PCCStatus.VALID;
+        let ageDays = 0;
+        let finalExpiryDate = expiryDateStr;
 
-        if (ageDays > this.PCC_MAX_AGE_DAYS) {
+        if (!issued || isNaN(issued.getTime())) {
             status = PCCStatus.EXPIRED;
-        } else if (ageDays >= this.PCC_EXPIRING_THRESHOLD) {
-            status = PCCStatus.EXPIRING;
-        }
+            ageDays = 0; // Or some high number
+            finalExpiryDate = expiryDateStr || '';
+        } else {
+            // Calculate age in days
+            const diffTime = now.getTime() - issued.getTime();
+            ageDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-        // Calculate expiry date (Issued + 180 days)
-        const expiryDate = new Date(issued);
-        expiryDate.setDate(expiryDate.getDate() + this.PCC_MAX_AGE_DAYS);
+            if (ageDays > this.PCC_MAX_AGE_DAYS) {
+                status = PCCStatus.EXPIRED;
+            } else if (ageDays >= this.PCC_EXPIRING_THRESHOLD) {
+                status = PCCStatus.EXPIRING;
+            }
+
+            // Calculate expiry date (Issued + 180 days)
+            if (!finalExpiryDate) {
+                const expiryDate = new Date(issued);
+                expiryDate.setDate(expiryDate.getDate() + this.PCC_MAX_AGE_DAYS);
+                finalExpiryDate = expiryDate.toISOString().split('T')[0];
+            }
+        }
 
         return {
             issuedDate: issuedDateStr,
-            expiryDate: expiryDate.toISOString().split('T')[0],
-            lastInspectionDate: lastInspectionDateStr,
+            expiryDate: finalExpiryDate,
             status,
             ageDays
         };

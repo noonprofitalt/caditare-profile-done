@@ -1,5 +1,10 @@
 -- RLS FIX SCRIPT
 -- RUN THIS IN SUPABASE SQL EDITOR
+--
+-- ⚠️ WARNING: These policies use `USING (true)` which allows ALL authenticated
+-- users full CRUD access. This is acceptable for development but MUST be
+-- tightened for production with proper role-based policies.
+-- See: https://supabase.com/docs/guides/auth/row-level-security
 
 -- 1. Create the table if it doesn't exist (Safety check)
 CREATE TABLE IF NOT EXISTS public.candidates (

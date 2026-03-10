@@ -9,6 +9,7 @@
 import { Candidate, WorkflowStage, PassportStatus, PCCStatus, MedicalStatus, DocumentStatus, DocumentCategory } from '../types';
 import { ComplianceEngine } from './compliance/ComplianceEngine';
 import { ComplianceSeverity } from './compliance/ComplianceTypes';
+import { AuditService } from './auditService';
 
 // ============================================================================
 // WORKFLOW CONFIGURATION
@@ -694,6 +695,23 @@ export class WorkflowEngine {
             daysInPreviousStage
         };
 
+        // Log transition to audit system
+        try {
+            AuditService.log(
+                'WORKFLOW_TRANSITION',
+                {
+                    candidateId: candidate.id,
+                    fromStage,
+                    toStage,
+                    type: event.transitionType,
+                    reason,
+                },
+                userId
+            );
+        } catch (e) {
+            console.error('Failed to log workflow transition audit', e);
+        }
+
         return {
             success: true,
             event
@@ -728,6 +746,35 @@ export class WorkflowEngine {
         const currentIndex = WORKFLOW_STAGES.indexOf(currentStage);
         if (currentIndex === -1) return [];
         return WORKFLOW_STAGES.slice(currentIndex + 1);
+    }
+    /**
+     * Action Policy Helper: Centralize permission logic for UI actions
+     */
+    static canPerformAction(candidate: Candidate, action: string): { allowed: boolean; reason?: string } {
+        const stage = candidate.stage;
+
+        switch (action) {
+            case 'DELETE':
+                if (stage === WorkflowStage.DEPARTED) {
+                    return { allowed: false, reason: 'Cannot delete a departed candidate' };
+                }
+                return { allowed: true };
+
+            case 'SCHEDULE_INTERVIEW':
+                if (stage === WorkflowStage.DEPARTED || stage === WorkflowStage.TICKET_ISSUED) {
+                    return { allowed: false, reason: 'Interviews cannot be scheduled at this stage' };
+                }
+                return { allowed: true };
+
+            case 'ASSIGN_TO_JOB':
+                if (![WorkflowStage.REGISTERED, WorkflowStage.VERIFIED, WorkflowStage.APPLIED].includes(stage)) {
+                    return { allowed: false, reason: 'Candidate is already processing for a job' };
+                }
+                return { allowed: true };
+
+            default:
+                return { allowed: true };
+        }
     }
 }
 

@@ -43,6 +43,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const isAdmin = user?.role === 'Admin';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { showToast, ToastContainer } = useToast();
+  const [agencyName, setAgencyName] = useState(() => localStorage.getItem('agency_name') || 'Suhara');
+
+  useEffect(() => {
+    const updateName = () => {
+      setAgencyName(localStorage.getItem('agency_name') || 'Suhara');
+    };
+    window.addEventListener('agency_update', updateName);
+    return () => window.removeEventListener('agency_update', updateName);
+  }, []);
 
   useEffect(() => {
     const handleOffline = () => showToast('You are offline. Changes will be saved locally and auto-synced.', 'error');
@@ -196,9 +205,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           {!isMobileSearchOpen && (
             <div className="flex items-center gap-2 lg:hidden">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200 animate-float">
-                <span className="font-black text-white text-xs">SU</span>
+                <span className="font-black text-white text-xs">{agencyName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</span>
               </div>
-              <span className="font-black text-slate-900 tracking-tighter text-sm uppercase">Suhara</span>
+              <span className="font-black text-slate-900 tracking-tighter text-sm uppercase">{agencyName}</span>
             </div>
           )}
         </div>

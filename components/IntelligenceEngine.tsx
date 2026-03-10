@@ -35,8 +35,11 @@ const IntelligenceEngine: React.FC = () => {
    };
 
    useEffect(() => {
-
       refreshData();
+
+      const handleShowAssistant = () => setActiveTab('assistant');
+      window.addEventListener('show_ai_assistant', handleShowAssistant);
+      return () => window.removeEventListener('show_ai_assistant', handleShowAssistant);
    }, []);
 
    const handleExportReport = async () => {
@@ -76,7 +79,7 @@ const IntelligenceEngine: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                      <div>
                         <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">Est. Revenue</p>
-                        <h3 className="text-3xl font-bold text-slate-800">${snapshot.kpi.revenueEst.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                        <h3 className="text-3xl font-bold text-slate-800">Rs. {snapshot.kpi.revenueEst.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                      </div>
                      <DollarSign className="text-green-500 bg-green-50 p-1.5 rounded-lg" size={32} />
                   </div>
@@ -216,7 +219,7 @@ const IntelligenceEngine: React.FC = () => {
                onClick={() => askAI("Analyze our workflow efficiency. Which stage has the highest attrition or delay, and how can we optimize it based on SLA compliance?")}
                className="w-full sm:w-auto justify-center px-4 py-2 sm:py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
             >
-               <Bot size={16} className="text-blue-500" />
+               <Bot size={16} className="text-slate-300" />
                AI Process Mining Audit
             </button>
          </div>
@@ -294,7 +297,7 @@ const IntelligenceEngine: React.FC = () => {
                onClick={() => askAI("Analyze our staff performance metrics. Who are the top performers, and where do we need additional training or resource allocation based on current action volumes?")}
                className="w-full sm:w-auto justify-center px-4 py-2 sm:py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
             >
-               <Bot size={16} className="text-blue-500" />
+               <Bot size={16} className="text-slate-300" />
                AI Performance Audit
             </button>
          </div>
@@ -362,74 +365,148 @@ const IntelligenceEngine: React.FC = () => {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-2">
                      <div>
                         <h3 className="text-xl font-bold text-slate-800 mb-1 sm:mb-2">Financial Performance</h3>
-                        <p className="text-sm sm:text-base text-slate-500">Revenue tracking, conversion value, and collection metrics.</p>
+                        <p className="text-sm sm:text-base text-slate-500">Advance payment collections, breakdown by type, and collection analytics.</p>
                      </div>
                      <button
-                        onClick={() => askAI("Analyze our financial health. Are we meeting our collection targets? What is the projected revenue discrepancy and how can we optimize current invoice clearing?")}
+                        onClick={() => askAI("Analyze our financial health. What's our collection rate? Which payment types have the highest amounts? Are there candidates with outstanding balances?")}
                         className="w-full sm:w-auto justify-center px-4 py-2 sm:py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors flex items-center gap-2 shadow-sm"
                      >
-                        <Bot size={16} className="text-blue-500" />
+                        <Bot size={16} className="text-slate-300" />
                         AI Revenue Strategy
                      </button>
                   </div>
+
+                  {/* KPI Row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                     <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 border-emerald-700 p-6 rounded-xl shadow-sm text-white relative overflow-hidden">
                         <div className="flex justify-between items-start mb-2">
-                           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Collected</p>
-                           <div className="p-1.5 bg-green-50 text-green-600 rounded-lg"><DollarSign size={16} /></div>
+                           <div>
+                              <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">Total Collected</p>
+                              <h3 className="text-3xl font-bold tracking-tight">Rs. {snapshot.financials.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                           </div>
+                           <div className="text-emerald-400 opacity-60"><DollarSign size={24} strokeWidth={2.5} /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-                        <div className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
-                           <TrendingUp size={12} /> Cash on hand
+                        <div className="flex items-center gap-2 text-xs text-emerald-100 font-medium mt-3 bg-emerald-900/30 w-max px-3 py-1.5 rounded-lg">
+                           <Activity size={12} className="text-emerald-300" /> From {snapshot.financials.candidatesWithPayments} of {snapshot.financials.totalCandidates} candidates
                         </div>
                      </div>
 
                      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending (Invoiced)</p>
-                           <div className="p-1.5 bg-orange-50 text-orange-600 rounded-lg"><Activity size={16} /></div>
+                        <div className="flex justify-between items-start mb-3">
+                           <div>
+                              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg per Candidate</p>
+                              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Rs. {snapshot.financials.avgCollectionPerCandidate.toLocaleString()}</h3>
+                           </div>
+                           <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><TrendingUp size={16} /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.pendingCollection.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-                        <div className="mt-2 text-xs text-orange-600 font-medium">Outstanding receivables</div>
-                     </div>
-
-                     <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm bg-blue-50/30">
-                        <div className="flex justify-between items-start mb-2">
-                           <p className="text-xs font-bold text-blue-500 uppercase tracking-wider">Projected (30 Days)</p>
-                           <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg"><TrendingUp size={16} /></div>
-                        </div>
-                        <h3 className="text-2xl font-bold text-blue-900">${snapshot.financials.projectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-                        <div className="mt-2 text-xs text-blue-600 font-medium">Estimated from high-prob leads</div>
+                        <div className="mt-3 text-xs font-medium text-blue-600">Average from paying candidates</div>
                      </div>
 
                      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pipeline Value</p>
-                           <div className="p-1.5 bg-slate-100 text-slate-600 rounded-lg"><LayoutDashboard size={16} /></div>
+                        <div className="flex justify-between items-start mb-3">
+                           <div>
+                              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Collection Rate</p>
+                              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{snapshot.financials.totalCandidates > 0 ? Math.round((snapshot.financials.candidatesWithPayments / snapshot.financials.totalCandidates) * 100) : 0}%</h3>
+                           </div>
+                           <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Users size={16} /></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-900">${snapshot.financials.pipelineValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-                        <div className="mt-2 text-xs text-slate-400 font-medium">Full potential of active funnel</div>
+                        <div className="mt-3">
+                           <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${snapshot.financials.totalCandidates > 0 ? (snapshot.financials.candidatesWithPayments / snapshot.financials.totalCandidates) * 100 : 0}%` }} />
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="bg-white p-6 rounded-xl border border-amber-200 shadow-sm">
+                        <div className="flex justify-between items-start mb-3">
+                           <div>
+                              <p className="text-amber-500 text-[10px] font-bold uppercase tracking-widest mb-1">Pending Receivables</p>
+                              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Rs. {snapshot.financials.pendingCollection.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                           </div>
+                           <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><AlertTriangle size={16} /></div>
+                        </div>
+                        <div className="mt-3 text-xs font-medium text-amber-600">Outstanding invoices & balances</div>
                      </div>
                   </div>
 
+                  {/* Payment Type Breakdown + Top Collectors */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                     <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 className="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                           <DollarSign size={18} className="text-emerald-500" /> Collection Breakdown by Payment Type
+                        </h4>
+                        {snapshot.financials.paymentTypeBreakdown.length > 0 ? (
+                           <div className="space-y-3">
+                              {snapshot.financials.paymentTypeBreakdown.map((pt, i) => {
+                                 const maxAmount = snapshot.financials.paymentTypeBreakdown[0]?.total || 1;
+                                 const pct = Math.round((pt.total / maxAmount) * 100);
+                                 const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-indigo-500', 'bg-cyan-500', 'bg-teal-500'];
+                                 const barColor = colors[i % colors.length];
+                                 return (
+                                    <div key={pt.type} className="group">
+                                       <div className="flex items-center justify-between mb-1.5">
+                                          <div className="flex items-center gap-2">
+                                             <span className={`w-2.5 h-2.5 rounded-full ${barColor}`} />
+                                             <span className="text-sm font-medium text-slate-700 capitalize">{pt.type.toLowerCase()}</span>
+                                             <span className="text-[10px] text-slate-400 font-mono">({pt.count} entries)</span>
+                                          </div>
+                                          <span className="text-sm font-bold text-slate-900">Rs. {pt.total.toLocaleString()}</span>
+                                       </div>
+                                       <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                          <div className={`h-full ${barColor} rounded-full transition-all group-hover:opacity-80`} style={{ width: `${pct}%` }} />
+                                       </div>
+                                    </div>
+                                 );
+                              })}
+                           </div>
+                        ) : (
+                           <div className="text-center py-12 text-slate-400">
+                              <DollarSign size={32} className="mx-auto mb-2 opacity-30" />
+                              <p className="text-sm">No advance payments recorded yet</p>
+                           </div>
+                        )}
+                     </div>
+
+                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                           <TrendingUp size={18} className="text-blue-500" /> Top Paying Candidates
+                        </h4>
+                        {snapshot.financials.topCollectors.length > 0 ? (
+                           <div className="space-y-3">
+                              {snapshot.financials.topCollectors.map((tc, i) => (
+                                 <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                                    <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] font-bold flex-shrink-0">
+                                       {i + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                       <p className="text-sm font-medium text-slate-700 truncate capitalize" title={tc.name}>{tc.name.toLowerCase()}</p>
+                                       <p className="text-[10px] text-slate-400 uppercase">{tc.stage}</p>
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-800 whitespace-nowrap">Rs. {tc.total.toLocaleString()}</span>
+                                 </div>
+                              ))}
+                           </div>
+                        ) : (
+                           <div className="text-center py-8 text-slate-400">
+                              <p className="text-sm">No payment data yet</p>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+
+                  {/* Revenue by Stage Chart */}
                   <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
                      <div className="flex justify-between items-center mb-6">
                         <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                           <DollarSign size={18} className="text-green-500" /> Revenue Capture by Stage
+                           <DollarSign size={18} className="text-emerald-500" /> Collections by Workflow Stage
                         </h4>
                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">
-                           Cumulative Paid
+                           Cumulative Paid (Rs.)
                         </div>
                      </div>
                      <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                           <AreaChart data={snapshot.financials.revenueByStage}>
-                              <defs>
-                                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                 </linearGradient>
-                              </defs>
+                           <BarChart data={snapshot.financials.revenueByStage}>
                               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                               <XAxis
                                  dataKey="name"
@@ -447,73 +524,60 @@ const IntelligenceEngine: React.FC = () => {
                                  tickLine={false}
                                  fontSize={10}
                                  tick={{ fill: '#64748b' }}
-                                 tickFormatter={(value) => `$${value}`}
+                                 tickFormatter={(value) => value >= 1000000 ? `Rs.${(value / 1000000).toFixed(1)}M` : value >= 1000 ? `Rs.${(value / 1000).toFixed(0)}k` : `Rs.${value}`}
                               />
                               <RechartsTooltip
-                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                 formatter={(value: number) => [`$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
+                                 contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                                 formatter={(value: number) => [`Rs. ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Collected']}
                               />
-                              <Area
-                                 type="monotone"
-                                 dataKey="value"
-                                 stroke="#10b981"
-                                 strokeWidth={3}
-                                 fillOpacity={1}
-                                 fill="url(#colorValue)"
-                              />
-                           </AreaChart>
+                              <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} barSize={24} />
+                           </BarChart>
                         </ResponsiveContainer>
                      </div>
                   </div>
 
-                  <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
-                     <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                        <TrendingUp size={18} className="text-blue-500" /> Revenue Realization Funnel
+                  {/* Recent Payments Activity */}
+                  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                     <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <Activity size={18} className="text-emerald-500" /> Recent Payment Activity
                      </h4>
-                     <div className="space-y-8">
-                        <div>
-                           <div className="flex justify-between items-end mb-2">
-                              <div>
-                                 <p className="text-sm font-bold text-slate-700">Realized Revenue</p>
-                                 <p className="text-xs text-slate-500">Payments already in the bank</p>
-                              </div>
-                              <span className="text-sm font-bold text-green-600">
-                                 {Math.round((snapshot.financials.totalCollected / snapshot.financials.pipelineValue) * 100)}%
-                              </span>
-                           </div>
-                           <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                 className="h-full bg-green-500 rounded-full"
-                                 style={{ width: `${(snapshot.financials.totalCollected / snapshot.financials.pipelineValue) * 100}%` }}
-                              />
-                           </div>
+                     {snapshot.financials.recentPayments.length > 0 ? (
+                        <div className="overflow-x-auto">
+                           <table className="w-full text-sm">
+                              <thead>
+                                 <tr className="border-b-2 border-slate-100 text-xs font-bold text-slate-500 uppercase">
+                                    <th className="text-left py-3 px-2">Candidate</th>
+                                    <th className="text-left py-3 px-2">Payment Type</th>
+                                    <th className="text-right py-3 px-2">Amount</th>
+                                    <th className="text-left py-3 px-2">Date</th>
+                                 </tr>
+                              </thead>
+                              <tbody>
+                                 {snapshot.financials.recentPayments.map((rp, i) => (
+                                    <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50">
+                                       <td className="py-2.5 px-2 font-medium text-slate-700 truncate max-w-[150px] sm:max-w-[250px] capitalize" title={rp.candidateName}>{rp.candidateName.toLowerCase()}</td>
+                                       <td className="py-2.5 px-2">
+                                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-medium text-[10px] uppercase tracking-wider rounded whitespace-nowrap border border-emerald-100">{rp.type}</span>
+                                       </td>
+                                       <td className="py-2.5 px-2 text-right font-semibold text-slate-800 whitespace-nowrap tabular-nums tracking-tight">Rs. {rp.amount.toLocaleString()}</td>
+                                       <td className="py-2.5 px-2 text-slate-500 text-xs whitespace-nowrap">{new Date(rp.date).toLocaleDateString()}</td>
+                                    </tr>
+                                 ))}
+                              </tbody>
+                           </table>
                         </div>
-
-                        <div>
-                           <div className="flex justify-between items-end mb-2">
-                              <div>
-                                 <p className="text-sm font-bold text-slate-700">Projected Growth (Short Term)</p>
-                                 <p className="text-xs text-slate-500">Expected revenue from candidates near departure</p>
-                              </div>
-                              <span className="text-sm font-bold text-blue-600">
-                                 +${snapshot.financials.projectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                           </div>
-                           <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                 className="h-full bg-blue-500 rounded-full"
-                                 style={{ width: `${((snapshot.financials.totalCollected + snapshot.financials.projectedRevenue) / snapshot.financials.pipelineValue) * 100}%` }}
-                              />
-                           </div>
+                     ) : (
+                        <div className="text-center py-8 text-slate-400">
+                           <p className="text-sm">No recent payments to display</p>
                         </div>
-                     </div>
+                     )}
+                  </div>
 
-                     <div className="mt-12 p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-center">
-                        <p className="text-sm text-slate-500">
-                           <ShieldCheck size={14} className="inline mr-1 text-slate-400" />
-                           Forecast is based on a conservative <strong>$2,500 average revenue</strong> per successful placement.
-                        </p>
-                     </div>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-center">
+                     <p className="text-sm text-slate-500">
+                        <ShieldCheck size={14} className="inline mr-1 text-slate-400" />
+                        All values are in <strong>Sri Lankan Rupees (Rs.)</strong>. Data sourced from Advance Payment Tracking records on each candidate.
+                     </p>
                   </div>
                </div>
             )}

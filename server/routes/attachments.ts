@@ -233,19 +233,16 @@ router.get('/:id', async (req: Request, res: Response) => {
         }
 
         const attachment = result.rows[0];
-
-        /*
         // Check if user has access to the channel
         const accessCheck = await query(`
-      SELECT 1 FROM chat_channels c
-      LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $2
-      WHERE c.id = $1 AND (c.type = 'public' OR cm.user_id IS NOT NULL)
-    `, [attachment.channel_id, userId]);
+          SELECT 1 FROM chat_channels c
+          LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $2
+          WHERE c.id = $1 AND (c.type = 'public' OR cm.user_id IS NOT NULL)
+        `, [attachment.channel_id, userId]);
 
         if (accessCheck.rows.length === 0) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        */
 
         // Send file
         res.download(attachment.file_path, attachment.file_name);
@@ -278,19 +275,16 @@ router.get('/:id/preview', async (req: Request, res: Response) => {
         }
 
         const attachment = result.rows[0];
-
-        /*
         // Check if user has access to the channel
         const accessCheck = await query(`
-      SELECT 1 FROM chat_channels c
-      LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $2
-      WHERE c.id = $1 AND (c.type = 'public' OR cm.user_id IS NOT NULL)
-    `, [attachment.channel_id, userId]);
+          SELECT 1 FROM chat_channels c
+          LEFT JOIN chat_channel_members cm ON cm.channel_id = c.id AND cm.user_id = $2
+          WHERE c.id = $1 AND (c.type = 'public' OR cm.user_id IS NOT NULL)
+        `, [attachment.channel_id, userId]);
 
         if (accessCheck.rows.length === 0) {
             return res.status(403).json({ error: 'Access denied' });
         }
-        */
 
         // Check if file type is previewable
         const previewableTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
@@ -331,21 +325,18 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
         const attachment = result.rows[0];
 
-        // FRICTIONLESS: Bypassed ownership/admin check — anyone can delete any attachment
-        /*
         const isOwner = attachment.sender_id === userId;
 
         const adminCheck = await query(`
-      SELECT role FROM chat_channel_members
-      WHERE channel_id = $1 AND user_id = $2 AND role IN ('owner', 'admin')
-    `, [attachment.channel_id, userId]);
+          SELECT role FROM chat_channel_members
+          WHERE channel_id = $1 AND user_id = $2 AND role IN ('owner', 'admin')
+        `, [attachment.channel_id, userId]);
 
         const isAdmin = adminCheck.rows.length > 0;
 
         if (!isOwner && !isAdmin) {
             return res.status(403).json({ error: 'You can only delete your own attachments or be a channel admin' });
         }
-        */
 
         // Delete file from filesystem
         try {

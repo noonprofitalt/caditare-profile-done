@@ -94,7 +94,7 @@ describe('Security Constraints Middleware', () => {
         securityConstraints(mockRequest as Request, mockResponse as Response, nextFunction);
 
         expect(mockResponse.status).toHaveBeenCalledWith(403);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'System is only accessible from the office network.' });
+        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'System is only accessible from the authorized office network.' });
         expect(nextFunction).not.toHaveBeenCalled();
     });
 

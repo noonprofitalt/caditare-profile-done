@@ -4,7 +4,14 @@ import { OfflineSyncService } from './offlineSyncService';
 import { AuditService } from './auditService';
 
 export class DemandOrderService {
-    static async getAll(): Promise<DemandOrder[]> {
+    private static _ordersCache: DemandOrder[] | null = null;
+    private static _ordersCacheTime: number = 0;
+
+    static async getAll(forceRefresh: boolean = false): Promise<DemandOrder[]> {
+        if (!forceRefresh && this._ordersCache && Date.now() - this._ordersCacheTime < 60000) {
+            return this._ordersCache;
+        }
+
         const { data, error } = await supabase
             .from('demand_orders')
             .select('*')
@@ -15,7 +22,9 @@ export class DemandOrderService {
             return [];
         }
 
-        return data.map((d: any) => this.mapDatabaseToOrder(d));
+        this._ordersCache = data.map((d: any) => this.mapDatabaseToOrder(d));
+        this._ordersCacheTime = Date.now();
+        return this._ordersCache;
     }
 
     static async getById(id: string): Promise<DemandOrder | undefined> {
@@ -118,6 +127,8 @@ export class DemandOrderService {
         const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('DEMAND_ORDER_CREATED', { orderId: dbOrder.order_number || data.id, title: dbOrder.title }, auditUserId);
 
+        this._ordersCache = null; // Invalidate cache
+
         return this.mapDatabaseToOrder(data);
     }
 
@@ -168,6 +179,8 @@ export class DemandOrderService {
         const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('DEMAND_ORDER_UPDATED', { orderId: updated.id, status: updated.status }, auditUserId);
 
+        this._ordersCache = null; // Invalidate cache
+
         return this.mapDatabaseToOrder(data);
     }
 
@@ -195,6 +208,8 @@ export class DemandOrderService {
         // SYSLOG: Track Audit
         const auditUserId = await AuditService.getCurrentUserId();
         AuditService.log('DEMAND_ORDER_DELETED', { orderId: id }, auditUserId);
+
+        this._ordersCache = null; // Invalidate cache
 
         return true;
     }

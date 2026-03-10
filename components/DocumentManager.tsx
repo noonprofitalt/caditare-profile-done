@@ -206,7 +206,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
         message: `Starting upload of ${filesToUpload.length} recognized documents...`
       });
 
-      const newAuthDocsList: CandidateDocument[] = [...docsRef.current];
+      const uploadedDocs: CandidateDocument[] = [];
       let uploadCount = 0;
 
       for (const item of filesToUpload) {
@@ -239,18 +239,25 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ candidate, onUpdate }
           rejectionReason: undefined
         };
 
-        const index = newAuthDocsList.findIndex(d => d.type === item.type);
-        if (index !== -1) {
-          newAuthDocsList[index] = updatedDoc;
-        } else {
-          newAuthDocsList.push(updatedDoc);
-        }
+        uploadedDocs.push(updatedDoc);
         uploadCount++;
       }
 
-      docsRef.current = newAuthDocsList; // Keep reference strictly up to date
+      // Merge sequentially uploaded zip documents into the absolute latest docsRef
+      // to avoid overwriting any verifications the user did while the zip was uploading!
+      const finalDocs = [...docsRef.current];
+      uploadedDocs.forEach(doc => {
+        const index = finalDocs.findIndex(d => d.type === doc.type);
+        if (index !== -1) {
+          finalDocs[index] = doc;
+        } else {
+          finalDocs.push(doc);
+        }
+      });
+
+      docsRef.current = finalDocs; // Keep reference strictly up to date
       // Trigger parent update
-      onUpdate(newAuthDocsList);
+      onUpdate(finalDocs);
 
       NotificationService.addNotification({
         type: 'SUCCESS',

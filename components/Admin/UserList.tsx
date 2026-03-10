@@ -2,10 +2,15 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
 import { User } from '../../types';
-import { Plus, Search, MoreVertical, Shield, Calendar, Edit2, Trash2, User as UserIcon } from 'lucide-react';
+import { Plus, Search, Shield, Calendar, Edit2, Trash2, User as UserIcon } from 'lucide-react';
 import UserDialog from './UserDialog';
+import { UserService } from '../../services/userService';
+import { useAuth } from '../../context/AuthContext';
+import { usePermission } from '../../hooks/usePermission';
 
 const UserList: React.FC = () => {
+    const { hasPermission } = usePermission();
+    const { user: currentUser } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -14,28 +19,14 @@ const UserList: React.FC = () => {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
+        try {
+            const data = await UserService.getUsers();
+            setUsers(data);
+        } catch (error) {
             console.error('Error fetching users:', error);
-        } else {
-            // Map profile data to User interface
-            const mappedUsers: User[] = (data || []).map(p => ({
-                id: p.id,
-                name: p.full_name || p.email,
-                email: p.email,
-                role: p.role,
-                status: p.status,
-                avatar: p.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name || 'User')}&background=random`,
-                lastLogin: p.last_login,
-                createdAt: p.created_at
-            }));
-            setUsers(mappedUsers);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     useEffect(() => {
@@ -52,16 +43,24 @@ const UserList: React.FC = () => {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (userId: string) => {
-        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    const handleDelete = async (user: User) => {
+        // Safety check: Don't allow deleting master admins or self
+        const protectedEmails = ['auth@suhara.com'];
+        if (protectedEmails.includes(user.email)) {
+            alert('Cannot delete master admin account.');
+            return;
+        }
+
+        if (user.id === currentUser?.id) {
+            alert('Cannot delete your own account.');
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)) return;
 
         setLoading(true);
         try {
-            const { error } = await supabase.functions.invoke('delete-user', {
-                body: { userId }
-            });
-
-            if (error) throw error;
+            await UserService.deleteUser(user.id);
             await fetchUsers();
         } catch (err: any) {
             console.error('Failed to delete user:', err);
@@ -118,7 +117,7 @@ const UserList: React.FC = () => {
                         <h3 className="text-2xl font-bold text-slate-800 mt-1">{stats.admins}</h3>
                     </div>
                     <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
-                        <MoreVertical size={24} />
+                        <Shield size={24} />
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
@@ -150,13 +149,15 @@ const UserList: React.FC = () => {
                                 className="pl-10 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64"
                             />
                         </div>
-                        <button
-                            onClick={handleCreate}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                        >
-                            <Plus size={18} />
-                            Add User
-                        </button>
+                        {hasPermission('users.manage') && (
+                            <button
+                                onClick={handleCreate}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                            >
+                                <Plus size={18} />
+                                Add User
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -234,22 +235,27 @@ const UserList: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => handleEdit(user)}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    title="Edit User"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(user.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete User"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
+                                            {hasPermission('users.manage') && (
+                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => handleEdit(user)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Edit User"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(user)}
+                                                        className={`p-2 rounded-lg transition-colors ${['auth@suhara.com'].includes(user.email) || user.id === currentUser?.id
+                                                            ? 'text-slate-200 cursor-not-allowed'
+                                                            : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                                                        title={['auth@suhara.com'].includes(user.email) ? "Master Admin Protected" : "Delete User"}
+                                                        disabled={['auth@suhara.com'].includes(user.email) || user.id === currentUser?.id}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

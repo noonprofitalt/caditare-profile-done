@@ -20,15 +20,14 @@ export default tseslint.config(
         rules: {
             ...reactHooks.configs.recommended.rules,
             'react-refresh/only-export-components': 'off',
-            'react-hooks/purity': 'off',
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-unused-vars': 'off',
-            'react-hooks/exhaustive-deps': 'off',
-            'react-hooks/static-components': 'off',
+            // Re-enabled as warnings — will surface issues without blocking builds
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+            'react-hooks/exhaustive-deps': 'warn',
+            // Keep these off — intentionally suppressed
             '@typescript-eslint/ban-ts-comment': 'off',
             '@typescript-eslint/no-unsafe-function-type': 'off',
             'no-case-declarations': 'off',
-            'react-hooks/set-state-in-effect': 'off',
             '@typescript-eslint/no-namespace': 'off',
             'react/display-name': 'off'
         },

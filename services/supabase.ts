@@ -35,9 +35,29 @@ export async function getUserProfile(userId: string) {
     return data;
 }
 
-// Helper function to check if user has required role
-// FRICTIONLESS: Always return true to allow full access
-export async function hasRole(requiredRole: 'Admin' | 'Recruiter' | 'Viewer') {
-    return true;
+// Role hierarchy: Admin > Recruiter > Viewer
+const ROLE_HIERARCHY: Record<string, number> = {
+    'Admin': 3,
+    'Recruiter': 2,
+    'Viewer': 1,
+};
+
+// Helper function to check if current user has the required role (or higher)
+export async function hasRole(requiredRole: 'Admin' | 'Recruiter' | 'Viewer'): Promise<boolean> {
+    try {
+        const user = await getCurrentUser();
+        if (!user) return false;
+
+        const profile = await getUserProfile(user.id);
+        if (!profile?.role) return false;
+
+        const userLevel = ROLE_HIERARCHY[profile.role] ?? 0;
+        const requiredLevel = ROLE_HIERARCHY[requiredRole] ?? 0;
+
+        return userLevel >= requiredLevel;
+    } catch (error) {
+        console.error('Error checking role:', error);
+        return false;
+    }
 }
 

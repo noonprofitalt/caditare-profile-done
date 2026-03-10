@@ -65,6 +65,7 @@ describe('Messages API', () => {
             ];
 
             (query as any)
+                .mockResolvedValueOnce({ rows: [{ exists: 1 }] }) // Access check
                 .mockResolvedValueOnce({ rows: mockMessages }); // Messages query
 
             const response = await request(app).get(`/api/${VALID_UUID}/messages`);
@@ -80,6 +81,7 @@ describe('Messages API', () => {
             const mockResult = { id: VALID_UUID, text: 'Test message', sender_id: VALID_UUID, created_at: new Date() };
 
             (query as any)
+                .mockResolvedValueOnce({ rows: [{ exists: 1 }] }) // Access check
                 .mockResolvedValueOnce({ rows: [mockResult] }); // Insert query
 
             const response = await request(app)
