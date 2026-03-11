@@ -50,14 +50,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       rollupOptions: {
-        output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'pdf-renderer': ['@react-pdf/renderer'],
-            'recharts': ['recharts'],
-            'lucide': ['lucide-react']
-          }
-        }
+        // Output chunking handled automatically by Vite
       },
       chunkSizeWarningLimit: 1600, // Elevated for pdf-renderer
     }
