@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { User, AuthState } from '../types';
 import { AuthService } from '../services/authService';
 import { AuditService } from '../services/auditService';
@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         initAuth();
     }, []);
 
-    const login = async (email: string, password: string) => {
+    const login = useCallback(async (email: string, password: string) => {
         setState(prev => ({ ...prev, isLoading: true }));
         try {
             const user = await AuthService.login(email, password);
@@ -63,20 +63,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setState(prev => ({ ...prev, isLoading: false }));
             throw error;
         }
-    };
+    }, []);
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         if (state.user) {
             AuditService.log('USER_LOGOUT', { email: state.user.email }, state.user.id);
         }
         await AuthService.logout();
         AuditService.setCurrentUser(null);
         setState({ user: null, isAuthenticated: false, isLoading: false });
-    };
+    }, [state.user]);
 
-    const updateUser = (user: User) => {
+    const updateUser = useCallback((user: User) => {
         setState(prev => ({ ...prev, user }));
-    };
+    }, []);
 
     // Auto-Session Timeout (Idle Security) - 2 Hours
     React.useEffect(() => {

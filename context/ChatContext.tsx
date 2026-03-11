@@ -110,7 +110,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
     }, [state.activeChannelId, currentUser?.id]);
 
-    const sendMessage = async (text: string, context?: ChatMessageContext, attachments?: ChatAttachment[]) => {
+    const sendMessage = useCallback(async (text: string, context?: ChatMessageContext, attachments?: ChatAttachment[]) => {
         if (!state.activeChannelId || !currentUser) return;
 
         // 🚀 Optimistic update for zero-delay user experience
@@ -150,25 +150,25 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 messages: prev.messages.filter(m => m.id !== tempId)
             }));
         }
-    };
+    }, [state.activeChannelId, currentUser]);
 
-    const addReaction = async (messageId: string, emoji: string) => {
+    const addReaction = useCallback(async (messageId: string, emoji: string) => {
         if (!state.activeChannelId) return;
         await ChatService.addReaction(state.activeChannelId, messageId, emoji);
-    };
+    }, [state.activeChannelId]);
 
-    const removeReaction = async (messageId: string, emoji: string) => {
+    const removeReaction = useCallback(async (messageId: string, emoji: string) => {
         if (!state.activeChannelId) return;
         await ChatService.removeReaction(state.activeChannelId, messageId, emoji);
-    };
+    }, [state.activeChannelId]);
 
-    const createChannel = async (name: string, type: 'public' | 'private') => {
+    const createChannel = useCallback(async (name: string, type: 'public' | 'private') => {
         const newChannel = await ChatService.createChannel(name, type);
         await refreshData();
         setState(prev => ({ ...prev, activeChannelId: newChannel.id }));
-    };
+    }, [refreshData]);
 
-    const deleteChannel = async (id: string) => {
+    const deleteChannel = useCallback(async (id: string) => {
         const success = await ChatService.deleteChannel(id);
         if (success) {
             await refreshData();
@@ -176,23 +176,23 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setState(prev => ({ ...prev, activeChannelId: 'c1' }));
             }
         }
-    };
+    }, [refreshData, state.activeChannelId]);
 
-    const setActiveChannelId = (id: string | null) => {
+    const setActiveChannelId = useCallback((id: string | null) => {
         setState(prev => ({ ...prev, activeChannelId: id }));
-    };
+    }, []);
 
-    const setSearchQuery = (query: string) => {
+    const setSearchQuery = useCallback((query: string) => {
         setState(prev => ({ ...prev, searchQuery: query }));
-    };
+    }, []);
 
-    const setFilterType = (type: 'all' | 'channels' | 'dms') => {
+    const setFilterType = useCallback((type: 'all' | 'channels' | 'dms') => {
         setState(prev => ({ ...prev, filterType: type }));
-    };
+    }, []);
 
-    const toggleMobileSidebar = () => {
+    const toggleMobileSidebar = useCallback(() => {
         setState(prev => ({ ...prev, isMobileSidebarOpen: !prev.isMobileSidebarOpen }));
-    };
+    }, []);
 
     return (
         <ChatContext.Provider value={{
