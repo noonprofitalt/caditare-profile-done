@@ -1,0 +1,208 @@
+{
+    "result":  {
+                   "id":  "2ca8ed09-412b-49d9-8648-3cdd22d16745",
+                   "name":  "suhara-erp",
+                   "subdomain":  "suhara-erp.pages.dev",
+                   "domains":  [
+                                   "suhara-erp.pages.dev"
+                               ],
+                   "build_config":  {
+                                        "web_analytics_tag":  null,
+                                        "web_analytics_token":  null
+                                    },
+                   "deployment_configs":  {
+                                              "preview":  {
+                                                              "env_vars":  null,
+                                                              "fail_open":  true,
+                                                              "always_use_latest_compatibility_date":  false,
+                                                              "compatibility_date":  "2026-03-11",
+                                                              "compatibility_flags":  [
+
+                                                                                      ],
+                                                              "build_image_major_version":  3,
+                                                              "usage_model":  "standard"
+                                                          },
+                                              "production":  {
+                                                                 "env_vars":  null,
+                                                                 "fail_open":  true,
+                                                                 "always_use_latest_compatibility_date":  false,
+                                                                 "compatibility_date":  "2026-03-11",
+                                                                 "compatibility_flags":  [
+
+                                                                                         ],
+                                                                 "build_image_major_version":  3,
+                                                                 "usage_model":  "standard"
+                                                             }
+                                          },
+                   "latest_deployment":  {
+                                             "id":  "b1171594-394a-475a-94f3-78eb550d8b22",
+                                             "short_id":  "b1171594",
+                                             "project_id":  "2ca8ed09-412b-49d9-8648-3cdd22d16745",
+                                             "project_name":  "suhara-erp",
+                                             "environment":  "production",
+                                             "url":  "https://b1171594.suhara-erp.pages.dev",
+                                             "created_on":  "2026-03-11T06:22:56.134852Z",
+                                             "modified_on":  "2026-03-11T06:22:57.789282Z",
+                                             "latest_stage":  {
+                                                                  "name":  "deploy",
+                                                                  "started_on":  null,
+                                                                  "ended_on":  "2026-03-11T06:22:57.789282Z",
+                                                                  "status":  "success"
+                                                              },
+                                             "deployment_trigger":  {
+                                                                        "type":  "ad_hoc",
+                                                                        "metadata":  {
+                                                                                         "branch":  "main",
+                                                                                         "commit_hash":  "de2a1b4ce46021fc1d2c19e609b14164418d61d1",
+                                                                                         "commit_message":  "ci: add Cloudflare Pages automatic deployment workflow",
+                                                                                         "commit_dirty":  true
+                                                                                     }
+                                                                    },
+                                             "stages":  [
+                                                            {
+                                                                "name":  "queued",
+                                                                "started_on":  "2026-03-11T06:22:56.134852Z",
+                                                                "ended_on":  null,
+                                                                "status":  "active"
+                                                            },
+                                                            {
+                                                                "name":  "initialize",
+                                                                "started_on":  null,
+                                                                "ended_on":  null,
+                                                                "status":  "idle"
+                                                            },
+                                                            {
+                                                                "name":  "clone_repo",
+                                                                "started_on":  null,
+                                                                "ended_on":  null,
+                                                                "status":  "idle"
+                                                            },
+                                                            {
+                                                                "name":  "build",
+                                                                "started_on":  null,
+                                                                "ended_on":  null,
+                                                                "status":  "idle"
+                                                            },
+                                                            {
+                                                                "name":  "deploy",
+                                                                "started_on":  null,
+                                                                "ended_on":  "2026-03-11T06:22:57.789282Z",
+                                                                "status":  "success"
+                                                            }
+                                                        ],
+                                             "build_config":  {
+                                                                  "build_command":  null,
+                                                                  "destination_dir":  null,
+                                                                  "build_caching":  null,
+                                                                  "root_dir":  null,
+                                                                  "web_analytics_tag":  null,
+                                                                  "web_analytics_token":  null
+                                                              },
+                                             "env_vars":  {
+
+                                                          },
+                                             "compatibility_date":  "2026-03-11",
+                                             "compatibility_flags":  [
+
+                                                                     ],
+                                             "build_image_major_version":  3,
+                                             "usage_model":  null,
+                                             "aliases":  null,
+                                             "is_skipped":  false,
+                                             "production_branch":  "main",
+                                             "uses_functions":  false
+                                         },
+                   "canonical_deployment":  {
+                                                "id":  "b1171594-394a-475a-94f3-78eb550d8b22",
+                                                "short_id":  "b1171594",
+                                                "project_id":  "2ca8ed09-412b-49d9-8648-3cdd22d16745",
+                                                "project_name":  "suhara-erp",
+                                                "environment":  "production",
+                                                "url":  "https://b1171594.suhara-erp.pages.dev",
+                                                "created_on":  "2026-03-11T06:22:56.134852Z",
+                                                "modified_on":  "2026-03-11T06:22:57.789282Z",
+                                                "latest_stage":  {
+                                                                     "name":  "deploy",
+                                                                     "started_on":  null,
+                                                                     "ended_on":  "2026-03-11T06:22:57.789282Z",
+                                                                     "status":  "success"
+                                                                 },
+                                                "deployment_trigger":  {
+                                                                           "type":  "ad_hoc",
+                                                                           "metadata":  {
+                                                                                            "branch":  "main",
+                                                                                            "commit_hash":  "de2a1b4ce46021fc1d2c19e609b14164418d61d1",
+                                                                                            "commit_message":  "ci: add Cloudflare Pages automatic deployment workflow",
+                                                                                            "commit_dirty":  true
+                                                                                        }
+                                                                       },
+                                                "stages":  [
+                                                               {
+                                                                   "name":  "queued",
+                                                                   "started_on":  "2026-03-11T06:22:56.134852Z",
+                                                                   "ended_on":  null,
+                                                                   "status":  "active"
+                                                               },
+                                                               {
+                                                                   "name":  "initialize",
+                                                                   "started_on":  null,
+                                                                   "ended_on":  null,
+                                                                   "status":  "idle"
+                                                               },
+                                                               {
+                                                                   "name":  "clone_repo",
+                                                                   "started_on":  null,
+                                                                   "ended_on":  null,
+                                                                   "status":  "idle"
+                                                               },
+                                                               {
+                                                                   "name":  "build",
+                                                                   "started_on":  null,
+                                                                   "ended_on":  null,
+                                                                   "status":  "idle"
+                                                               },
+                                                               {
+                                                                   "name":  "deploy",
+                                                                   "started_on":  null,
+                                                                   "ended_on":  "2026-03-11T06:22:57.789282Z",
+                                                                   "status":  "success"
+                                                               }
+                                                           ],
+                                                "build_config":  {
+                                                                     "build_command":  null,
+                                                                     "destination_dir":  null,
+                                                                     "build_caching":  null,
+                                                                     "root_dir":  null,
+                                                                     "web_analytics_tag":  null,
+                                                                     "web_analytics_token":  null
+                                                                 },
+                                                "env_vars":  {
+
+                                                             },
+                                                "compatibility_date":  "2026-03-11",
+                                                "compatibility_flags":  [
+
+                                                                        ],
+                                                "build_image_major_version":  3,
+                                                "usage_model":  null,
+                                                "aliases":  null,
+                                                "is_skipped":  false,
+                                                "production_branch":  "main",
+                                                "uses_functions":  false
+                                            },
+                   "created_on":  "2026-03-11T06:20:24.924249Z",
+                   "production_branch":  "main",
+                   "production_script_name":  "pages-worker--11645219-production",
+                   "preview_script_name":  "pages-worker--11645219-preview",
+                   "uses_functions":  false,
+                   "framework":  "",
+                   "framework_version":  ""
+               },
+    "success":  true,
+    "errors":  [
+
+               ],
+    "messages":  [
+
+                 ]
+}
