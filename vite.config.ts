@@ -6,6 +6,19 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  
+  // VALIDATION: Prevent build if required environment variables are missing
+  if (mode === 'production') {
+    const requiredEnv = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
+    const missing = requiredEnv.filter(key => !env[key]);
+    if (missing.length > 0) {
+      throw new Error(
+        `FATAL BUILD ERROR: The following required environment variables are missing for production build: ${missing.join(', ')}. ` +
+        `Make sure these are added as Secrets in GitHub or in your .env.production file.`
+      );
+    }
+  }
+
   return {
     server: {
       port: 3000,
