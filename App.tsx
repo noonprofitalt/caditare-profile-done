@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -105,7 +105,7 @@ const App: React.FC = () => {
         <AuthProvider>
           <CandidateProvider>
             <ToastProvider>
-              <HashRouter>
+              <BrowserRouter>
                 <GlobalSearch />
                 <Routes>
                   <Route path="/login" element={<Login />} />
@@ -177,7 +177,7 @@ const App: React.FC = () => {
                     }
                   />
                 </Routes>
-              </HashRouter>
+              </BrowserRouter>
             </ToastProvider>
           </CandidateProvider>
         </AuthProvider>
