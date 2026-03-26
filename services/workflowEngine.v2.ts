@@ -610,7 +610,7 @@ export class WorkflowEngine {
         const enteredAt = (stageEntry && stageEntry.timestamp) ? new Date(stageEntry.timestamp) : (candidate.stageEnteredAt ? new Date(candidate.stageEnteredAt) : new Date());
         const safeEnteredAt = isNaN(enteredAt.getTime()) ? new Date() : enteredAt;
         const now = new Date();
-        const slaDays = (this as any).SLA_CONFIG?.[stage] || 7; // Fallback to 7 days if config missing
+        const slaDays = SLA_CONFIG[stage] ?? 7; // Use module-level SLA_CONFIG constant
         const slaDeadline = new Date(safeEnteredAt);
         slaDeadline.setDate(slaDeadline.getDate() + slaDays);
 

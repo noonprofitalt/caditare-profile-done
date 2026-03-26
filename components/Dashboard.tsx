@@ -32,25 +32,25 @@ const Dashboard: React.FC = () => {
    const isAdmin = user?.role === 'Admin';
 
    useEffect(() => {
+      // GUARD: Don't fetch dashboard data until the user is authenticated
+      if (!user) return;
+
       const loadDashboardData = async () => {
+         console.log('[Dashboard] Loading data... user:', user?.email, 'role:', user?.role, 'isAdmin:', isAdmin);
          try {
             // FRICTIONLESS MODE: Parallel Fetching to eliminate network waterfalls.
-            // Only fetch restricted data if user is an Admin.
+            // Force refresh (true) to bypass any stale caches from prior unauthenticated requests.
             const [data, employers, jobs, orders] = await Promise.all([
-               CandidateService.getCandidates().then(res => res || []),
-               isAdmin ? PartnerService.getEmployers().then(res => res || []) : Promise.resolve([]),
-               isAdmin ? JobService.getJobs().then(res => res || []) : Promise.resolve([]),
-               isAdmin ? DemandOrderService.getAll().then(res => res || []) : Promise.resolve([])
+               CandidateService.getCandidates(true).then(res => res || []),
+               isAdmin ? PartnerService.getEmployers(true).then(res => res || []) : Promise.resolve([]),
+               isAdmin ? JobService.getJobs(true).then(res => res || []) : Promise.resolve([]),
+               isAdmin ? DemandOrderService.getAll(true).then(res => res || []) : Promise.resolve([])
             ]);
 
-            // OFFLINE MODE: Cache latest data
-            if (data.length > 0) localStorage.setItem('caditare_dash_data', JSON.stringify(data));
-            if (isAdmin) {
-               if (employers.length > 0) localStorage.setItem('caditare_dash_employers', JSON.stringify(employers));
-               if (jobs.length > 0) localStorage.setItem('caditare_dash_jobs', JSON.stringify(jobs));
-               if (orders.length > 0) localStorage.setItem('caditare_dash_orders', JSON.stringify(orders));
-            }
+            console.log('[Dashboard] Fetched:', { candidates: data.length, employers: employers.length, jobs: jobs.length, orders: orders.length });
 
+            // *** SET REACT STATE FIRST — before any localStorage operations ***
+            // This ensures the dashboard renders data even if caching fails.
             setCandidates(data);
             const generatedTasks = TaskEngine.generateWorkQueue(data);
             const generatedAlerts = TaskEngine.generateAlerts(data);
@@ -62,34 +62,58 @@ const Dashboard: React.FC = () => {
                setOpenJobsCount(jobs.filter(j => j.status === JobStatus.OPEN).length);
                setActiveDemands(orders.filter(o => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
             }
+
+            // OFFLINE MODE: Cache latest data (wrapped in try-catch to prevent QuotaExceededError from crashing)
+            try {
+               if (data.length > 0) localStorage.setItem('caditare_dash_data', JSON.stringify(data));
+               if (isAdmin) {
+                  if (employers.length > 0) localStorage.setItem('caditare_dash_employers', JSON.stringify(employers));
+                  if (jobs.length > 0) localStorage.setItem('caditare_dash_jobs', JSON.stringify(jobs));
+                  if (orders.length > 0) localStorage.setItem('caditare_dash_orders', JSON.stringify(orders));
+               }
+            } catch (cacheErr) {
+               console.warn('[Dashboard] localStorage cache failed (quota exceeded). Clearing stale data and retrying...');
+               // Clear old cache entries to free up space
+               localStorage.removeItem('caditare_dash_data');
+               localStorage.removeItem('caditare_dash_employers');
+               localStorage.removeItem('caditare_dash_jobs');
+               localStorage.removeItem('caditare_dash_orders');
+               localStorage.removeItem('caditare_offline_candidates');
+               // Dashboard data is already rendered in React state — no action needed.
+            }
          } catch (error) {
-            console.error('Failed to load dashboard data:', error);
+            console.error('[Dashboard] Failed to load dashboard data:', error);
             // OFFLINE MODE: Fallback to cached data if network fails
-            const cData = localStorage.getItem('caditare_dash_data');
-            const cEmpl = localStorage.getItem('caditare_dash_employers');
-            const cJobs = localStorage.getItem('caditare_dash_jobs');
-            const cOrders = localStorage.getItem('caditare_dash_orders');
+            try {
+               const cData = localStorage.getItem('caditare_dash_data');
+               if (cData) {
+                  console.log('[Dashboard] Serving dashboard from local cache.');
+                  const data = JSON.parse(cData);
+                  setCandidates(data);
+                  setTasks(TaskEngine.generateWorkQueue(data));
+                  setAlerts(TaskEngine.generateAlerts(data));
 
-            if (cData && cEmpl && cJobs && cOrders) {
-               console.log('Network offline. Serving dashboard from local cache.');
-               const data = JSON.parse(cData);
-               const employers = JSON.parse(cEmpl);
-               const jobs = JSON.parse(cJobs);
-               const orders = JSON.parse(cOrders);
-
-               setCandidates(data);
-               setTasks(TaskEngine.generateWorkQueue(data));
-               setAlerts(TaskEngine.generateAlerts(data));
-               setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
-               setOpenJobsCount(jobs.filter((j: any) => j.status === JobStatus.OPEN).length);
-               setActiveDemands(orders.filter((o: any) => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
+                  const cEmpl = localStorage.getItem('caditare_dash_employers');
+                  const cJobs = localStorage.getItem('caditare_dash_jobs');
+                  const cOrders = localStorage.getItem('caditare_dash_orders');
+                  if (cEmpl && cJobs && cOrders) {
+                     const employers = JSON.parse(cEmpl);
+                     const jobs = JSON.parse(cJobs);
+                     const orders = JSON.parse(cOrders);
+                     setProjectedRevenue(FinanceService.getProjectedRevenue(data, employers));
+                     setOpenJobsCount(jobs.filter((j: any) => j.status === JobStatus.OPEN).length);
+                     setActiveDemands(orders.filter((o: any) => o.status === DemandOrderStatus.OPEN || o.status === DemandOrderStatus.PARTIALLY_FILLED).length);
+                  }
+               }
+            } catch (cacheReadErr) {
+               console.error('[Dashboard] Cache read also failed:', cacheReadErr);
             }
          } finally {
             setIsLoading(false);
          }
       };
       loadDashboardData();
-   }, []);
+   }, [user]);
 
    const activeCandidates = candidates.length;
    const criticalIssues = tasks.filter(t => t.priority === 'Critical').length;

@@ -3,12 +3,13 @@ import { Candidate } from '../types';
 import { CandidateService } from '../services/candidateService';
 import { logger } from '../services/loggerService';
 import { supabase } from '../services/supabase';
+import { useAuth } from './AuthContext';
 
 interface CandidateContextType {
     candidates: Candidate[];
     isLoading: boolean;
     error: string | null;
-    refreshCandidates: () => Promise<void>;
+    refreshCandidates: (force?: boolean) => Promise<void>;
     updateCandidateInState: (candidate: Candidate) => void;
     removeCandidateFromState: (id: string) => void;
     addCandidateToState: (candidate: Candidate) => void;
@@ -17,19 +18,27 @@ interface CandidateContextType {
 const CandidateContext = createContext<CandidateContextType | undefined>(undefined);
 
 export const CandidateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { isAuthenticated } = useAuth();
     const [candidates, setCandidates] = useState<Candidate[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const refreshCandidates = useCallback(async () => {
+    const refreshCandidates = useCallback(async (force = false) => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await CandidateService.getCandidates();
+            const data = await CandidateService.getCandidates(force);
             if (data && data.length > 0) {
+                // SET STATE FIRST — before caching, to prevent QuotaExceededError from blocking the UI
                 setCandidates(data);
-                // OFFLINE MODE: Cache latest data
-                localStorage.setItem('caditare_offline_candidates', JSON.stringify(data));
+                // OFFLINE MODE: Try to cache latest data (non-critical)
+                try {
+                    localStorage.setItem('caditare_offline_candidates', JSON.stringify(data));
+                } catch (cacheErr) {
+                    console.warn('[CandidateProvider] localStorage quota exceeded. Clearing old cache.');
+                    localStorage.removeItem('caditare_offline_candidates');
+                    localStorage.removeItem('caditare_dash_data');
+                }
             }
         } catch (err) {
             logger.error('Failed to fetch candidates', err);
@@ -60,7 +69,9 @@ export const CandidateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // Initial load and Real-time subscription setup
     useEffect(() => {
-        refreshCandidates();
+        if (!isAuthenticated) return;
+        
+        refreshCandidates(true);
 
         // Establish Realtime Collaboration Sync
         const channel = supabase
@@ -117,7 +128,7 @@ export const CandidateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [refreshCandidates]);
+    }, [refreshCandidates, isAuthenticated]);
 
     const updateCandidateInState = useCallback((updatedCandidate: Candidate) => {
         setCandidates(prev => prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c));

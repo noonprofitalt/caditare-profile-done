@@ -22,21 +22,26 @@ export class CandidateService {
     // Fetch all candidates from Supabase (Used for Dashboard/Pipeline where aggregations are needed)
     static async getCandidates(forceRefresh: boolean = false): Promise<Candidate[]> {
         if (!forceRefresh && this._candidatesCache && Date.now() - this._candidatesCacheTime < 60000) {
+            console.log('[CandidateService] Returning cached candidates:', this._candidatesCache.length);
             return this._candidatesCache;
         }
 
+        console.log('[CandidateService] Fetching candidates from Supabase... (force:', forceRefresh, ')');
         const { data, error } = await supabase
             .from('candidates')
             .select('*')
             .order('updated_at', { ascending: false });
 
         if (error) {
+            console.error('[CandidateService] Supabase ERROR:', error.message, error.code, error.details);
             logger.error('Error fetching candidates:', error);
             return [];
         }
 
+        console.log('[CandidateService] Supabase returned:', data?.length, 'rows');
         this._candidatesCache = (data || []).map(row => this.mapRowToCandidate(row));
         this._candidatesCacheTime = Date.now();
+        console.log('[CandidateService] Mapped', this._candidatesCache.length, 'candidates');
         return this._candidatesCache;
     }
 

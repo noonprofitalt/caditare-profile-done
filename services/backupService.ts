@@ -512,7 +512,11 @@ export class BackupService {
                 if (data && typeof data === 'object') {
                     Object.entries(data).forEach(([key, value]) => {
                         if (typeof value === 'string') {
-                            localStorage.setItem(key, value);
+                            try {
+                                localStorage.setItem(key, value);
+                            } catch (e) {
+                                console.warn('[BackupService] Failed to set localStorage cache (quota exceeded)', e);
+                            }
                         }
                     });
                 }
@@ -632,7 +636,12 @@ export class BackupService {
      * Saves backup history to localStorage.
      */
     private static saveBackupHistory(history: BackupHistoryEntry[]): void {
-        localStorage.setItem(BACKUP_HISTORY_KEY, JSON.stringify(history));
+        try {
+            localStorage.setItem(BACKUP_HISTORY_KEY, JSON.stringify(history));
+        } catch (e) {
+            console.warn('[BackupService] Failed to save backup history (quota exceeded)', e);
+            // Optionally, we could trim the history further here, but for now just catch the error.
+        }
     }
 
     /**
@@ -789,7 +798,11 @@ export class BackupService {
      * Sets the auto-backup interval in hours (0 = disabled).
      */
     static setAutoBackupInterval(hours: number): void {
-        localStorage.setItem(AUTO_BACKUP_INTERVAL_KEY, String(hours));
+        try {
+            localStorage.setItem(AUTO_BACKUP_INTERVAL_KEY, String(hours));
+        } catch (e) {
+            console.warn('[BackupService] Failed to set auto backup interval (quota exceeded)', e);
+        }
     }
 
     /**
@@ -818,7 +831,11 @@ export class BackupService {
                     createdBy: 'Auto-Scheduler',
                     tags: ['auto', 'scheduled']
                 });
-                localStorage.setItem(LAST_AUTO_BACKUP_KEY, new Date().toISOString());
+                try {
+                    localStorage.setItem(LAST_AUTO_BACKUP_KEY, new Date().toISOString());
+                } catch (e) {
+                    console.warn('[BackupService] Failed to update last auto backup time (quota exceeded)', e);
+                }
                 return true;
             } catch (e) {
                 console.error('Auto-backup failed:', e);
