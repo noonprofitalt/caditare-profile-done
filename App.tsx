@@ -10,6 +10,7 @@ import { CandidateProvider } from './context/CandidateContext';
 import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleRoute from './components/RoleRoute';
+import PaymentGate from './components/PaymentGate';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { logger } from './services/loggerService';
@@ -100,6 +101,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
+    <PaymentGate>
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <AuthProvider>
@@ -183,6 +185,7 @@ const App: React.FC = () => {
         </AuthProvider>
       </ErrorBoundary>
     </QueryClientProvider>
+    </PaymentGate>
   );
 };
 
