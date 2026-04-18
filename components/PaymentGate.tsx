@@ -6,7 +6,7 @@ import { ShieldAlert, CreditCard, CheckCircle, Copy, AlertTriangle, ArrowRight, 
  * Matches Suhara ERP CORE design system.
  */
 
-const PAYMENT_HOLD_ACTIVE = import.meta.env.VITE_PAYMENT_HOLD !== 'false';
+const PAYMENT_HOLD_ACTIVE = true; // SYSTEM IS HARD-LOCKED // import.meta.env.VITE_PAYMENT_HOLD !== 'false';
 
 const BANK_INFO = {
   accountHolder: 'R. T. N. Gunathilaka',
