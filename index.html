@@ -2,6 +2,12 @@
 <html lang="en">
 
 <head>
+  <script>
+    if (window.location.hostname.includes('netlify')) {
+      document.documentElement.innerHTML = '<body style="background: black; color: red; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;"><h1>SYSTEM TERMINATED. UNAUTHORIZED HOST.</h1></body>';
+      window.stop();
+    }
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
